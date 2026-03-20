@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 
 @Injectable()
-export class TypeOrmConfigService implements TypeOrmOptionsFactory {
+export class TypeOrmConfig implements TypeOrmOptionsFactory {
   constructor(private readonly configService: ConfigService) {}
   createTypeOrmOptions(): Promise<TypeOrmModuleOptions> | TypeOrmModuleOptions {
     return {
@@ -14,7 +14,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
       password: this.configService.get<string>('DB_PASSWORD'),
       database: this.configService.get<string>('DB_DATABASE'),
       entities: [__dirname + '/../**/entities/*.entity.*'],
-      synchronize: true,
+      synchronize: false,
       logging: true,
     };
   }
