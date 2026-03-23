@@ -11,7 +11,6 @@ enum RoomType {
 
 enum RoomStatus {
   OPEN = 'OPEN',
-  FULL = 'FULL',
   CLOSE = 'CLOSE',
 }
 
@@ -38,8 +37,10 @@ export class Room extends BaseTableEntity {
   })
   roomType: RoomType;
 
-  @Column()
-  capacity: number;
+  @Column({
+    name: 'max_capacity',
+  })
+  maxCapacity: number;
 
   @Column({
     name: 'min_age',

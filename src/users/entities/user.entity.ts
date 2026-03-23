@@ -2,7 +2,7 @@ import { CommentLike } from '../../comments/entities/comment-like.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 import { BaseTableEntity } from '../../commons/entities/base.entity';
 import { Friend } from '../../friends/entities/friend.entity';
-import { LunchMenuReaction } from '../../lunchMenus/entities/lunch-menu-reaction.entity';
+import { MealMenuReaction } from '../../meal-menus/entities/meal-menu-reaction.entity';
 import { PostLike } from '../../posts/entities/post-like.entity';
 import { Post } from '../../posts/entities/post.entity';
 import { RoomMember } from '../../rooms/entities/room-member.entity';
@@ -52,7 +52,7 @@ export class User extends BaseTableEntity {
     type: 'text',
     nullable: true,
   })
-  description: string;
+  introduce: string;
 
   @Column({
     nullable: true,
@@ -84,6 +84,6 @@ export class User extends BaseTableEntity {
   @OneToMany(() => CommentLike, (commentLike) => commentLike.user)
   commentLikes: CommentLike[];
 
-  @OneToMany(() => LunchMenuReaction, (lunchMenuReaction) => lunchMenuReaction.user)
-  reactions: LunchMenuReaction[];
+  @OneToMany(() => MealMenuReaction, (mealMenuReaction) => mealMenuReaction.user)
+  reactions: MealMenuReaction[];
 }

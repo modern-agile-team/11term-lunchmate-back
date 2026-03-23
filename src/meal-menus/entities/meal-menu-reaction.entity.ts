@@ -1,15 +1,15 @@
 import { User } from '../../users/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { LunchMenu } from './lunch-menu.entity';
+import { MealMenu } from './meal-menu.entity';
 
 export enum ActionType {
   LIKE = 'LIKE',
   DISLIKE = 'DISLIKE',
 }
 
-@Entity('lunch_menu_reactions')
-@Unique(['user', 'lunchMenu'])
-export class LunchMenuReaction {
+@Entity('meal_menu_reactions')
+@Unique(['user', 'mealMenu'])
+export class MealMenuReaction {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -24,7 +24,7 @@ export class LunchMenuReaction {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => LunchMenu, (lunchMenu) => lunchMenu.reactions)
-  @JoinColumn({ name: 'lunch_menu_id' })
-  lunchMenu: LunchMenu;
+  @ManyToOne(() => MealMenu, (mealMenu) => mealMenu.reactions)
+  @JoinColumn({ name: 'meal_menu_id' })
+  mealMenu: MealMenu;
 }

@@ -1,4 +1,4 @@
-import { LunchMenuReaction } from './lunch-menu-reaction.entity';
+import { MealMenuReaction } from './meal-menu-reaction.entity';
 import { BaseTableEntity } from '../../commons/entities/base.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -9,15 +9,16 @@ export enum MealType {
   ALL = 'ALL',
 }
 
-@Entity('lunch_menus')
-export class LunchMenu extends BaseTableEntity {
+@Entity('meal_menus')
+export class MealMenu extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({
     length: 100,
+    name: 'school_info',
   })
-  school: string;
+  schoolInfo: string;
 
   @Column({
     type: 'date',
@@ -34,8 +35,9 @@ export class LunchMenu extends BaseTableEntity {
 
   @Column({
     length: 255,
+    name: 'menu_name',
   })
-  title: string;
+  menuName: string;
 
   @Column({
     nullable: true,
@@ -59,6 +61,6 @@ export class LunchMenu extends BaseTableEntity {
   })
   dislikeCount: number;
 
-  @OneToMany(() => LunchMenuReaction, (lunchMenuReaction) => lunchMenuReaction.lunchMenu)
-  reactions: LunchMenuReaction[];
+  @OneToMany(() => MealMenuReaction, (MealMenuReaction) => MealMenuReaction.mealMenu)
+  reactions: MealMenuReaction[];
 }

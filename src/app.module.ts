@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoomModule } from './rooms/rooms.module';
-import { LunchMenuModule } from './lunchMenus/lunch-menus.module';
+import { MealMenuModule } from './meal-menus/meal-menus.module';
 import { CommentModule } from './comments/comments.module';
 import { PostCategoryModule } from './post-categories/post-categories.module';
 import { PostModule } from './posts/posts.module';
@@ -22,7 +22,7 @@ import { TypeOrmConfig } from './config/database.config';
     }),
     UserModule,
     RoomModule,
-    LunchMenuModule,
+    MealMenuModule,
     CommentModule,
     PostCategoryModule,
     PostModule,
