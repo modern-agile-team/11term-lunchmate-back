@@ -1,4 +1,3 @@
-import { Exclude } from 'class-transformer';
 import { CommentLike } from '../../comments/entities/comment-like.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 import { BaseTableEntity } from '../../commons/entities/base.entity';
@@ -32,8 +31,7 @@ export class User extends BaseTableEntity {
   })
   nickname: string;
 
-  @Exclude()
-  @Column({ name: 'hashed_password' })
+  @Column({ name: 'hashed_password', select: false })
   hashedPassword: string;
 
   @Column({ type: 'date', name: 'birth_date' })
