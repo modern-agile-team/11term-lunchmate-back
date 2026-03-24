@@ -38,9 +38,9 @@ export class Room extends BaseTableEntity {
   roomType: RoomType;
 
   @Column({
-    name: 'max_capacity',
+    name: 'max_members_count',
   })
-  maxCapacity: number;
+  maxMembersCount: number;
 
   @Column({
     name: 'min_age',
