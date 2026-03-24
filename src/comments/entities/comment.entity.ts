@@ -1,0 +1,33 @@
+import { BaseTableEntity } from '../../commons/entities/base.entity';
+import { Post } from '../../posts/entities/post.entity';
+import { User } from '../../users/entities/user.entity';
+import { Column, Entity, JoinColumn, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { CommentLike } from './comment-like.entity';
+
+@Entity('comments')
+export class Comment extends BaseTableEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({
+    type: 'text',
+  })
+  content: string;
+
+  @Column({
+    default: 0,
+    name: 'like_count',
+  })
+  likeCount: number;
+
+  @OneToMany(() => CommentLike, (commentLike) => commentLike.comment)
+  commentLikes: CommentLike[];
+
+  @ManyToMany(() => Post, (post) => post.comments)
+  @JoinColumn({ name: 'post_id' })
+  post: Post;
+
+  @ManyToMany(() => User, (user) => user.comments)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+}

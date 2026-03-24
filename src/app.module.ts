@@ -3,7 +3,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from './users/user.module';
+import { RoomModule } from './rooms/rooms.module';
+import { MealMenuModule } from './meal-menus/meal-menus.module';
+import { CommentModule } from './comments/comments.module';
+import { PostCategoryModule } from './post-categories/post-categories.module';
+import { PostModule } from './posts/posts.module';
+import { FriendModule } from './friends/friends.module';
+import { UserModule } from './users/users.module';
 import { TypeOrmConfig } from './config/database.config';
 
 @Module({
@@ -15,6 +21,12 @@ import { TypeOrmConfig } from './config/database.config';
       useClass: TypeOrmConfig,
     }),
     UserModule,
+    RoomModule,
+    MealMenuModule,
+    CommentModule,
+    PostCategoryModule,
+    PostModule,
+    FriendModule,
   ],
   controllers: [AppController],
   providers: [AppService],
