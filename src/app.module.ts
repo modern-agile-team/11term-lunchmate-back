@@ -11,6 +11,10 @@ import { PostModule } from './posts/posts.module';
 import { FriendModule } from './friends/friends.module';
 import { UserModule } from './users/users.module';
 import { TypeOrmConfig } from './config/database.config';
+import { WinstonModule } from 'nest-winston';
+import { winstonOptions } from './config/winston.config';
+import { APP_FILTER } from '@nestjs/core';
+import { AllExceptionFilter } from './commons/filters/all-exception.filter';
 
 @Module({
   imports: [
@@ -19,6 +23,9 @@ import { TypeOrmConfig } from './config/database.config';
     }),
     TypeOrmModule.forRootAsync({
       useClass: TypeOrmConfig,
+    }),
+    WinstonModule.forRoot({
+      transports: winstonOptions,
     }),
     UserModule,
     RoomModule,
@@ -29,6 +36,12 @@ import { TypeOrmConfig } from './config/database.config';
     FriendModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
