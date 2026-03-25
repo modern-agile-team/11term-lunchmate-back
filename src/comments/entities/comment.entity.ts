@@ -1,7 +1,7 @@
 import { BaseTableEntity } from '../../commons/entities/base.entity';
 import { Post } from '../../posts/entities/post.entity';
 import { User } from '../../users/entities/user.entity';
-import { Column, Entity, JoinColumn, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { CommentLike } from './comment-like.entity';
 
 @Entity('comments')
@@ -23,11 +23,11 @@ export class Comment extends BaseTableEntity {
   @OneToMany(() => CommentLike, (commentLike) => commentLike.comment)
   commentLikes: CommentLike[];
 
-  @ManyToMany(() => Post, (post) => post.comments)
+  @ManyToOne(() => Post, (post) => post.comments)
   @JoinColumn({ name: 'post_id' })
   post: Post;
 
-  @ManyToMany(() => User, (user) => user.comments)
+  @ManyToOne(() => User, (user) => user.comments)
   @JoinColumn({ name: 'user_id' })
   user: User;
 }

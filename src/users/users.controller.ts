@@ -1,13 +1,69 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Body,
+} from '@nestjs/common';
+import {
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Authenticated } from '../auth/decorators/authenticated.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { UserService } from './users.service';
-import { User } from './entities/user.entity';
+import { UpdateMeDto } from './dto/update-me.dto';
+import { PublicUserResponseDto } from './dto/public-user-response.dto';
+import { MeUserResponseDto } from './dto/me-user-response.dto';
 
+@ApiTags('User')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
-  async findAllUsers(): Promise<User[]> {
-    return await this.userService.findAllUsers();
+  @Get('me')
+  @Authenticated()
+  @ApiOperation({ summary: '내 정보 조회' })
+  @ApiOkResponse({ type: MeUserResponseDto })
+  async getMe(
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<MeUserResponseDto> {
+    return this.userService.findMe(currentUser.userId);
+  }
+
+  @Patch('me')
+  @Authenticated()
+  @ApiOperation({ summary: '내 프로필 수정' })
+  @ApiOkResponse({ type: MeUserResponseDto })
+  async updateMe(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Body() updateMeDto: UpdateMeDto,
+  ): Promise<MeUserResponseDto> {
+    return this.userService.updateMe(currentUser.userId, updateMeDto);
+  }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Authenticated()
+  @ApiOperation({ summary: '회원 탈퇴' })
+  @ApiNoContentResponse()
+  async deleteMe(@CurrentUser() currentUser: AuthenticatedUser): Promise<void> {
+    await this.userService.withdraw(currentUser.userId);
+  }
+
+  @Get(':userId')
+  @ApiOperation({ summary: '공개 유저 조회' })
+  @ApiOkResponse({ type: PublicUserResponseDto })
+  async findUserById(
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<PublicUserResponseDto> {
+    return this.userService.findPublicUserById(userId);
   }
 }
