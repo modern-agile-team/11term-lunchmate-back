@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { winstonLogger } from './config/winston.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: winstonLogger,
+  });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Lunch Mate API')
@@ -18,6 +22,8 @@ async function bootstrap() {
       persistAuthorization: true,
     },
   });
+
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   await app.listen(process.env.PORT ?? 3000);
 }
