@@ -7,7 +7,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/auth/auth.module';
-import { validationPipeOptions } from '../src/common/validation/validation-pipe-options';
+import { validationPipeOptions } from '../src/commons/validation/validation-pipe-options';
 import { CommentLike } from '../src/comments/entities/comment-like.entity';
 import { Comment } from '../src/comments/entities/comment.entity';
 import { Friend } from '../src/friends/entities/friend.entity';
