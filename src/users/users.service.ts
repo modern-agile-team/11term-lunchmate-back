@@ -186,6 +186,12 @@ export class UserService {
     return this.toMeResponse(savedUser);
   }
 
+  async withdraw(userId: number): Promise<void> {
+    await this.findActiveUserOrFail(userId);
+    await this.revokeTokens(userId);
+    await this.userRepository.softDelete(userId);
+  }
+
   toPublicResponse(user: User): PublicUserResponseDto {
     return {
       id: user.id,
