@@ -60,6 +60,14 @@ export class UserService {
     }
   }
 
+  async findByEmailForLogin(email: string): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect(['user.hashedPassword'])
+      .where('user.email = :email', { email })
+      .getOne();
+  }
+
   toMeResponse(user: User) {
     return {
       id: user.id,

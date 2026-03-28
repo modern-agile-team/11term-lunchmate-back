@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../users/users.service';
-import { JWT_DEFAULTS } from './auth.constants';
+import { AUTH_ERROR_MESSAGES, JWT_DEFAULTS } from './auth.constants';
+import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { AuthResponseDto, AuthTokensResponseDto } from './dto/auth-response.dto';
 
@@ -29,6 +30,16 @@ export class AuthService {
       mbti: signupDto.mbti ?? null,
     });
 
+    const tokens = await this.issueTokens(user.id, user.email, user.nickname);
+
+    return {
+      ...tokens,
+      user: this.userService.toMeResponse(user),
+    };
+  }
+
+  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+    const user = await this.validateCredentials(loginDto);
     const tokens = await this.issueTokens(user.id, user.email, user.nickname);
 
     return {
@@ -66,6 +77,25 @@ export class AuthService {
       this.userService.assertEmailAvailable(signupDto.email),
       this.userService.assertNicknameAvailable(signupDto.nickname),
     ]);
+  }
+
+  private async validateCredentials(loginDto: LoginDto) {
+    const user = await this.userService.findByEmailForLogin(loginDto.email);
+
+    if (!user) {
+      throw new UnauthorizedException(AUTH_ERROR_MESSAGES.invalidCredentials);
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.hashedPassword,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException(AUTH_ERROR_MESSAGES.invalidCredentials);
+    }
+
+    return user;
   }
 
   private buildAccessPayload(
