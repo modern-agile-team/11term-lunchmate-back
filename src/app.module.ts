@@ -11,6 +11,7 @@ import { PostModule } from './posts/posts.module';
 import { FriendModule } from './friends/friends.module';
 import { UserModule } from './users/users.module';
 import { TypeOrmConfig } from './config/database.config';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TypeOrmConfig } from './config/database.config';
     TypeOrmModule.forRootAsync({
       useClass: TypeOrmConfig,
     }),
+    AuthModule,
     UserModule,
     RoomModule,
     MealMenuModule,
