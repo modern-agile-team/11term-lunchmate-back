@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -12,6 +13,7 @@ import { FriendModule } from './friends/friends.module';
 import { UserModule } from './users/users.module';
 import { TypeOrmConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
+import { AllExceptionFilter } from './commons/filters/all-exception.filter';
 
 @Module({
   imports: [
