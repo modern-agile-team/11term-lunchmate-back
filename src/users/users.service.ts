@@ -1,7 +1,14 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
+import { MeUserResponseDto } from './dto/me-user-response.dto';
+import { PublicUserResponseDto } from './dto/public-user-response.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 
 @Injectable()
 export class UserService {
@@ -9,10 +16,6 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
-
-  async findAllUsers(): Promise<User[]> {
-    return this.userRepository.find();
-  }
 
   async createUser(params: {
     email: string;
@@ -50,11 +53,17 @@ export class UserService {
 
   async assertNicknameAvailable(
     nickname: string,
+    excludeUserId?: number,
   ): Promise<void> {
     const existingUser = await this.userRepository.exists({
-      where: {
-        nickname,
-      },
+      where: excludeUserId
+        ? {
+            nickname,
+            id: Not(excludeUserId),
+          }
+        : {
+            nickname,
+          },
     });
 
     if (existingUser) {
@@ -133,16 +142,66 @@ export class UserService {
       .execute();
   }
 
-  toMeResponse(user: User) {
+  async findActiveUserOrFail(userId: number): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    return user;
+  }
+
+  async findPublicUserById(userId: number): Promise<PublicUserResponseDto> {
+    const user = await this.findActiveUserOrFail(userId);
+    return this.toPublicResponse(user);
+  }
+
+  async findMe(userId: number): Promise<MeUserResponseDto> {
+    const user = await this.findActiveUserOrFail(userId);
+    return this.toMeResponse(user);
+  }
+
+  async updateMe(
+    userId: number,
+    updateMeDto: UpdateMeDto,
+  ): Promise<MeUserResponseDto> {
+    const user = await this.findActiveUserOrFail(userId);
+
+    if (updateMeDto.nickname) {
+      await this.assertNicknameAvailable(updateMeDto.nickname, userId);
+    }
+
+    user.name = updateMeDto.name ?? user.name;
+    user.nickname = updateMeDto.nickname ?? user.nickname;
+    user.profileImageUrl = updateMeDto.profileImageUrl ?? user.profileImageUrl;
+    user.bio = updateMeDto.bio ?? user.bio;
+    user.mbti = updateMeDto.mbti ?? user.mbti;
+
+    const savedUser = await this.userRepository.save(user);
+    return this.toMeResponse(savedUser);
+  }
+
+  toPublicResponse(user: User): PublicUserResponseDto {
     return {
       id: user.id,
-      email: user.email,
       name: user.name,
       nickname: user.nickname,
       profileImageUrl: user.profileImageUrl,
       bio: user.bio,
       mbti: user.mbti,
       createdAt: user.createdAt,
+    };
+  }
+
+  toMeResponse(user: User): MeUserResponseDto {
+    return {
+      ...this.toPublicResponse(user),
+      email: user.email,
     };
   }
 }
