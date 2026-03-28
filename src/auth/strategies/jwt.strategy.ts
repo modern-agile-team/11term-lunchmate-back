@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { UserService } from '../../users/users.service';
 import { JWT_DEFAULTS } from '../auth.constants';
 import {
   AuthenticatedUser,
@@ -10,7 +11,10 @@ import {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly userService: UserService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -21,8 +25,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtAccessPayload): AuthenticatedUser {
+  async validate(payload: JwtAccessPayload): Promise<AuthenticatedUser> {
     if (payload.type !== 'access') {
+      throw new UnauthorizedException();
+    }
+
+    const user = await this.userService.findByIdForAccessValidation(payload.sub);
+
+    if (!user || user.tokenVersion !== payload.tokenVersion) {
       throw new UnauthorizedException();
     }
 

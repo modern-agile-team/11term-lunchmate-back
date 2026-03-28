@@ -131,4 +131,89 @@ describe('Auth and Users (e2e)', () => {
 
     expect(response.status).toBe(401);
   });
+
+  it('refresh 성공 및 새 access token 발급', async () => {
+    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'refresh@example.com',
+      password: 'password1234',
+      name: '리프레시유저',
+      nickname: 'refresh-user',
+    });
+
+    const response = await request(app.getHttpServer()).post('/auth/refresh').send({
+      refreshToken: signupResponse.body.refreshToken,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.accessToken).toEqual(expect.any(String));
+    expect(response.body.refreshToken).toEqual(expect.any(String));
+    expect(response.body.refreshToken).not.toBe(signupResponse.body.refreshToken);
+
+    const reusedRefreshResponse = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({
+        refreshToken: signupResponse.body.refreshToken,
+      });
+
+    expect(reusedRefreshResponse.status).toBe(401);
+  });
+
+  it('잘못된 refresh token 거부', async () => {
+    const response = await request(app.getHttpServer()).post('/auth/refresh').send({
+      refreshToken: 'invalid.refresh.token.value',
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('로그아웃 후 refresh 재사용 실패', async () => {
+    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'logout@example.com',
+      password: 'password1234',
+      name: '로그아웃유저',
+      nickname: 'logout-user',
+    });
+
+    const logoutResponse = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
+
+    expect(logoutResponse.status).toBe(204);
+
+    const refreshResponse = await request(app.getHttpServer()).post('/auth/refresh').send({
+      refreshToken: signupResponse.body.refreshToken,
+    });
+
+    expect(refreshResponse.status).toBe(401);
+
+    const logoutAgainResponse = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
+
+    expect(logoutAgainResponse.status).toBe(401);
+  });
+
+  it('같은 refresh token 동시 요청 시 한 번만 성공', async () => {
+    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'refresh-race@example.com',
+      password: 'password1234',
+      name: '리프레시경쟁유저',
+      nickname: 'refresh-race-user',
+    });
+
+    const refreshToken = signupResponse.body.refreshToken;
+
+    const [firstResponse, secondResponse] = await Promise.all([
+      request(app.getHttpServer()).post('/auth/refresh').send({
+        refreshToken,
+      }),
+      request(app.getHttpServer()).post('/auth/refresh').send({
+        refreshToken,
+      }),
+    ]);
+
+    const statuses = [firstResponse.status, secondResponse.status].sort();
+
+    expect(statuses).toEqual([200, 401]);
+  });
 });
