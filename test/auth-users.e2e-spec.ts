@@ -287,4 +287,36 @@ describe('Auth and Users (e2e)', () => {
 
     expect(response.status).toBe(409);
   });
+
+  it('DELETE /users/me 후 soft delete 반영 및 재로그인 실패', async () => {
+    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'withdraw@example.com',
+      password: 'password1234',
+      name: '탈퇴유저',
+      nickname: 'withdraw-user',
+    });
+
+    const deleteResponse = await request(app.getHttpServer())
+      .delete('/users/me')
+      .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
+
+    expect(deleteResponse.status).toBe(204);
+
+    const deletedUser = await dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .addSelect('user.deletedAt')
+      .withDeleted()
+      .where('user.id = :userId', { userId: signupResponse.body.user.id })
+      .getOne();
+
+    expect(deletedUser?.deletedAt).toBeInstanceOf(Date);
+
+    const loginResponse = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'withdraw@example.com',
+      password: 'password1234',
+    });
+
+    expect(loginResponse.status).toBe(401);
+  });
 });
