@@ -11,10 +11,7 @@ export class FriendRepository {
     private readonly friendRepository: Repository<Friend>,
   ) {}
 
-  async findActiveRelationsBetweenUsers(
-    userId: number,
-    otherUserId: number,
-  ): Promise<Friend[]> {
+  async findActiveRelationsBetweenUsers(userId: number, otherUserId: number): Promise<Friend[]> {
     return this.friendRepository
       .createQueryBuilder('friend')
       .leftJoinAndSelect('friend.requester', 'requester')
@@ -26,10 +23,7 @@ export class FriendRepository {
       .getMany();
   }
 
-  async findRestorableRequest(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<Friend | null> {
+  async findRestorableRequest(requesterId: number, receiverId: number): Promise<Friend | null> {
     return this.friendRepository
       .createQueryBuilder('friend')
       .withDeleted()
@@ -50,14 +44,8 @@ export class FriendRepository {
       .getOne();
   }
 
-  async createOrRestoreRequest(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<Friend> {
-    const restorableRequest = await this.findRestorableRequest(
-      requesterId,
-      receiverId,
-    );
+  async createOrRestoreRequest(requesterId: number, receiverId: number): Promise<Friend> {
+    const restorableRequest = await this.findRestorableRequest(requesterId, receiverId);
 
     if (restorableRequest) {
       return this.restoreRequest(restorableRequest);
@@ -74,10 +62,7 @@ export class FriendRepository {
     return (await this.findById(restoredRequest.id)) ?? restoredRequest;
   }
 
-  private async createNewRequest(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<Friend> {
+  private async createNewRequest(requesterId: number, receiverId: number): Promise<Friend> {
     const friendRequest = this.friendRepository.create({
       requester: { id: requesterId } as User,
       receiver: { id: receiverId } as User,

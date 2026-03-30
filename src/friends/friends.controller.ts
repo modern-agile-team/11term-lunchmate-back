@@ -1,9 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import {
-  ApiCreatedResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -24,9 +20,6 @@ export class FriendController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() createFriendRequestDto: CreateFriendRequestDto,
   ): Promise<FriendRequestResponseDto> {
-    return this.friendService.createRequest(
-      currentUser.userId,
-      createFriendRequestDto.receiverId,
-    );
+    return this.friendService.createRequest(currentUser.userId, createFriendRequestDto.receiverId);
   }
 }

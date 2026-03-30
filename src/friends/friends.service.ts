@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { UserService } from '../users/users.service';
 import { Friend, FriendStatus } from './entities/friend.entity';
 import { FriendRequestResponseDto } from './dto/friend-request-response.dto';
@@ -15,10 +11,7 @@ export class FriendService {
     private readonly userService: UserService,
   ) {}
 
-  async createRequest(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<FriendRequestResponseDto> {
+  async createRequest(requesterId: number, receiverId: number): Promise<FriendRequestResponseDto> {
     await this.validateReceiver(requesterId, receiverId);
     await this.ensureRequestableRelation(requesterId, receiverId);
 
@@ -30,10 +23,7 @@ export class FriendService {
     return this.toResponse(friendRequest);
   }
 
-  private async validateReceiver(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<void> {
+  private async validateReceiver(requesterId: number, receiverId: number): Promise<void> {
     if (requesterId === receiverId) {
       throw new BadRequestException('Cannot send friend request to yourself.');
     }
@@ -41,20 +31,14 @@ export class FriendService {
     await this.userService.findActiveUserOrFail(receiverId);
   }
 
-  private async ensureRequestableRelation(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<void> {
-    const existingRelations =
-      await this.friendRepository.findActiveRelationsBetweenUsers(
-        requesterId,
-        receiverId,
-      );
+  private async ensureRequestableRelation(requesterId: number, receiverId: number): Promise<void> {
+    const existingRelations = await this.friendRepository.findActiveRelationsBetweenUsers(
+      requesterId,
+      receiverId,
+    );
 
     const sameDirectionRelation = existingRelations.find(
-      (relation) =>
-        relation.requester.id === requesterId &&
-        relation.receiver.id === receiverId,
+      (relation) => relation.requester.id === requesterId && relation.receiver.id === receiverId,
     );
 
     if (sameDirectionRelation) {
@@ -62,15 +46,11 @@ export class FriendService {
     }
 
     const reverseRelation = existingRelations.find(
-      (relation) =>
-        relation.requester.id === receiverId &&
-        relation.receiver.id === requesterId,
+      (relation) => relation.requester.id === receiverId && relation.receiver.id === requesterId,
     );
 
     if (reverseRelation?.status === FriendStatus.PENDING) {
-      throw new ConflictException(
-        'Friend request from the target user already exists.',
-      );
+      throw new ConflictException('Friend request from the target user already exists.');
     }
 
     if (reverseRelation?.status === FriendStatus.ACCEPTED) {
