@@ -12,6 +12,7 @@ import { CommentLike } from '../src/comments/entities/comment-like.entity';
 import { Comment } from '../src/comments/entities/comment.entity';
 import { Friend } from '../src/friends/entities/friend.entity';
 import { MealMenuModule } from '../src/meal-menus/meal-menus.module';
+import { FriendModule } from '../src/friends/friends.module';
 import { MealMenuReaction } from '../src/meal-menus/entities/meal-menu-reaction.entity';
 import { MealMenu } from '../src/meal-menus/entities/meal-menu.entity';
 import { PostCategory } from '../src/post-categories/entities/post-category.entity';
@@ -19,6 +20,7 @@ import { PostLike } from '../src/posts/entities/post-like.entity';
 import { Post } from '../src/posts/entities/post.entity';
 import { RoomMember } from '../src/rooms/entities/room-member.entity';
 import { Room } from '../src/rooms/entities/room.entity';
+import { RoomModule } from '../src/rooms/rooms.module';
 import { User } from '../src/users/entities/user.entity';
 import { UserModule } from '../src/users/users.module';
 
@@ -93,6 +95,8 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
       }),
       UserModule,
       AuthModule,
+      RoomModule,
+      FriendModule,
     ],
   }).compile();
 
