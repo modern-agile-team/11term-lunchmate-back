@@ -97,4 +97,48 @@ describe('Auth and Users (e2e)', () => {
 
     expect(response.status).toBe(409);
   });
+
+  it('로그인 성공', async () => {
+    await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'login@example.com',
+      password: 'password1234',
+      name: '로그인유저',
+      nickname: 'login-user',
+    });
+
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'login@example.com',
+      password: 'password1234',
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.email).toBe('login@example.com');
+    expect(response.body.accessToken).toEqual(expect.any(String));
+    expect(response.body.refreshToken).toEqual(expect.any(String));
+  });
+
+  it('비밀번호 불일치 로그인 실패', async () => {
+    await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'wrong-password@example.com',
+      password: 'password1234',
+      name: '로그인유저',
+      nickname: 'wrong-password-user',
+    });
+
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'wrong-password@example.com',
+      password: 'invalid-password',
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('존재하지 않는 사용자 로그인 실패', async () => {
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'missing@example.com',
+      password: 'password1234',
+    });
+
+    expect(response.status).toBe(401);
+  });
 });
