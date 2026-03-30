@@ -12,9 +12,7 @@ export class MealMenusController {
   @Get()
   @ApiOperation({ summary: '학식 목록 조회' })
   @ApiOkResponse({ type: MealMenuListResponseDto })
-  async findMealMenus(
-    @Query() query: GetMealMenuListQueryDto,
-  ): Promise<MealMenuListResponseDto> {
+  async findMealMenus(@Query() query: GetMealMenuListQueryDto): Promise<MealMenuListResponseDto> {
     return this.mealMenusService.findMealMenus(query);
   }
 }

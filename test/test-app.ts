@@ -82,9 +82,7 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
             implementation: () => 'PostgreSQL 16.0',
           });
 
-          const dataSource = db.adapters.createTypeormDataSource(
-            options as DataSourceOptions,
-          );
+          const dataSource = db.adapters.createTypeormDataSource(options as DataSourceOptions);
 
           if (!dataSource.isInitialized) {
             await dataSource.initialize();
@@ -133,9 +131,7 @@ export async function createMealMenuTestApp(): Promise<INestApplication> {
             implementation: () => 'PostgreSQL 16.0',
           });
 
-          const dataSource = db.adapters.createTypeormDataSource(
-            options as DataSourceOptions,
-          );
+          const dataSource = db.adapters.createTypeormDataSource(options as DataSourceOptions);
 
           if (!dataSource.isInitialized) {
             await dataSource.initialize();

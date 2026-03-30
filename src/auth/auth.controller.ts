@@ -12,10 +12,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignupDto } from './dto/signup.dto';
-import {
-  AuthResponseDto,
-  AuthTokensResponseDto,
-} from './dto/auth-response.dto';
+import { AuthResponseDto, AuthTokensResponseDto } from './dto/auth-response.dto';
 import type { AuthenticatedUser } from './interfaces/jwt-payload.interface';
 
 @ApiTags('Auth')
@@ -42,9 +39,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '토큰 재발급' })
   @ApiOkResponse({ type: AuthTokensResponseDto })
-  refresh(
-    @Body() refreshTokenDto: RefreshTokenDto,
-  ): Promise<AuthTokensResponseDto> {
+  refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<AuthTokensResponseDto> {
     return this.authService.refresh(refreshTokenDto);
   }
 

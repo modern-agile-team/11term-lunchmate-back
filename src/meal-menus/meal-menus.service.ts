@@ -10,21 +10,15 @@ import { FindMealMenusParams, MealMenuRepository } from './meal-menus.repository
 export class MealMenusService {
   constructor(private readonly mealMenuRepository: MealMenuRepository) {}
 
-  async findMealMenus(
-    query: GetMealMenuListQueryDto,
-  ): Promise<MealMenuListResponseDto> {
-    const mealMenus = await this.mealMenuRepository.findMany(
-      this.toFindMealMenusParams(query),
-    );
+  async findMealMenus(query: GetMealMenuListQueryDto): Promise<MealMenuListResponseDto> {
+    const mealMenus = await this.mealMenuRepository.findMany(this.toFindMealMenusParams(query));
 
     return {
       items: mealMenus.map((mealMenu) => this.toListItem(mealMenu)),
     };
   }
 
-  private toFindMealMenusParams(
-    query: GetMealMenuListQueryDto,
-  ): FindMealMenusParams {
+  private toFindMealMenusParams(query: GetMealMenuListQueryDto): FindMealMenusParams {
     return {
       mealDate: query.mealDate,
       mealType: this.normalizeMealType(query.mealType),

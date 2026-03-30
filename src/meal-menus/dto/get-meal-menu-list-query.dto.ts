@@ -16,9 +16,7 @@ export class GetMealMenuListQueryDto {
     example: MealType.LUNCH,
   })
   @IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toUpperCase() : value,
-  )
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   @IsEnum(MealType)
   mealType?: MealType;
 }

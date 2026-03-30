@@ -19,9 +19,7 @@ export class TypeOrmConfig implements TypeOrmOptionsFactory {
         synchronize: true,
         dropSchema: true,
         logging: false,
-        dataSourceFactory: async (
-          options?: TypeOrmModuleOptions,
-        ): Promise<DataSource> => {
+        dataSourceFactory: async (options?: TypeOrmModuleOptions): Promise<DataSource> => {
           const db = newDb({
             autoCreateForeignKeyIndices: true,
           });
@@ -36,9 +34,7 @@ export class TypeOrmConfig implements TypeOrmOptionsFactory {
             implementation: () => 'PostgreSQL 16.0',
           });
 
-          const dataSource = db.adapters.createTypeormDataSource(
-            options as DataSourceOptions,
-          );
+          const dataSource = db.adapters.createTypeormDataSource(options as DataSourceOptions);
 
           if (!dataSource.isInitialized) {
             await dataSource.initialize();
