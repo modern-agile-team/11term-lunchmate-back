@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   ParseIntPipe,
   Patch,
@@ -10,6 +12,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOperation,
   ApiOkResponse,
   ApiTags,
@@ -73,5 +76,17 @@ export class FriendController {
     @Param('friendshipId', ParseIntPipe) friendshipId: number,
   ): Promise<FriendRequestResponseDto> {
     return this.friendService.rejectRequest(currentUser.userId, friendshipId);
+  }
+
+  @Delete('requests/:friendshipId')
+  @Authenticated()
+  @HttpCode(204)
+  @ApiOperation({ summary: '친구 신청 취소' })
+  @ApiNoContentResponse()
+  async cancelFriendRequest(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('friendshipId', ParseIntPipe) friendshipId: number,
+  ): Promise<void> {
+    await this.friendService.cancelRequest(currentUser.userId, friendshipId);
   }
 }
