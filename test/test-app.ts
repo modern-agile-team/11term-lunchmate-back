@@ -11,6 +11,7 @@ import { validationPipeOptions } from '../src/commons/validation/validation-pipe
 import { CommentLike } from '../src/comments/entities/comment-like.entity';
 import { Comment } from '../src/comments/entities/comment.entity';
 import { Friend } from '../src/friends/entities/friend.entity';
+import { FriendModule } from '../src/friends/friends.module';
 import { MealMenuReaction } from '../src/meal-menus/entities/meal-menu-reaction.entity';
 import { MealMenu } from '../src/meal-menus/entities/meal-menu.entity';
 import { PostCategory } from '../src/post-categories/entities/post-category.entity';
@@ -81,9 +82,7 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
             implementation: () => 'PostgreSQL 16.0',
           });
 
-          const dataSource = db.adapters.createTypeormDataSource(
-            options as DataSourceOptions,
-          );
+          const dataSource = db.adapters.createTypeormDataSource(options as DataSourceOptions);
 
           if (!dataSource.isInitialized) {
             await dataSource.initialize();
@@ -94,6 +93,7 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
       }),
       UserModule,
       AuthModule,
+      FriendModule,
     ],
   }).compile();
 
