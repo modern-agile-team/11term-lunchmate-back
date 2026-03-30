@@ -1,7 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import {
   ApiCreatedResponse,
   ApiOperation,
+  ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
@@ -28,5 +29,16 @@ export class FriendController {
       currentUser.userId,
       createFriendRequestDto.receiverId,
     );
+  }
+
+  @Patch('requests/:friendshipId/accept')
+  @Authenticated()
+  @ApiOperation({ summary: '친구 신청 수락' })
+  @ApiOkResponse({ type: FriendRequestResponseDto })
+  async acceptFriendRequest(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('friendshipId', ParseIntPipe) friendshipId: number,
+  ): Promise<FriendRequestResponseDto> {
+    return this.friendService.acceptRequest(currentUser.userId, friendshipId);
   }
 }
