@@ -26,27 +26,32 @@ export class User extends BaseTableEntity {
   })
   nickname: string;
 
-  @Column({
-    length: 100,
-  })
-  name: string;
-
   @Column({ name: 'hashed_password', select: false })
   hashedPassword: string;
 
   @Column({
-    type: 'varchar',
-    nullable: true,
-    name: 'profile_image_url',
-    length: 500,
+    type: 'date',
+    name: 'birth_date',
   })
-  profileImageUrl: string | null;
+  birthDate: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['MALE', 'FEMALE'],
+  })
+  gender: 'MALE' | 'FEMALE';
+
+  @Column({
+    length: 100,
+    name: 'school',
+  })
+  schoolInfo: string;
 
   @Column({
     type: 'text',
     nullable: true,
   })
-  bio: string | null;
+  introduce: string | null;
 
   @Column({
     type: 'varchar',

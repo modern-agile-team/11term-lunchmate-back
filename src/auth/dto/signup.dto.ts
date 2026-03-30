@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEmail, IsOptional, IsString, IsUrl, MaxLength, MinLength } from 'class-validator';
+import { IsDateString, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class SignupDto {
   @ApiProperty({
@@ -17,13 +17,18 @@ export class SignupDto {
   password: string;
 
   @ApiProperty({
-    example: '홍길동',
+    example: '1999-01-01',
+  })
+  @IsDateString()
+  birthDate: string;
+
+  @ApiProperty({
+    example: 'MALE',
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @MinLength(2)
-  @MaxLength(100)
-  name: string;
+  @IsIn(['MALE', 'FEMALE'])
+  gender: 'MALE' | 'FEMALE';
 
   @ApiProperty({
     example: 'lunchmate',
@@ -35,13 +40,13 @@ export class SignupDto {
   nickname: string;
 
   @ApiProperty({
-    required: false,
-    example: 'https://example.com/profile.jpg',
+    example: 'Hongik University',
   })
-  @IsOptional()
-  @IsUrl()
-  @MaxLength(500)
-  profileImageUrl?: string;
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  schoolInfo: string;
 
   @ApiProperty({
     required: false,
@@ -50,7 +55,7 @@ export class SignupDto {
   @IsOptional()
   @IsString()
   @MaxLength(1000)
-  bio?: string;
+  introduce?: string;
 
   @ApiProperty({
     required: false,

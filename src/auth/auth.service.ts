@@ -21,11 +21,12 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(signupDto.password, 10);
     const user = await this.userService.createUser({
       email: signupDto.email,
-      name: signupDto.name,
+      birthDate: signupDto.birthDate,
+      gender: signupDto.gender,
       nickname: signupDto.nickname,
       hashedPassword,
-      profileImageUrl: signupDto.profileImageUrl ?? null,
-      bio: signupDto.bio ?? null,
+      schoolInfo: signupDto.schoolInfo,
+      introduce: signupDto.introduce ?? null,
       mbti: signupDto.mbti ?? null,
     });
 

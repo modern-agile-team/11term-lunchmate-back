@@ -16,20 +16,22 @@ export class UserService {
 
   async createUser(params: {
     email: string;
-    name: string;
+    birthDate: string;
+    gender: 'MALE' | 'FEMALE';
     nickname: string;
     hashedPassword: string;
-    profileImageUrl: string | null;
-    bio: string | null;
+    schoolInfo: string;
+    introduce: string | null;
     mbti: string | null;
   }): Promise<User> {
     const user = this.userRepository.create({
       email: params.email,
-      name: params.name,
+      birthDate: params.birthDate,
+      gender: params.gender,
       nickname: params.nickname,
       hashedPassword: params.hashedPassword,
-      profileImageUrl: params.profileImageUrl,
-      bio: params.bio,
+      schoolInfo: params.schoolInfo,
+      introduce: params.introduce,
       mbti: params.mbti,
     });
 
@@ -64,10 +66,11 @@ export class UserService {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
       nickname: user.nickname,
-      profileImageUrl: user.profileImageUrl,
-      bio: user.bio,
+      birthDate: user.birthDate,
+      gender: user.gender,
+      schoolInfo: user.schoolInfo,
+      introduce: user.introduce,
       mbti: user.mbti,
       createdAt: user.createdAt,
     };

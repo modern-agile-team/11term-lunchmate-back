@@ -8,16 +8,19 @@ export class AuthUserResponseDto {
   email: string;
 
   @ApiProperty()
-  name: string;
-
-  @ApiProperty()
   nickname: string;
 
-  @ApiProperty({ nullable: true })
-  profileImageUrl: string | null;
+  @ApiProperty()
+  birthDate: string;
+
+  @ApiProperty()
+  gender: 'MALE' | 'FEMALE';
+
+  @ApiProperty()
+  schoolInfo: string;
 
   @ApiProperty({ nullable: true })
-  bio: string | null;
+  introduce: string | null;
 
   @ApiProperty({ nullable: true })
   mbti: string | null;

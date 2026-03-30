@@ -28,15 +28,17 @@ describe('Auth and Users (e2e)', () => {
     const response = await request(app.getHttpServer()).post('/auth/signup').send({
       email: 'alpha@example.com',
       password: 'password1234',
-      name: '알파',
+      birthDate: '1999-01-01',
+      gender: 'MALE',
       nickname: 'alpha',
-      profileImageUrl: 'https://example.com/a.png',
-      bio: '점심 친구 구해요',
+      schoolInfo: 'Hongik University',
+      introduce: '점심 친구 구해요',
       mbti: 'INTJ',
     });
 
     expect(response.status).toBe(201);
     expect(response.body.user.email).toBe('alpha@example.com');
+    expect(response.body.user.schoolInfo).toBe('Hongik University');
     expect(response.body.accessToken).toEqual(expect.any(String));
     expect(response.body.refreshToken).toEqual(expect.any(String));
     expect(response.body.user.hashedPassword).toBeUndefined();
@@ -56,15 +58,19 @@ describe('Auth and Users (e2e)', () => {
     await request(app.getHttpServer()).post('/auth/signup').send({
       email: 'duplicate@example.com',
       password: 'password1234',
-      name: '유저',
+      birthDate: '1999-01-01',
+      gender: 'MALE',
       nickname: 'dup-one',
+      schoolInfo: 'Hongik University',
     });
 
     const response = await request(app.getHttpServer()).post('/auth/signup').send({
       email: 'duplicate@example.com',
       password: 'password1234',
-      name: '다른유저',
+      birthDate: '1998-02-02',
+      gender: 'FEMALE',
       nickname: 'dup-two',
+      schoolInfo: 'Yonsei University',
     });
 
     expect(response.status).toBe(409);
@@ -74,15 +80,19 @@ describe('Auth and Users (e2e)', () => {
     await request(app.getHttpServer()).post('/auth/signup').send({
       email: 'first@example.com',
       password: 'password1234',
-      name: '유저',
+      birthDate: '1999-01-01',
+      gender: 'MALE',
       nickname: 'same-nickname',
+      schoolInfo: 'Hongik University',
     });
 
     const response = await request(app.getHttpServer()).post('/auth/signup').send({
       email: 'second@example.com',
       password: 'password1234',
-      name: '다른유저',
+      birthDate: '1998-02-02',
+      gender: 'FEMALE',
       nickname: 'same-nickname',
+      schoolInfo: 'Yonsei University',
     });
 
     expect(response.status).toBe(409);
