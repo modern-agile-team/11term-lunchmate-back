@@ -60,6 +60,22 @@ export class User extends BaseTableEntity {
   })
   mbti: string | null;
 
+  @Column({
+    type: 'varchar',
+    name: 'refresh_token_hash',
+    nullable: true,
+    select: false,
+  })
+  refreshTokenHash: string | null;
+
+  @Column({
+    type: 'integer',
+    name: 'token_version',
+    default: 0,
+    select: false,
+  })
+  tokenVersion: number;
+
   @OneToMany(() => Friend, (friend) => friend.requester)
   sentFriendRequests: Friend[];
 

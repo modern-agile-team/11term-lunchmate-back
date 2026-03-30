@@ -49,4 +49,100 @@ export class UserRepository {
       where: { nickname },
     });
   }
+
+  async existsByNicknameExcludingUser(
+    nickname: string,
+    excludeUserId: number,
+  ): Promise<boolean> {
+    const existingUser = await this.userRepository.findOne({
+      select: {
+        id: true,
+      },
+      where: {
+        nickname,
+      },
+      withDeleted: false,
+    });
+
+    return !!existingUser && existingUser.id !== excludeUserId;
+  }
+
+  async findByEmailForLogin(email: string): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect(['user.hashedPassword', 'user.tokenVersion'])
+      .where('user.email = :email', { email })
+      .getOne();
+  }
+
+  async findByIdForRefresh(userId: number): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect(['user.refreshTokenHash', 'user.tokenVersion'])
+      .where('user.id = :userId', { userId })
+      .getOne();
+  }
+
+  async findByIdForAccessValidation(userId: number): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect(['user.tokenVersion'])
+      .where('user.id = :userId', { userId })
+      .getOne();
+  }
+
+  async updateRefreshTokenHash(
+    userId: number,
+    refreshTokenHash: string | null,
+  ): Promise<void> {
+    await this.userRepository.update(userId, { refreshTokenHash });
+  }
+
+  async rotateRefreshTokenHash(
+    userId: number,
+    currentRefreshTokenHash: string,
+    nextRefreshTokenHash: string,
+  ): Promise<boolean> {
+    const result = await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        refreshTokenHash: nextRefreshTokenHash,
+      })
+      .where('id = :userId', { userId })
+      .andWhere('"refresh_token_hash" = :currentRefreshTokenHash', {
+        currentRefreshTokenHash,
+      })
+      .execute();
+
+    return (result.affected ?? 0) === 1;
+  }
+
+  async revokeTokens(userId: number): Promise<void> {
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        refreshTokenHash: null,
+        tokenVersion: () => '"token_version" + 1',
+      })
+      .where('id = :userId', { userId })
+      .execute();
+  }
+
+  async findActiveUserById(userId: number): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+  }
+
+  async save(user: User): Promise<User> {
+    return this.userRepository.save(user);
+  }
+
+  async softDelete(userId: number): Promise<void> {
+    await this.userRepository.softDelete(userId);
+  }
 }
