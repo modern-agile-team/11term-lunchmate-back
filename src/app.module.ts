@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -11,6 +12,8 @@ import { PostModule } from './posts/posts.module';
 import { FriendModule } from './friends/friends.module';
 import { UserModule } from './users/users.module';
 import { TypeOrmConfig } from './config/database.config';
+import { AuthModule } from './auth/auth.module';
+import { AllExceptionFilter } from './commons/filters/all-exception.filter';
 
 @Module({
   imports: [
@@ -20,6 +23,7 @@ import { TypeOrmConfig } from './config/database.config';
     TypeOrmModule.forRootAsync({
       useClass: TypeOrmConfig,
     }),
+    AuthModule,
     UserModule,
     RoomModule,
     MealMenuModule,
@@ -29,6 +33,12 @@ import { TypeOrmConfig } from './config/database.config';
     FriendModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
