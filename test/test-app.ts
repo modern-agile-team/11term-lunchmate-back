@@ -11,6 +11,7 @@ import { validationPipeOptions } from '../src/commons/validation/validation-pipe
 import { CommentLike } from '../src/comments/entities/comment-like.entity';
 import { Comment } from '../src/comments/entities/comment.entity';
 import { Friend } from '../src/friends/entities/friend.entity';
+import { MealMenuModule } from '../src/meal-menus/meal-menus.module';
 import { MealMenuReaction } from '../src/meal-menus/entities/meal-menu-reaction.entity';
 import { MealMenu } from '../src/meal-menus/entities/meal-menu.entity';
 import { PostCategory } from '../src/post-categories/entities/post-category.entity';
@@ -94,6 +95,56 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
       }),
       UserModule,
       AuthModule,
+    ],
+  }).compile();
+
+  const app = moduleFixture.createNestApplication();
+  app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
+  await app.init();
+
+  return app;
+}
+
+export async function createMealMenuTestApp(): Promise<INestApplication> {
+  const moduleFixture: TestingModule = await Test.createTestingModule({
+    imports: [
+      ConfigModule.forRoot({
+        isGlobal: true,
+        ignoreEnvFile: true,
+      }),
+      TypeOrmModule.forRootAsync({
+        useFactory: () => ({
+          type: 'postgres',
+          synchronize: true,
+          logging: false,
+          entities: TEST_ENTITIES,
+        }),
+        dataSourceFactory: async (options) => {
+          const db = newDb({
+            autoCreateForeignKeyIndices: true,
+          });
+
+          db.public.registerFunction({
+            name: 'current_database',
+            implementation: () => 'lunchmate_test',
+          });
+          db.public.registerFunction({
+            name: 'version',
+            implementation: () => 'PostgreSQL 16.0',
+          });
+
+          const dataSource = db.adapters.createTypeormDataSource(
+            options as DataSourceOptions,
+          );
+
+          if (!dataSource.isInitialized) {
+            await dataSource.initialize();
+          }
+
+          return dataSource as DataSource;
+        },
+      }),
+      MealMenuModule,
     ],
   }).compile();
 
