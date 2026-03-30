@@ -9,12 +9,7 @@ import {
   ParseIntPipe,
   Patch,
 } from '@nestjs/common';
-import {
-  ApiNoContentResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -32,9 +27,7 @@ export class UserController {
   @Authenticated()
   @ApiOperation({ summary: '내 정보 조회' })
   @ApiOkResponse({ type: MeUserResponseDto })
-  async getMe(
-    @CurrentUser() currentUser: AuthenticatedUser,
-  ): Promise<MeUserResponseDto> {
+  async getMe(@CurrentUser() currentUser: AuthenticatedUser): Promise<MeUserResponseDto> {
     return this.userService.findMe(currentUser.userId);
   }
 

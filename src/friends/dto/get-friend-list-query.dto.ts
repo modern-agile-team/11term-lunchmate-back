@@ -7,9 +7,7 @@ export class GetFriendListQueryDto {
     example: 'accepted',
   })
   @IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   @IsString()
   @IsIn(['accepted'])
   status?: 'accepted';

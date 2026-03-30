@@ -165,11 +165,9 @@ describe('Auth and Users (e2e)', () => {
     expect(response.body.refreshToken).toEqual(expect.any(String));
     expect(response.body.refreshToken).not.toBe(signupResponse.body.refreshToken);
 
-    const reusedRefreshResponse = await request(app.getHttpServer())
-      .post('/auth/refresh')
-      .send({
-        refreshToken: signupResponse.body.refreshToken,
-      });
+    const reusedRefreshResponse = await request(app.getHttpServer()).post('/auth/refresh').send({
+      refreshToken: signupResponse.body.refreshToken,
+    });
 
     expect(reusedRefreshResponse.status).toBe(401);
   });
@@ -249,7 +247,9 @@ describe('Auth and Users (e2e)', () => {
       mbti: 'ENFP',
     });
 
-    const response = await request(app.getHttpServer()).get(`/users/${signupResponse.body.user.id}`);
+    const response = await request(app.getHttpServer()).get(
+      `/users/${signupResponse.body.user.id}`,
+    );
 
     expect(response.status).toBe(200);
     expect(response.body.email).toBeUndefined();

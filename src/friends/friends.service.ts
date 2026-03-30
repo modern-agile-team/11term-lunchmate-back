@@ -19,10 +19,7 @@ export class FriendService {
     private readonly userService: UserService,
   ) {}
 
-  async createRequest(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<FriendRequestResponseDto> {
+  async createRequest(requesterId: number, receiverId: number): Promise<FriendRequestResponseDto> {
     await this.validateReceiver(requesterId, receiverId);
     await this.ensureRequestableRelation(requesterId, receiverId);
 
@@ -66,26 +63,17 @@ export class FriendService {
     return this.toResponse(rejectedRequest);
   }
 
-  async findFriends(
-    currentUserId: number,
-    status?: 'accepted',
-  ): Promise<FriendListResponseDto> {
+  async findFriends(currentUserId: number, status?: 'accepted'): Promise<FriendListResponseDto> {
     this.validateFriendListStatus(status);
 
-    const relations =
-      await this.friendRepository.findAcceptedRelationsForUser(currentUserId);
+    const relations = await this.friendRepository.findAcceptedRelationsForUser(currentUserId);
 
     return {
-      items: relations.map((relation) =>
-        this.toFriendListItem(relation, currentUserId),
-      ),
+      items: relations.map((relation) => this.toFriendListItem(relation, currentUserId)),
     };
   }
 
-  private async validateReceiver(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<void> {
+  private async validateReceiver(requesterId: number, receiverId: number): Promise<void> {
     if (requesterId === receiverId) {
       throw new BadRequestException('Cannot send friend request to yourself.');
     }
@@ -93,20 +81,14 @@ export class FriendService {
     await this.userService.findActiveUserOrFail(receiverId);
   }
 
-  private async ensureRequestableRelation(
-    requesterId: number,
-    receiverId: number,
-  ): Promise<void> {
-    const existingRelations =
-      await this.friendRepository.findActiveRelationsBetweenUsers(
-        requesterId,
-        receiverId,
-      );
+  private async ensureRequestableRelation(requesterId: number, receiverId: number): Promise<void> {
+    const existingRelations = await this.friendRepository.findActiveRelationsBetweenUsers(
+      requesterId,
+      receiverId,
+    );
 
     const sameDirectionRelation = existingRelations.find(
-      (relation) =>
-        relation.requester.id === requesterId &&
-        relation.receiver.id === receiverId,
+      (relation) => relation.requester.id === requesterId && relation.receiver.id === receiverId,
     );
 
     if (sameDirectionRelation) {
@@ -114,15 +96,11 @@ export class FriendService {
     }
 
     const reverseRelation = existingRelations.find(
-      (relation) =>
-        relation.requester.id === receiverId &&
-        relation.receiver.id === requesterId,
+      (relation) => relation.requester.id === receiverId && relation.receiver.id === requesterId,
     );
 
     if (reverseRelation?.status === FriendStatus.PENDING) {
-      throw new ConflictException(
-        'Friend request from the target user already exists.',
-      );
+      throw new ConflictException('Friend request from the target user already exists.');
     }
 
     if (reverseRelation?.status === FriendStatus.ACCEPTED) {
@@ -140,14 +118,9 @@ export class FriendService {
     return friendRequest;
   }
 
-  private ensureReceiverOwnsRequest(
-    friendRequest: Friend,
-    currentUserId: number,
-  ): void {
+  private ensureReceiverOwnsRequest(friendRequest: Friend, currentUserId: number): void {
     if (friendRequest.receiver.id !== currentUserId) {
-      throw new ForbiddenException(
-        'Only the receiver can process this request.',
-      );
+      throw new ForbiddenException('Only the receiver can process this request.');
     }
   }
 
@@ -173,12 +146,8 @@ export class FriendService {
     };
   }
 
-  private toFriendListItem(
-    friend: Friend,
-    currentUserId: number,
-  ): FriendListItemResponseDto {
-    const otherUser =
-      friend.requester.id === currentUserId ? friend.receiver : friend.requester;
+  private toFriendListItem(friend: Friend, currentUserId: number): FriendListItemResponseDto {
+    const otherUser = friend.requester.id === currentUserId ? friend.receiver : friend.requester;
 
     return {
       friendshipId: friend.id,
