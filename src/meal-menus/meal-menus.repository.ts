@@ -25,7 +25,7 @@ export class MealMenuRepository {
       query.andWhere('mealMenu.meal_date = :mealDate', { mealDate: params.mealDate });
     }
 
-    if (params.mealType) {
+    if (params.mealType && params.mealType !== MealType.ALL) {
       query.andWhere('mealMenu.meal_type = :mealType', { mealType: params.mealType });
     }
 
