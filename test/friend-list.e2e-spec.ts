@@ -35,16 +35,18 @@ describe('Friend List (e2e)', () => {
     introduce?: string;
     mbti?: string;
   }) {
-    return request(app.getHttpServer()).post('/auth/signup').send({
-      email: params.email,
-      password: 'password1234',
-      birthDate: params.birthDate ?? '1999-01-01',
-      gender: params.gender ?? 'MALE',
-      nickname: params.nickname,
-      schoolInfo: params.schoolInfo ?? 'Hongik University',
-      introduce: params.introduce,
-      mbti: params.mbti,
-    });
+    return request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        email: params.email,
+        password: 'password1234',
+        birthDate: params.birthDate ?? '1999-01-01',
+        gender: params.gender ?? 'MALE',
+        nickname: params.nickname,
+        schoolInfo: params.schoolInfo ?? 'Hongik University',
+        introduce: params.introduce,
+        mbti: params.mbti,
+      });
   }
 
   async function createFriendRelation(params: {

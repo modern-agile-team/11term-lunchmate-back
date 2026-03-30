@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { MeUserResponseDto } from './dto/me-user-response.dto';
 import { PublicUserResponseDto } from './dto/public-user-response.dto';
@@ -11,9 +7,7 @@ import { UserRepository } from './users.repository';
 
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly userRepository: UserRepository,
-  ) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async findAllUsers(): Promise<User[]> {
     return this.userRepository.findAll();
@@ -39,15 +33,9 @@ export class UserService {
     }
   }
 
-  async assertNicknameAvailable(
-    nickname: string,
-    excludeUserId?: number,
-  ): Promise<void> {
+  async assertNicknameAvailable(nickname: string, excludeUserId?: number): Promise<void> {
     const existingUser = excludeUserId
-      ? await this.userRepository.existsByNicknameExcludingUser(
-          nickname,
-          excludeUserId,
-        )
+      ? await this.userRepository.existsByNicknameExcludingUser(nickname, excludeUserId)
       : await this.userRepository.existsByNickname(nickname);
 
     if (existingUser) {
@@ -67,10 +55,7 @@ export class UserService {
     return this.userRepository.findByIdForAccessValidation(userId);
   }
 
-  async updateRefreshTokenHash(
-    userId: number,
-    refreshTokenHash: string | null,
-  ): Promise<void> {
+  async updateRefreshTokenHash(userId: number, refreshTokenHash: string | null): Promise<void> {
     await this.userRepository.updateRefreshTokenHash(userId, refreshTokenHash);
   }
 
@@ -110,10 +95,7 @@ export class UserService {
     return this.toMeResponse(user);
   }
 
-  async updateMe(
-    userId: number,
-    updateMeDto: UpdateMeDto,
-  ): Promise<MeUserResponseDto> {
+  async updateMe(userId: number, updateMeDto: UpdateMeDto): Promise<MeUserResponseDto> {
     const user = await this.findActiveUserOrFail(userId);
 
     if (updateMeDto.nickname) {

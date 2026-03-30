@@ -33,14 +33,16 @@ describe('Friend Delete (e2e)', () => {
     birthDate?: string;
     schoolInfo?: string;
   }) {
-    return request(app.getHttpServer()).post('/auth/signup').send({
-      email: params.email,
-      password: 'password1234',
-      birthDate: params.birthDate ?? '1999-01-01',
-      gender: params.gender ?? 'MALE',
-      nickname: params.nickname,
-      schoolInfo: params.schoolInfo ?? 'Hongik University',
-    });
+    return request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        email: params.email,
+        password: 'password1234',
+        birthDate: params.birthDate ?? '1999-01-01',
+        gender: params.gender ?? 'MALE',
+        nickname: params.nickname,
+        schoolInfo: params.schoolInfo ?? 'Hongik University',
+      });
   }
 
   async function createFriendRelation(params: {
