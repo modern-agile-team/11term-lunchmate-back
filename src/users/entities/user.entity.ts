@@ -9,11 +9,6 @@ import { RoomMember } from '../../rooms/entities/room-member.entity';
 import { Room } from '../../rooms/entities/room.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-enum Gender {
-  MALE = 'MALE',
-  FEMALE = 'FEMALE',
-}
-
 @Entity('users')
 export class User extends BaseTableEntity {
   @PrimaryGeneratedColumn()
@@ -34,31 +29,36 @@ export class User extends BaseTableEntity {
   @Column({ name: 'hashed_password', select: false })
   hashedPassword: string;
 
-  @Column({ type: 'date', name: 'birth_date' })
-  birthDate: Date;
+  @Column({
+    type: 'date',
+    name: 'birth_date',
+  })
+  birthDate: string;
 
   @Column({
     type: 'enum',
-    enum: Gender,
+    enum: ['MALE', 'FEMALE'],
   })
-  gender: Gender;
+  gender: 'MALE' | 'FEMALE';
 
   @Column({
     length: 100,
+    name: 'school',
   })
-  school: string;
+  schoolInfo: string;
 
   @Column({
     type: 'text',
     nullable: true,
   })
-  introduce: string;
+  introduce: string | null;
 
   @Column({
+    type: 'varchar',
     nullable: true,
     length: 4,
   })
-  mbti: string;
+  mbti: string | null;
 
   @OneToMany(() => Friend, (friend) => friend.requester)
   sentFriendRequests: Friend[];
