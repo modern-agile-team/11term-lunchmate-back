@@ -37,7 +37,7 @@ export class FriendService {
     friendshipId: number,
   ): Promise<FriendRequestResponseDto> {
     const friendRequest = await this.findRequestOrFail(friendshipId);
-    this.ensureReceiverCanAccept(friendRequest, currentUserId);
+    this.ensureReceiverOwnsRequest(friendRequest, currentUserId);
     this.ensurePendingRequest(friendRequest);
 
     const acceptedRequest = await this.friendRepository.updateStatus(
@@ -46,6 +46,22 @@ export class FriendService {
     );
 
     return this.toResponse(acceptedRequest);
+  }
+
+  async rejectRequest(
+    currentUserId: number,
+    friendshipId: number,
+  ): Promise<FriendRequestResponseDto> {
+    const friendRequest = await this.findRequestOrFail(friendshipId);
+    this.ensureReceiverOwnsRequest(friendRequest, currentUserId);
+    this.ensurePendingRequest(friendRequest);
+
+    const rejectedRequest = await this.friendRepository.updateStatus(
+      friendRequest,
+      FriendStatus.REJECTED,
+    );
+
+    return this.toResponse(rejectedRequest);
   }
 
   private async validateReceiver(
@@ -106,12 +122,14 @@ export class FriendService {
     return friendRequest;
   }
 
-  private ensureReceiverCanAccept(
+  private ensureReceiverOwnsRequest(
     friendRequest: Friend,
     currentUserId: number,
   ): void {
     if (friendRequest.receiver.id !== currentUserId) {
-      throw new ForbiddenException('Only the receiver can accept this request.');
+      throw new ForbiddenException(
+        'Only the receiver can process this request.',
+      );
     }
   }
 
