@@ -85,6 +85,10 @@ export class FriendRepository {
     return this.persistAndReload(friendRequest);
   }
 
+  async softDelete(friendId: number): Promise<void> {
+    await this.friendRepository.softDelete(friendId);
+  }
+
   private async persistAndReload(friendRequest: Friend): Promise<Friend> {
     const savedRequest = await this.friendRepository.save(friendRequest);
     return (await this.findById(savedRequest.id)) ?? savedRequest;

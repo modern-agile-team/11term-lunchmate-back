@@ -63,6 +63,14 @@ export class FriendService {
     return this.toResponse(rejectedRequest);
   }
 
+  async cancelRequest(currentUserId: number, friendshipId: number): Promise<void> {
+    const friendRequest = await this.findRequestOrFail(friendshipId);
+    this.ensureRequesterOwnsRequest(friendRequest, currentUserId);
+    this.ensurePendingRequest(friendRequest);
+
+    await this.friendRepository.softDelete(friendRequest.id);
+  }
+
   async findFriends(currentUserId: number, status?: 'accepted'): Promise<FriendListResponseDto> {
     this.validateFriendListStatus(status);
 
@@ -121,6 +129,12 @@ export class FriendService {
   private ensureReceiverOwnsRequest(friendRequest: Friend, currentUserId: number): void {
     if (friendRequest.receiver.id !== currentUserId) {
       throw new ForbiddenException('Only the receiver can process this request.');
+    }
+  }
+
+  private ensureRequesterOwnsRequest(friendRequest: Friend, currentUserId: number): void {
+    if (friendRequest.requester.id !== currentUserId) {
+      throw new ForbiddenException('Only the requester can cancel this request.');
     }
   }
 

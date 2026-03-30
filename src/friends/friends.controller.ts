@@ -1,5 +1,22 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOperation, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOperation,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -56,5 +73,17 @@ export class FriendController {
     @Param('friendshipId', ParseIntPipe) friendshipId: number,
   ): Promise<FriendRequestResponseDto> {
     return this.friendService.rejectRequest(currentUser.userId, friendshipId);
+  }
+
+  @Delete('requests/:friendshipId')
+  @Authenticated()
+  @HttpCode(204)
+  @ApiOperation({ summary: '친구 신청 취소' })
+  @ApiNoContentResponse()
+  async cancelFriendRequest(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('friendshipId', ParseIntPipe) friendshipId: number,
+  ): Promise<void> {
+    await this.friendService.cancelRequest(currentUser.userId, friendshipId);
   }
 }
