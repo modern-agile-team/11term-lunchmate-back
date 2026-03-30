@@ -6,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserService } from '../users/users.service';
+import { FriendListItemResponseDto } from './dto/friend-list-item-response.dto';
+import { FriendListResponseDto } from './dto/friend-list-response.dto';
 import { Friend, FriendStatus } from './entities/friend.entity';
 import { FriendRequestResponseDto } from './dto/friend-request-response.dto';
 import { FriendRepository } from './friends.repository';
@@ -62,6 +64,22 @@ export class FriendService {
     );
 
     return this.toResponse(rejectedRequest);
+  }
+
+  async findFriends(
+    currentUserId: number,
+    status?: 'accepted',
+  ): Promise<FriendListResponseDto> {
+    this.validateFriendListStatus(status);
+
+    const relations =
+      await this.friendRepository.findAcceptedRelationsForUser(currentUserId);
+
+    return {
+      items: relations.map((relation) =>
+        this.toFriendListItem(relation, currentUserId),
+      ),
+    };
   }
 
   private async validateReceiver(
@@ -139,6 +157,12 @@ export class FriendService {
     }
   }
 
+  private validateFriendListStatus(status?: 'accepted'): void {
+    if (status && status !== 'accepted') {
+      throw new BadRequestException('Only status=accepted is supported.');
+    }
+  }
+
   private toResponse(friend: Friend): FriendRequestResponseDto {
     return {
       id: friend.id,
@@ -146,6 +170,20 @@ export class FriendService {
       receiverId: friend.receiver.id,
       status: friend.status,
       createdAt: friend.createdAt,
+    };
+  }
+
+  private toFriendListItem(
+    friend: Friend,
+    currentUserId: number,
+  ): FriendListItemResponseDto {
+    const otherUser =
+      friend.requester.id === currentUserId ? friend.receiver : friend.requester;
+
+    return {
+      friendshipId: friend.id,
+      status: friend.status,
+      user: this.userService.toPublicResponse(otherUser),
     };
   }
 }
