@@ -1,17 +1,15 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { UserRepository } from './users.repository';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async findAllUsers(): Promise<User[]> {
-    return this.userRepository.find();
+    return this.userRepository.findAll();
   }
 
   async createUser(params: {
@@ -24,24 +22,11 @@ export class UserService {
     introduce: string | null;
     mbti: string | null;
   }): Promise<User> {
-    const user = this.userRepository.create({
-      email: params.email,
-      birthDate: params.birthDate,
-      gender: params.gender,
-      nickname: params.nickname,
-      hashedPassword: params.hashedPassword,
-      schoolInfo: params.schoolInfo,
-      introduce: params.introduce,
-      mbti: params.mbti,
-    });
-
-    return this.userRepository.save(user);
+    return this.userRepository.createUser(params);
   }
 
   async assertEmailAvailable(email: string): Promise<void> {
-    const existingUser = await this.userRepository.exists({
-      where: { email },
-    });
+    const existingUser = await this.userRepository.existsByEmail(email);
 
     if (existingUser) {
       throw new ConflictException('Email already exists.');
@@ -51,11 +36,7 @@ export class UserService {
   async assertNicknameAvailable(
     nickname: string,
   ): Promise<void> {
-    const existingUser = await this.userRepository.exists({
-      where: {
-        nickname,
-      },
-    });
+    const existingUser = await this.userRepository.existsByNickname(nickname);
 
     if (existingUser) {
       throw new ConflictException('Nickname already exists.');
