@@ -33,4 +33,15 @@ export class FriendController {
   ): Promise<FriendRequestResponseDto> {
     return this.friendService.acceptRequest(currentUser.userId, friendshipId);
   }
+
+  @Patch('requests/:friendshipId/reject')
+  @Authenticated()
+  @ApiOperation({ summary: '친구 신청 거절' })
+  @ApiOkResponse({ type: FriendRequestResponseDto })
+  async rejectFriendRequest(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('friendshipId', ParseIntPipe) friendshipId: number,
+  ): Promise<FriendRequestResponseDto> {
+    return this.friendService.rejectRequest(currentUser.userId, friendshipId);
+  }
 }
