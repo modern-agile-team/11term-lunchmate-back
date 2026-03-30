@@ -23,6 +23,16 @@ export class FriendRepository {
       .getMany();
   }
 
+  async findAcceptedRelationsForUser(userId: number): Promise<Friend[]> {
+    return this.friendRepository
+      .createQueryBuilder('friend')
+      .leftJoinAndSelect('friend.requester', 'requester')
+      .leftJoinAndSelect('friend.receiver', 'receiver')
+      .where('(requester.id = :userId OR receiver.id = :userId)', { userId })
+      .andWhere('friend.status = :status', { status: FriendStatus.ACCEPTED })
+      .getMany();
+  }
+
   async findRestorableRequest(requesterId: number, receiverId: number): Promise<Friend | null> {
     return this.friendRepository
       .createQueryBuilder('friend')

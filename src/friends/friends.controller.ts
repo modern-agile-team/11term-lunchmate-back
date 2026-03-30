@@ -1,16 +1,29 @@
-import { Body, Controller, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOperation, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { CreateFriendRequestDto } from './dto/create-friend-request.dto';
+import { FriendListResponseDto } from './dto/friend-list-response.dto';
 import { FriendRequestResponseDto } from './dto/friend-request-response.dto';
+import { GetFriendListQueryDto } from './dto/get-friend-list-query.dto';
 import { FriendService } from './friends.service';
 
 @ApiTags('Friend')
 @Controller('friends')
 export class FriendController {
   constructor(private readonly friendService: FriendService) {}
+
+  @Get()
+  @Authenticated()
+  @ApiOperation({ summary: '친구 목록 조회' })
+  @ApiOkResponse({ type: FriendListResponseDto })
+  async findFriends(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Query() query: GetFriendListQueryDto,
+  ): Promise<FriendListResponseDto> {
+    return this.friendService.findFriends(currentUser.userId, query.status);
+  }
 
   @Post('requests')
   @Authenticated()
