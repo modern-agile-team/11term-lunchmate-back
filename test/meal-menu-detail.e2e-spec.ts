@@ -57,9 +57,7 @@ describe('Meal Menu Detail (e2e)', () => {
       dislikeCount: 2,
     });
 
-    const response = await request(app.getHttpServer()).get(
-      `/meal-menus/${mealMenu.id}`,
-    );
+    const response = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -89,9 +87,7 @@ describe('Meal Menu Detail (e2e)', () => {
 
     await dataSource.getRepository(MealMenu).softDelete(mealMenu.id);
 
-    const response = await request(app.getHttpServer()).get(
-      `/meal-menus/${mealMenu.id}`,
-    );
+    const response = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
 
     expect(response.status).toBe(404);
   });
@@ -103,9 +99,7 @@ describe('Meal Menu Detail (e2e)', () => {
       menuName: '토스트',
     });
 
-    const response = await request(app.getHttpServer()).get(
-      `/meal-menus/${mealMenu.id}`,
-    );
+    const response = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
 
     expect(response.status).toBe(200);
   });
