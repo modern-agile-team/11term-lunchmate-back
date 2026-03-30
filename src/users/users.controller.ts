@@ -1,12 +1,20 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -39,6 +47,15 @@ export class UserController {
     @Body() updateMeDto: UpdateMeDto,
   ): Promise<MeUserResponseDto> {
     return this.userService.updateMe(currentUser.userId, updateMeDto);
+  }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Authenticated()
+  @ApiOperation({ summary: '회원 탈퇴' })
+  @ApiNoContentResponse()
+  async deleteMe(@CurrentUser() currentUser: AuthenticatedUser): Promise<void> {
+    await this.userService.withdraw(currentUser.userId);
   }
 
   @Get(':userId')
