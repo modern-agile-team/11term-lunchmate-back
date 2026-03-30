@@ -3,13 +3,13 @@ import { User } from '../../users/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { RoomMember } from './room-member.entity';
 
-enum RoomType {
+export enum RoomType {
   MALE = 'MALE',
   FEMALE = 'FEMALE',
   ANY = 'ANY',
 }
 
-enum RoomStatus {
+export enum RoomStatus {
   OPEN = 'OPEN',
   CLOSE = 'CLOSE',
 }
@@ -58,7 +58,7 @@ export class Room extends BaseTableEntity {
   place: string;
 
   @Column({ type: 'timestamp', name: 'lunch_at' })
-  lunchAt: Date;
+  lunchAt: string;
 
   @Column({
     type: 'enum',
@@ -67,13 +67,13 @@ export class Room extends BaseTableEntity {
   })
   status: RoomStatus;
 
-  @Column({ name: 'current_count', default: 1 })
-  currentCount: number;
+  @Column({ name: 'current_members_count', default: 1 })
+  currentMembersCount: number;
 
   @OneToMany(() => RoomMember, (roomMember) => roomMember.room)
   roomMembers: RoomMember[];
 
   @ManyToOne(() => User, (user) => user.rooms)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  @JoinColumn({ name: 'host_user_id' })
+  hostUser: User;
 }

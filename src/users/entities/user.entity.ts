@@ -43,7 +43,7 @@ export class User extends BaseTableEntity {
 
   @Column({
     length: 100,
-    name: 'school',
+    name: 'school_info',
   })
   schoolInfo: string;
 
@@ -91,7 +91,7 @@ export class User extends BaseTableEntity {
   @OneToMany(() => PostLike, (postLike) => postLike.user)
   postLikes: PostLike[];
 
-  @OneToMany(() => Room, (room) => room.user)
+  @OneToMany(() => Room, (room) => room.hostUser)
   rooms: Room[];
 
   @OneToMany(() => RoomMember, (roomMember) => roomMember.user)

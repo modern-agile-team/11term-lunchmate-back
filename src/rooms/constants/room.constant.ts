@@ -1,0 +1,8 @@
+export const ROOM_CONSTANTS = {
+  TITLE_MAX_LENGTH: 100,
+  MIN_MEMBERS: 2,
+  MAX_MEMBERS: 10,
+  MIN_AGE: 20,
+  MAX_AGE: 100,
+  PLACE_MAX_LENGTH: 100,
+} as const;
