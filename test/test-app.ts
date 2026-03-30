@@ -18,6 +18,7 @@ import { PostLike } from '../src/posts/entities/post-like.entity';
 import { Post } from '../src/posts/entities/post.entity';
 import { RoomMember } from '../src/rooms/entities/room-member.entity';
 import { Room } from '../src/rooms/entities/room.entity';
+import { RoomModule } from '../src/rooms/rooms.module';
 import { User } from '../src/users/entities/user.entity';
 import { UserModule } from '../src/users/users.module';
 
@@ -92,6 +93,7 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
       }),
       UserModule,
       AuthModule,
+      RoomModule,
     ],
   }).compile();
 

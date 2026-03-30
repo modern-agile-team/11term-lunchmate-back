@@ -4,13 +4,13 @@ import { RoomRepository } from './room.repository';
 import { DataSource, EntityManager } from 'typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { RoomType } from './entities/room.entity';
+import { RoomStatus, RoomType } from './entities/room.entity';
 import { RoomMapper } from './mappers/room.mapper';
 
 const mockUserSummary = {
   id: 1,
   nickname: '임동영',
-  gender: 'MALE',
+  gender: 'MALE' as const,
   schoolInfo: '인덕대',
 };
 
@@ -18,14 +18,14 @@ const mockRoomEntity = {
   id: 1,
   title: '밥 같이 먹을 사람',
   description: '테스트용 방입니다.',
-  roomType: 'MALE',
-  status: 'OPEN',
+  roomType: RoomType.MALE,
+  status: RoomStatus.OPEN,
   maxMembersCount: 4,
   currentMembersCount: 1,
   minAge: 20,
   maxAge: 24,
   place: '학식당 앞',
-  lunchAt: '2026-03-27T12:30:00.000Z',
+  lunchAt: '2099-03-27T12:30:00.000Z',
   createdAt: '2026-03-27T06:26:40.062Z',
   hostUser: mockUserSummary,
   roomMembers: [
@@ -76,6 +76,8 @@ describe('RoomService', () => {
   let roomMapperSpy: jest.SpiedFunction<typeof RoomMapper.toDetailDto>;
 
   beforeEach(async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-03-27T00:00:00.000Z'));
     jest.clearAllMocks();
     roomMapperSpy = jest.spyOn(RoomMapper, 'toDetailDto');
 
@@ -100,6 +102,10 @@ describe('RoomService', () => {
     }).compile();
 
     roomService = module.get<RoomService>(RoomService);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('findRoomById', () => {

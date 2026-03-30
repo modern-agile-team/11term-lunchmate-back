@@ -13,6 +13,8 @@ describe('Rooms (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
   const httpApp = () => app.getHttpAdapter().getInstance();
+  const futureLunchAt = (hoursFromNow: number) =>
+    new Date(Date.now() + hoursFromNow * 60 * 60 * 1000).toISOString();
 
   beforeAll(async () => {
     app = (await createAuthUserTestApp()) as INestApplication<App>;
@@ -48,7 +50,7 @@ describe('Rooms (e2e)', () => {
         roomType: 'MALE',
         maxMembersCount: 4,
         place: '학식당 앞',
-        lunchAt: '2026-03-30T16:33:00+09:00',
+        lunchAt: futureLunchAt(1),
         minAge: 20,
         maxAge: 24,
       });
@@ -91,7 +93,7 @@ describe('Rooms (e2e)', () => {
         roomType: 'MALE',
         maxMembersCount: 4,
         place: '학식당',
-        lunchAt: '2026-03-30T17:00:00+09:00',
+        lunchAt: futureLunchAt(1),
         minAge: 20,
         maxAge: 24,
       });
@@ -107,7 +109,7 @@ describe('Rooms (e2e)', () => {
         roomType: 'MALE',
         maxMembersCount: 4,
         place: '학식당 앞',
-        lunchAt: '2026-03-30T18:00:00+09:00',
+        lunchAt: futureLunchAt(2),
         minAge: 20,
         maxAge: 24,
       });

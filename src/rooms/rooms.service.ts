@@ -13,6 +13,11 @@ export class RoomService {
   ) {}
 
   async createRoom(userId: number, createRoomDto: CreateRoomDto): Promise<ResponseRoomDetailDto> {
+    if (new Date(createRoomDto.lunchAt) < new Date())
+      throw new BadRequestException('lunchAt은 현재보다 미래여야 합니다.');
+    if (createRoomDto.minAge > createRoomDto.maxAge)
+      throw new BadRequestException('최소 나이는 최대 나이보다 클 수 없습니다.');
+
     const participatingRoom = await this.roomRepository.findParticipatingRoom(userId);
     if (participatingRoom) throw new BadRequestException('이미 참여 중인 방이 있습니다.');
 
