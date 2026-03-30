@@ -1,5 +1,4 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
 import { IsDateString, IsEnum, IsOptional } from 'class-validator';
 import { MealType } from '../entities/meal-menu.entity';
 
@@ -16,7 +15,6 @@ export class GetMealMenuListQueryDto {
     example: MealType.LUNCH,
   })
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   @IsEnum(MealType)
   mealType?: MealType;
 }

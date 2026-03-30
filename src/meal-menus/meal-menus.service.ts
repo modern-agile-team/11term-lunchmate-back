@@ -4,15 +4,17 @@ import { MealMenuDetailResponseDto } from './dto/meal-menu-detail-response.dto';
 import { MealMenuListItemResponseDto } from './dto/meal-menu-list-item-response.dto';
 import { MealMenuListResponseDto } from './dto/meal-menu-list-response.dto';
 import { MealMenu } from './entities/meal-menu.entity';
-import { MealType } from './entities/meal-menu.entity';
-import { FindMealMenusParams, MealMenuRepository } from './meal-menus.repository';
+import { MealMenuRepository } from './meal-menus.repository';
 
 @Injectable()
 export class MealMenusService {
   constructor(private readonly mealMenuRepository: MealMenuRepository) {}
 
   async findMealMenus(query: GetMealMenuListQueryDto): Promise<MealMenuListResponseDto> {
-    const mealMenus = await this.mealMenuRepository.findMany(this.toFindMealMenusParams(query));
+    const mealMenus = await this.mealMenuRepository.findMany({
+      mealDate: query.mealDate,
+      mealType: query.mealType,
+    });
 
     return {
       items: mealMenus.map((mealMenu) => this.toListItem(mealMenu)),
@@ -29,32 +31,20 @@ export class MealMenusService {
     return this.toDetailResponse(mealMenu);
   }
 
-  private toFindMealMenusParams(query: GetMealMenuListQueryDto): FindMealMenusParams {
+  private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
     return {
-      mealDate: query.mealDate,
-      mealType: this.normalizeMealType(query.mealType),
+      id: mealMenu.id,
+      mealDate: this.formatMealDate(mealMenu.mealDate),
+      mealType: mealMenu.mealType,
+      menuName: mealMenu.menuName,
+      price: mealMenu.price ?? null,
+      calorie: mealMenu.calorie ?? null,
+      likeCount: mealMenu.likeCount,
+      dislikeCount: mealMenu.dislikeCount,
     };
   }
 
-  private normalizeMealType(mealType?: MealType): MealType | undefined {
-    if (!mealType || mealType === MealType.ALL) {
-      return undefined;
-    }
-
-    return mealType;
-  }
-
-  private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
-    return this.toBaseResponse(mealMenu);
-  }
-
   private toDetailResponse(mealMenu: MealMenu): MealMenuDetailResponseDto {
-    return this.toBaseResponse(mealMenu);
-  }
-
-  private toBaseResponse(
-    mealMenu: MealMenu,
-  ): MealMenuListItemResponseDto | MealMenuDetailResponseDto {
     return {
       id: mealMenu.id,
       mealDate: this.formatMealDate(mealMenu.mealDate),
