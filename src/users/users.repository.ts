@@ -50,10 +50,7 @@ export class UserRepository {
     });
   }
 
-  async existsByNicknameExcludingUser(
-    nickname: string,
-    excludeUserId: number,
-  ): Promise<boolean> {
+  async existsByNicknameExcludingUser(nickname: string, excludeUserId: number): Promise<boolean> {
     const existingUser = await this.userRepository.findOne({
       select: {
         id: true,
@@ -91,10 +88,7 @@ export class UserRepository {
       .getOne();
   }
 
-  async updateRefreshTokenHash(
-    userId: number,
-    refreshTokenHash: string | null,
-  ): Promise<void> {
+  async updateRefreshTokenHash(userId: number, refreshTokenHash: string | null): Promise<void> {
     await this.userRepository.update(userId, { refreshTokenHash });
   }
 

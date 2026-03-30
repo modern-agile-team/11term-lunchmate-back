@@ -50,10 +50,7 @@ export class FriendController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() createFriendRequestDto: CreateFriendRequestDto,
   ): Promise<FriendRequestResponseDto> {
-    return this.friendService.createRequest(
-      currentUser.userId,
-      createFriendRequestDto.receiverId,
-    );
+    return this.friendService.createRequest(currentUser.userId, createFriendRequestDto.receiverId);
   }
 
   @Patch('requests/:friendshipId/accept')
