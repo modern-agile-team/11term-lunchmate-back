@@ -216,4 +216,107 @@ describe('Auth and Users (e2e)', () => {
 
     expect(statuses).toEqual([200, 401]);
   });
+
+  it('GET /users/:userId 공개 프로필 조회 성공', async () => {
+    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'public@example.com',
+      password: 'password1234',
+      name: '공개유저',
+      nickname: 'public-user',
+      bio: '안녕하세요',
+      mbti: 'ENFP',
+    });
+
+    const response = await request(app.getHttpServer()).get(`/users/${signupResponse.body.user.id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.email).toBeUndefined();
+    expect(response.body.name).toBe('공개유저');
+  });
+
+  it('GET /users/me 인증 없이 접근 시 401', async () => {
+    const response = await request(app.getHttpServer()).get('/users/me');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('PATCH /users/me 프로필 수정 성공', async () => {
+    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'update@example.com',
+      password: 'password1234',
+      name: '수정전',
+      nickname: 'update-user',
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
+      .send({
+        name: '수정후',
+        bio: '프로필 수정 완료',
+        mbti: 'ISTP',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.name).toBe('수정후');
+    expect(response.body.bio).toBe('프로필 수정 완료');
+    expect(response.body.mbti).toBe('ISTP');
+  });
+
+  it('PATCH /users/me 에서 중복 닉네임 거부', async () => {
+    await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'first-user@example.com',
+      password: 'password1234',
+      name: '첫번째',
+      nickname: 'taken-nickname',
+    });
+
+    const secondUser = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'second-user@example.com',
+      password: 'password1234',
+      name: '두번째',
+      nickname: 'second-user',
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${secondUser.body.accessToken}`)
+      .send({
+        nickname: 'taken-nickname',
+      });
+
+    expect(response.status).toBe(409);
+  });
+
+  it('DELETE /users/me 후 soft delete 반영 및 재로그인 실패', async () => {
+    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'withdraw@example.com',
+      password: 'password1234',
+      name: '탈퇴유저',
+      nickname: 'withdraw-user',
+    });
+
+    const deleteResponse = await request(app.getHttpServer())
+      .delete('/users/me')
+      .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
+
+    expect(deleteResponse.status).toBe(204);
+
+    const deletedUser = await dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .addSelect('user.deletedAt')
+      .withDeleted()
+      .where('user.id = :userId', { userId: signupResponse.body.user.id })
+      .getOne();
+
+    expect(deletedUser?.deletedAt).toBeInstanceOf(Date);
+
+    const loginResponse = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'withdraw@example.com',
+      password: 'password1234',
+    });
+
+    expect(loginResponse.status).toBe(401);
+  });
 });
