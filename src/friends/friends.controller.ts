@@ -86,4 +86,16 @@ export class FriendController {
   ): Promise<void> {
     await this.friendService.cancelRequest(currentUser.userId, friendshipId);
   }
+
+  @Delete(':friendshipId')
+  @Authenticated()
+  @HttpCode(204)
+  @ApiOperation({ summary: '친구 삭제' })
+  @ApiNoContentResponse()
+  async deleteFriend(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('friendshipId', ParseIntPipe) friendshipId: number,
+  ): Promise<void> {
+    await this.friendService.deleteFriend(currentUser.userId, friendshipId);
+  }
 }

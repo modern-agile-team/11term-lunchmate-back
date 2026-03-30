@@ -71,6 +71,14 @@ export class FriendService {
     await this.friendRepository.softDelete(friendRequest.id);
   }
 
+  async deleteFriend(currentUserId: number, friendshipId: number): Promise<void> {
+    const friendRelation = await this.findRequestOrFail(friendshipId);
+    this.ensureUserRelatedToFriend(friendRelation, currentUserId);
+    this.ensureAcceptedFriend(friendRelation);
+
+    await this.friendRepository.softDelete(friendRelation.id);
+  }
+
   async findFriends(currentUserId: number, status?: 'accepted'): Promise<FriendListResponseDto> {
     this.validateFriendListStatus(status);
 
@@ -141,6 +149,18 @@ export class FriendService {
   private ensurePendingRequest(friendRequest: Friend): void {
     if (friendRequest.status !== FriendStatus.PENDING) {
       throw new ConflictException('Friend request has already been processed.');
+    }
+  }
+
+  private ensureAcceptedFriend(friend: Friend): void {
+    if (friend.status !== FriendStatus.ACCEPTED) {
+      throw new ConflictException('Only accepted friends can be deleted.');
+    }
+  }
+
+  private ensureUserRelatedToFriend(friend: Friend, currentUserId: number): void {
+    if (friend.requester.id !== currentUserId && friend.receiver.id !== currentUserId) {
+      throw new ForbiddenException('Only related users can delete this friendship.');
     }
   }
 
