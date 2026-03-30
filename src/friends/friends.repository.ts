@@ -57,9 +57,7 @@ export class FriendRepository {
   private async restoreRequest(friendRequest: Friend): Promise<Friend> {
     await this.friendRepository.restore(friendRequest.id);
     friendRequest.status = FriendStatus.PENDING;
-
-    const restoredRequest = await this.friendRepository.save(friendRequest);
-    return (await this.findById(restoredRequest.id)) ?? restoredRequest;
+    return this.persistAndReload(friendRequest);
   }
 
   private async createNewRequest(requesterId: number, receiverId: number): Promise<Friend> {
@@ -69,6 +67,15 @@ export class FriendRepository {
       status: FriendStatus.PENDING,
     });
 
+    return this.persistAndReload(friendRequest);
+  }
+
+  async updateStatus(friendRequest: Friend, status: FriendStatus): Promise<Friend> {
+    friendRequest.status = status;
+    return this.persistAndReload(friendRequest);
+  }
+
+  private async persistAndReload(friendRequest: Friend): Promise<Friend> {
     const savedRequest = await this.friendRepository.save(friendRequest);
     return (await this.findById(savedRequest.id)) ?? savedRequest;
   }

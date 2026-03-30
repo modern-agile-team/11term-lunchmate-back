@@ -1,5 +1,5 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { ApiCreatedResponse, ApiOperation, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -21,5 +21,16 @@ export class FriendController {
     @Body() createFriendRequestDto: CreateFriendRequestDto,
   ): Promise<FriendRequestResponseDto> {
     return this.friendService.createRequest(currentUser.userId, createFriendRequestDto.receiverId);
+  }
+
+  @Patch('requests/:friendshipId/accept')
+  @Authenticated()
+  @ApiOperation({ summary: '친구 신청 수락' })
+  @ApiOkResponse({ type: FriendRequestResponseDto })
+  async acceptFriendRequest(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('friendshipId', ParseIntPipe) friendshipId: number,
+  ): Promise<FriendRequestResponseDto> {
+    return this.friendService.acceptRequest(currentUser.userId, friendshipId);
   }
 }

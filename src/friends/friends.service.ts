@@ -1,4 +1,10 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserService } from '../users/users.service';
 import { Friend, FriendStatus } from './entities/friend.entity';
 import { FriendRequestResponseDto } from './dto/friend-request-response.dto';
@@ -21,6 +27,22 @@ export class FriendService {
     );
 
     return this.toResponse(friendRequest);
+  }
+
+  async acceptRequest(
+    currentUserId: number,
+    friendshipId: number,
+  ): Promise<FriendRequestResponseDto> {
+    const friendRequest = await this.findRequestOrFail(friendshipId);
+    this.ensureReceiverCanAccept(friendRequest, currentUserId);
+    this.ensurePendingRequest(friendRequest);
+
+    const acceptedRequest = await this.friendRepository.updateStatus(
+      friendRequest,
+      FriendStatus.ACCEPTED,
+    );
+
+    return this.toResponse(acceptedRequest);
   }
 
   private async validateReceiver(requesterId: number, receiverId: number): Promise<void> {
@@ -55,6 +77,28 @@ export class FriendService {
 
     if (reverseRelation?.status === FriendStatus.ACCEPTED) {
       throw new ConflictException('Already friends.');
+    }
+  }
+
+  private async findRequestOrFail(friendshipId: number): Promise<Friend> {
+    const friendRequest = await this.friendRepository.findById(friendshipId);
+
+    if (!friendRequest) {
+      throw new NotFoundException('Friend request not found.');
+    }
+
+    return friendRequest;
+  }
+
+  private ensureReceiverCanAccept(friendRequest: Friend, currentUserId: number): void {
+    if (friendRequest.receiver.id !== currentUserId) {
+      throw new ForbiddenException('Only the receiver can accept this request.');
+    }
+  }
+
+  private ensurePendingRequest(friendRequest: Friend): void {
+    if (friendRequest.status !== FriendStatus.PENDING) {
+      throw new ConflictException('Friend request has already been processed.');
     }
   }
 
