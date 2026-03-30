@@ -23,5 +23,5 @@ export class PublicUserResponseDto {
   mbti: string | null;
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt: string;
 }

@@ -18,6 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:room": "jest --testPathPatterns=src/rooms --coverage --collectCoverageFrom=src/rooms/**",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d ./src/data-source.ts",
     "migration:create": "typeorm migration:create",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d ./src/data-source.ts",
@@ -82,7 +83,9 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "roots": [
+      "src"
+    ],
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -90,7 +93,17 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coveragePathIgnorePatterns": [
+      "module.ts",
+      "dto.ts",
+      "mapper.ts",
+      "constant.ts",
+      "entity.ts"
+    ],
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "src/(.*)": "<rootDir>/src/$1"
+    }
   }
 }

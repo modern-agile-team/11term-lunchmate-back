@@ -13,6 +13,8 @@ import { FriendModule } from './friends/friends.module';
 import { UserModule } from './users/users.module';
 import { TypeOrmConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
+import { WinstonModule } from 'nest-winston';
+import { winstonOptions } from './config/winston.config';
 import { AllExceptionFilter } from './commons/filters/all-exception.filter';
 
 @Module({
@@ -22,6 +24,9 @@ import { AllExceptionFilter } from './commons/filters/all-exception.filter';
     }),
     TypeOrmModule.forRootAsync({
       useClass: TypeOrmConfig,
+    }),
+    WinstonModule.forRoot({
+      transports: winstonOptions,
     }),
     AuthModule,
     UserModule,
