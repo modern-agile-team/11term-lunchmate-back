@@ -1,33 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-export class AuthUserResponseDto {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  email: string;
-
-  @ApiProperty()
-  nickname: string;
-
-  @ApiProperty()
-  birthDate: string;
-
-  @ApiProperty()
-  gender: 'MALE' | 'FEMALE';
-
-  @ApiProperty()
-  schoolInfo: string;
-
-  @ApiProperty({ nullable: true })
-  introduce: string | null;
-
-  @ApiProperty({ nullable: true })
-  mbti: string | null;
-
-  @ApiProperty()
-  createdAt: Date;
-}
+import { MeUserResponseDto } from '../../users/dto/me-user-response.dto';
 
 export class AuthTokensResponseDto {
   @ApiProperty()
@@ -38,6 +10,6 @@ export class AuthTokensResponseDto {
 }
 
 export class AuthResponseDto extends AuthTokensResponseDto {
-  @ApiProperty({ type: AuthUserResponseDto })
-  user: AuthUserResponseDto;
+  @ApiProperty({ type: MeUserResponseDto })
+  user: MeUserResponseDto;
 }
