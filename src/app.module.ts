@@ -14,6 +14,8 @@ import { UserModule } from './users/users.module';
 import { TypeOrmConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
 import { AllExceptionFilter } from './commons/filters/all-exception.filter';
+import { WinstonModule } from 'nest-winston';
+import { winstonOptions } from './config/winston.config';
 
 @Module({
   imports: [
@@ -22,6 +24,9 @@ import { AllExceptionFilter } from './commons/filters/all-exception.filter';
     }),
     TypeOrmModule.forRootAsync({
       useClass: TypeOrmConfig,
+    }),
+    WinstonModule.forRoot({
+      transports: winstonOptions,
     }),
     AuthModule,
     UserModule,
