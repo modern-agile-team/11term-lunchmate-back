@@ -1,13 +1,52 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+} from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Authenticated } from '../auth/decorators/authenticated.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
+import { MeUserResponseDto } from './dto/me-user-response.dto';
+import { PublicUserResponseDto } from './dto/public-user-response.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { UserService } from './users.service';
-import { User } from './entities/user.entity';
 
+@ApiTags('User')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
-  async findAllUsers(): Promise<User[]> {
-    return await this.userService.findAllUsers();
+  @Get('me')
+  @Authenticated()
+  @ApiOperation({ summary: '내 정보 조회' })
+  @ApiOkResponse({ type: MeUserResponseDto })
+  async getMe(
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<MeUserResponseDto> {
+    return this.userService.findMe(currentUser.userId);
+  }
+
+  @Patch('me')
+  @Authenticated()
+  @ApiOperation({ summary: '내 프로필 수정' })
+  @ApiOkResponse({ type: MeUserResponseDto })
+  async updateMe(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Body() updateMeDto: UpdateMeDto,
+  ): Promise<MeUserResponseDto> {
+    return this.userService.updateMe(currentUser.userId, updateMeDto);
+  }
+
+  @Get(':userId')
+  @ApiOperation({ summary: '공개 유저 조회' })
+  @ApiOkResponse({ type: PublicUserResponseDto })
+  async findUserById(
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<PublicUserResponseDto> {
+    return this.userService.findPublicUserById(userId);
   }
 }
