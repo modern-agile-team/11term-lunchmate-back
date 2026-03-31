@@ -1,6 +1,7 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GetMealMenuListQueryDto } from './dto/get-meal-menu-list-query.dto';
+import { MealMenuDetailResponseDto } from './dto/meal-menu-detail-response.dto';
 import { MealMenuListResponseDto } from './dto/meal-menu-list-response.dto';
 import { MealMenusService } from './meal-menus.service';
 
@@ -14,5 +15,14 @@ export class MealMenusController {
   @ApiOkResponse({ type: MealMenuListResponseDto })
   async findMealMenus(@Query() query: GetMealMenuListQueryDto): Promise<MealMenuListResponseDto> {
     return this.mealMenusService.findMealMenus(query);
+  }
+
+  @Get(':mealMenuId')
+  @ApiOperation({ summary: '학식 상세 조회' })
+  @ApiOkResponse({ type: MealMenuDetailResponseDto })
+  async findMealMenuById(
+    @Param('mealMenuId', ParseIntPipe) mealMenuId: number,
+  ): Promise<MealMenuDetailResponseDto> {
+    return this.mealMenusService.findMealMenuById(mealMenuId);
   }
 }

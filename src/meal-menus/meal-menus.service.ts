@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { GetMealMenuListQueryDto } from './dto/get-meal-menu-list-query.dto';
+import { MealMenuDetailResponseDto } from './dto/meal-menu-detail-response.dto';
 import { MealMenuListItemResponseDto } from './dto/meal-menu-list-item-response.dto';
 import { MealMenuListResponseDto } from './dto/meal-menu-list-response.dto';
 import { MealMenu } from './entities/meal-menu.entity';
@@ -20,7 +21,30 @@ export class MealMenusService {
     };
   }
 
+  async findMealMenuById(mealMenuId: number): Promise<MealMenuDetailResponseDto> {
+    const mealMenu = await this.mealMenuRepository.findById(mealMenuId);
+
+    if (!mealMenu) {
+      throw new NotFoundException('Meal menu not found.');
+    }
+
+    return this.toDetailResponse(mealMenu);
+  }
+
   private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
+    return {
+      id: mealMenu.id,
+      mealDate: this.formatMealDate(mealMenu.mealDate),
+      mealType: mealMenu.mealType,
+      menuName: mealMenu.menuName,
+      price: mealMenu.price ?? null,
+      calorie: mealMenu.calorie ?? null,
+      likeCount: mealMenu.likeCount,
+      dislikeCount: mealMenu.dislikeCount,
+    };
+  }
+
+  private toDetailResponse(mealMenu: MealMenu): MealMenuDetailResponseDto {
     return {
       id: mealMenu.id,
       mealDate: this.formatMealDate(mealMenu.mealDate),

@@ -31,4 +31,8 @@ export class MealMenuRepository {
 
     return query.getMany();
   }
+
+  async findById(mealMenuId: number): Promise<MealMenu | null> {
+    return this.mealMenuRepository.findOneBy({ id: mealMenuId });
+  }
 }
