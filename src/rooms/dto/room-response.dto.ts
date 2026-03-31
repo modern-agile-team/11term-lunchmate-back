@@ -15,7 +15,7 @@ export class ResponseRoomMemberDto {
   schoolInfo: string;
 }
 
-export class ResponseRoomDetailDto {
+export class ResponseRoomItemDto {
   @ApiProperty()
   id: number;
 
@@ -50,11 +50,29 @@ export class ResponseRoomDetailDto {
   lunchAt: string;
 
   @ApiProperty()
-  createdAt: string;
+  hostUserId: number;
+}
+
+export class ResponseRoomListDto {
+  @ApiProperty({ type: () => [ResponseRoomItemDto] })
+  items: ResponseRoomItemDto[];
+
+  @ApiProperty({ nullable: true })
+  nextCursor: number | null;
 
   @ApiProperty()
-  hostUserId: number;
+  hasNext: boolean;
+}
+
+export class ResponseRoomDetailDto extends ResponseRoomItemDto {
+  @ApiProperty()
+  createdAt: string;
 
   @ApiProperty({ type: () => [ResponseRoomMemberDto] })
   roomMembers: ResponseRoomMemberDto[];
+}
+
+export class ResponseOpenRoomsCountDto {
+  @ApiProperty()
+  openRoomsCount: number;
 }

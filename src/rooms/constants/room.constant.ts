@@ -6,3 +6,8 @@ export const ROOM_CONSTANTS = {
   MAX_AGE: 100,
   PLACE_MAX_LENGTH: 100,
 } as const;
+
+export const PAGINATION_CONSTANTS = {
+  DEFAULT_LIMIT: 20,
+  MAX_LIMIT: 200,
+};

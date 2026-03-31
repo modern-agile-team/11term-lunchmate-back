@@ -1,9 +1,19 @@
 import { CreateRoomDto } from './dto/create-room.dto';
+import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoomMember } from './entities/room-member.entity';
 import { Room, RoomStatus } from './entities/room.entity';
-import { EntityManager, Repository } from 'typeorm';
+import {
+  Between,
+  EntityManager,
+  FindOptionsWhere,
+  LessThan,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
+import { PAGINATION_CONSTANTS } from './constants/room.constant';
 
 @Injectable()
 export class RoomRepository {
@@ -56,6 +66,52 @@ export class RoomRepository {
         roomMembers: {
           user: true,
         },
+      },
+    });
+  }
+
+  async findRooms(query: FindRoomsQueryDto): Promise<Room[]> {
+    const where: FindOptionsWhere<Room> = this.findRoomFilter(query);
+    const limit = query.limit ?? PAGINATION_CONSTANTS.DEFAULT_LIMIT;
+
+    return await this.roomRepository.find({
+      where,
+      relations: {
+        hostUser: true,
+      },
+      order: {
+        id: 'DESC',
+      },
+      take: limit + 1,
+    });
+  }
+
+  findRoomFilter(query: FindRoomsQueryDto): FindOptionsWhere<Room> {
+    const where: FindOptionsWhere<Room> = {};
+
+    if (query.roomType) where.roomType = query.roomType;
+    if (query.status) where.status = query.status;
+
+    if (query.maxAge !== undefined) where.maxAge = LessThanOrEqual(query.maxAge);
+    if (query.minAge !== undefined) where.minAge = MoreThanOrEqual(query.minAge);
+
+    if (query.lunchAtFrom !== undefined && query.lunchAtTo !== undefined) {
+      where.lunchAt = Between(query.lunchAtFrom, query.lunchAtTo);
+    } else if (query.lunchAtFrom !== undefined) {
+      where.lunchAt = MoreThanOrEqual(query.lunchAtFrom);
+    } else if (query.lunchAtTo !== undefined) {
+      where.lunchAt = LessThanOrEqual(query.lunchAtTo);
+    }
+
+    if (query.cursor !== undefined) where.id = LessThan(query.cursor);
+
+    return where;
+  }
+
+  async findOpenRoomsCount(): Promise<number> {
+    return await this.roomRepository.count({
+      where: {
+        status: RoomStatus.OPEN,
       },
     });
   }

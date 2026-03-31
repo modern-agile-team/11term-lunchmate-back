@@ -31,7 +31,6 @@ export class CreateRoomDto extends PickType(Room, [
   @MaxLength(ROOM_CONSTANTS.TITLE_MAX_LENGTH)
   title: string;
 
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @ApiProperty({ enum: RoomType, example: RoomType.MALE })
   @IsEnum(RoomType)
   @IsNotEmpty()
