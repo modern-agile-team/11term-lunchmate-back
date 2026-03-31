@@ -96,44 +96,4 @@ export class MealMenuRepository {
       return mealMenu;
     });
   }
-
-  async applyDislike(userId: number, mealMenuId: number): Promise<MealMenu> {
-    return this.dataSource.transaction(async (manager) => {
-      const mealMenuRepository = manager.getRepository(MealMenu);
-      const mealMenuReactionRepository = manager.getRepository(MealMenuReaction);
-
-      const mealMenu = await mealMenuRepository.findOneByOrFail({ id: mealMenuId });
-      const existingReaction = await mealMenuReactionRepository.findOne({
-        where: {
-          user: { id: userId },
-          mealMenu: { id: mealMenuId },
-        },
-      });
-
-      if (!existingReaction) {
-        await mealMenuReactionRepository.save(
-          mealMenuReactionRepository.create({
-            actionType: ActionType.DISLIKE,
-            user: { id: userId } as User,
-            mealMenu: { id: mealMenuId } as MealMenu,
-          }),
-        );
-
-        mealMenu.dislikeCount += 1;
-      } else if (existingReaction.actionType === ActionType.LIKE) {
-        existingReaction.actionType = ActionType.DISLIKE;
-        await mealMenuReactionRepository.save(existingReaction);
-
-        mealMenu.likeCount = Math.max(0, mealMenu.likeCount - 1);
-        mealMenu.dislikeCount += 1;
-      }
-
-      await mealMenuRepository.update(mealMenuId, {
-        likeCount: mealMenu.likeCount,
-        dislikeCount: mealMenu.dislikeCount,
-      });
-
-      return mealMenu;
-    });
-  }
 }

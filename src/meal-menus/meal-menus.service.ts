@@ -52,25 +52,6 @@ export class MealMenusService {
     };
   }
 
-  async dislikeMealMenu(
-    userId: number,
-    mealMenuId: number,
-  ): Promise<MealMenuReactionResponseDto> {
-    const mealMenu = await this.mealMenuRepository.findById(mealMenuId);
-
-    if (!mealMenu) {
-      throw new NotFoundException('Meal menu not found.');
-    }
-
-    const updatedMealMenu = await this.mealMenuRepository.applyDislike(userId, mealMenuId);
-
-    return {
-      actionType: ActionType.DISLIKE,
-      likeCount: updatedMealMenu.likeCount,
-      dislikeCount: updatedMealMenu.dislikeCount,
-    };
-  }
-
   private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
     return {
       id: mealMenu.id,
