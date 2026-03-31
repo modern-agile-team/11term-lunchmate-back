@@ -150,3 +150,58 @@ export async function createMealMenuTestApp(): Promise<INestApplication> {
 
   return app;
 }
+
+export async function createMealMenuAuthTestApp(): Promise<INestApplication> {
+  process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+  process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+  process.env.JWT_ACCESS_EXPIRES_IN = '15m';
+  process.env.JWT_REFRESH_EXPIRES_IN = '7d';
+
+  const moduleFixture: TestingModule = await Test.createTestingModule({
+    imports: [
+      ConfigModule.forRoot({
+        isGlobal: true,
+        ignoreEnvFile: true,
+      }),
+      TypeOrmModule.forRootAsync({
+        useFactory: () => ({
+          type: 'postgres',
+          synchronize: true,
+          logging: false,
+          entities: TEST_ENTITIES,
+        }),
+        dataSourceFactory: async (options) => {
+          const db = newDb({
+            autoCreateForeignKeyIndices: true,
+          });
+
+          db.public.registerFunction({
+            name: 'current_database',
+            implementation: () => 'lunchmate_test',
+          });
+          db.public.registerFunction({
+            name: 'version',
+            implementation: () => 'PostgreSQL 16.0',
+          });
+
+          const dataSource = db.adapters.createTypeormDataSource(options as DataSourceOptions);
+
+          if (!dataSource.isInitialized) {
+            await dataSource.initialize();
+          }
+
+          return dataSource as DataSource;
+        },
+      }),
+      UserModule,
+      AuthModule,
+      MealMenuModule,
+    ],
+  }).compile();
+
+  const app = moduleFixture.createNestApplication();
+  app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
+  await app.init();
+
+  return app;
+}

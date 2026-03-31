@@ -1,8 +1,12 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Authenticated } from '../auth/decorators/authenticated.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { GetMealMenuListQueryDto } from './dto/get-meal-menu-list-query.dto';
 import { MealMenuDetailResponseDto } from './dto/meal-menu-detail-response.dto';
 import { MealMenuListResponseDto } from './dto/meal-menu-list-response.dto';
+import { MealMenuReactionResponseDto } from './dto/meal-menu-reaction-response.dto';
 import { MealMenusService } from './meal-menus.service';
 
 @ApiTags('MealMenu')
@@ -24,5 +28,17 @@ export class MealMenusController {
     @Param('mealMenuId', ParseIntPipe) mealMenuId: number,
   ): Promise<MealMenuDetailResponseDto> {
     return this.mealMenusService.findMealMenuById(mealMenuId);
+  }
+
+  @Post(':mealMenuId/like')
+  @HttpCode(HttpStatus.OK)
+  @Authenticated()
+  @ApiOperation({ summary: '학식 좋아요' })
+  @ApiOkResponse({ type: MealMenuReactionResponseDto })
+  async likeMealMenu(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('mealMenuId', ParseIntPipe) mealMenuId: number,
+  ): Promise<MealMenuReactionResponseDto> {
+    return this.mealMenusService.likeMealMenu(currentUser.userId, mealMenuId);
   }
 }
