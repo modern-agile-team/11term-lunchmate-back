@@ -3,6 +3,8 @@ import { GetMealMenuListQueryDto } from './dto/get-meal-menu-list-query.dto';
 import { MealMenuDetailResponseDto } from './dto/meal-menu-detail-response.dto';
 import { MealMenuListItemResponseDto } from './dto/meal-menu-list-item-response.dto';
 import { MealMenuListResponseDto } from './dto/meal-menu-list-response.dto';
+import { MealMenuReactionResponseDto } from './dto/meal-menu-reaction-response.dto';
+import { ActionType } from './entities/meal-menu-reaction.entity';
 import { MealMenu } from './entities/meal-menu.entity';
 import { MealMenuRepository } from './meal-menus.repository';
 
@@ -29,6 +31,25 @@ export class MealMenusService {
     }
 
     return this.toDetailResponse(mealMenu);
+  }
+
+  async likeMealMenu(
+    userId: number,
+    mealMenuId: number,
+  ): Promise<MealMenuReactionResponseDto> {
+    const mealMenu = await this.mealMenuRepository.findById(mealMenuId);
+
+    if (!mealMenu) {
+      throw new NotFoundException('Meal menu not found.');
+    }
+
+    const updatedMealMenu = await this.mealMenuRepository.applyLike(userId, mealMenuId);
+
+    return {
+      actionType: ActionType.LIKE,
+      likeCount: updatedMealMenu.likeCount,
+      dislikeCount: updatedMealMenu.dislikeCount,
+    };
   }
 
   private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
