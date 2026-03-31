@@ -1,13 +1,17 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { WinstonModule } from 'nest-winston';
 import { newDb } from 'pg-mem';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/auth/auth.module';
+import { AllExceptionFilter } from '../src/commons/filters/all-exception.filter';
 import { validationPipeOptions } from '../src/commons/validation/validation-pipe-options';
+import { winstonOptions } from '../src/config/winston.config';
 import { CommentLike } from '../src/comments/entities/comment-like.entity';
 import { Comment } from '../src/comments/entities/comment.entity';
 import { Friend } from '../src/friends/entities/friend.entity';
@@ -63,6 +67,9 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
         isGlobal: true,
         ignoreEnvFile: true,
       }),
+      WinstonModule.forRoot({
+        transports: winstonOptions,
+      }),
       TypeOrmModule.forRootAsync({
         useFactory: () => ({
           type: 'postgres',
@@ -97,6 +104,12 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
       AuthModule,
       RoomModule,
       FriendModule,
+    ],
+    providers: [
+      {
+        provide: APP_FILTER,
+        useClass: AllExceptionFilter,
+      },
     ],
   }).compile();
 
