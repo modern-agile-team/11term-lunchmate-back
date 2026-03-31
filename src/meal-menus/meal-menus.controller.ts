@@ -41,4 +41,16 @@ export class MealMenusController {
   ): Promise<MealMenuReactionResponseDto> {
     return this.mealMenusService.likeMealMenu(currentUser.userId, mealMenuId);
   }
+
+  @Post(':mealMenuId/dislike')
+  @HttpCode(HttpStatus.OK)
+  @Authenticated()
+  @ApiOperation({ summary: '학식 싫어요' })
+  @ApiOkResponse({ type: MealMenuReactionResponseDto })
+  async dislikeMealMenu(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('mealMenuId', ParseIntPipe) mealMenuId: number,
+  ): Promise<MealMenuReactionResponseDto> {
+    return this.mealMenusService.dislikeMealMenu(currentUser.userId, mealMenuId);
+  }
 }
