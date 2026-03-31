@@ -4,6 +4,7 @@ import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { GetMealMenuListQueryDto } from './dto/get-meal-menu-list-query.dto';
+import { GetMealMenuRankingQueryDto } from './dto/get-meal-menu-ranking-query.dto';
 import { MealMenuDetailResponseDto } from './dto/meal-menu-detail-response.dto';
 import { MealMenuListResponseDto } from './dto/meal-menu-list-response.dto';
 import { MealMenuReactionResponseDto } from './dto/meal-menu-reaction-response.dto';
@@ -19,6 +20,15 @@ export class MealMenusController {
   @ApiOkResponse({ type: MealMenuListResponseDto })
   async findMealMenus(@Query() query: GetMealMenuListQueryDto): Promise<MealMenuListResponseDto> {
     return this.mealMenusService.findMealMenus(query);
+  }
+
+  @Get('rankings')
+  @ApiOperation({ summary: '학식 랭킹 조회' })
+  @ApiOkResponse({ type: MealMenuListResponseDto })
+  async findMealMenuRankings(
+    @Query() query: GetMealMenuRankingQueryDto,
+  ): Promise<MealMenuListResponseDto> {
+    return this.mealMenusService.findMealMenuRankings(query);
   }
 
   @Get(':mealMenuId')

@@ -1,0 +1,28 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsEnum, IsOptional } from 'class-validator';
+import { ActionType } from '../entities/meal-menu-reaction.entity';
+import { MealType } from '../entities/meal-menu.entity';
+
+export class GetMealMenuRankingQueryDto {
+  @ApiPropertyOptional({
+    example: '2026-03-31',
+  })
+  @IsOptional()
+  @IsDateString()
+  mealDate?: string;
+
+  @ApiPropertyOptional({
+    enum: MealType,
+    example: MealType.LUNCH,
+  })
+  @IsOptional()
+  @IsEnum(MealType)
+  mealType?: MealType;
+
+  @ApiPropertyOptional({
+    enum: ActionType,
+    example: ActionType.LIKE,
+  })
+  @IsEnum(ActionType)
+  actionType: ActionType;
+}

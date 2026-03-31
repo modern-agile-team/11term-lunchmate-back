@@ -10,6 +10,12 @@ export interface FindMealMenusParams {
   mealType?: MealType;
 }
 
+export interface FindMealMenuRankingsParams {
+  mealDate?: string;
+  mealType?: MealType;
+  actionType: ActionType;
+}
+
 @Injectable()
 export class MealMenuRepository {
   constructor(
@@ -39,6 +45,28 @@ export class MealMenuRepository {
 
   async findById(mealMenuId: number): Promise<MealMenu | null> {
     return this.mealMenuRepository.findOneBy({ id: mealMenuId });
+  }
+
+  async findRankings(params: FindMealMenuRankingsParams): Promise<MealMenu[]> {
+    const query = this.mealMenuRepository.createQueryBuilder('mealMenu');
+
+    if (params.mealDate) {
+      query.andWhere('mealMenu.meal_date = :mealDate', { mealDate: params.mealDate });
+    }
+
+    if (params.mealType && params.mealType !== MealType.ALL) {
+      query.andWhere('mealMenu.meal_type = :mealType', { mealType: params.mealType });
+    }
+
+    if (params.actionType === ActionType.LIKE) {
+      query.orderBy('mealMenu.like_count', 'DESC');
+    } else {
+      query.orderBy('mealMenu.dislike_count', 'DESC');
+    }
+
+    query.addOrderBy('mealMenu.id', 'DESC');
+
+    return query.getMany();
   }
 
   async findReactionByUserAndMealMenu(

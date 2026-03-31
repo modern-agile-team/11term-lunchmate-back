@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { GetMealMenuListQueryDto } from './dto/get-meal-menu-list-query.dto';
+import { GetMealMenuRankingQueryDto } from './dto/get-meal-menu-ranking-query.dto';
 import { MealMenuDetailResponseDto } from './dto/meal-menu-detail-response.dto';
 import { MealMenuListItemResponseDto } from './dto/meal-menu-list-item-response.dto';
 import { MealMenuListResponseDto } from './dto/meal-menu-list-response.dto';
@@ -16,6 +17,18 @@ export class MealMenusService {
     const mealMenus = await this.mealMenuRepository.findMany({
       mealDate: query.mealDate,
       mealType: query.mealType,
+    });
+
+    return {
+      items: mealMenus.map((mealMenu) => this.toListItem(mealMenu)),
+    };
+  }
+
+  async findMealMenuRankings(query: GetMealMenuRankingQueryDto): Promise<MealMenuListResponseDto> {
+    const mealMenus = await this.mealMenuRepository.findRankings({
+      mealDate: query.mealDate,
+      mealType: query.mealType,
+      actionType: query.actionType,
     });
 
     return {
