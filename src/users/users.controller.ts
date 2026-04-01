@@ -13,7 +13,7 @@ import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nes
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
-import { MeUserResponseDto } from './dto/me-user-response.dto';
+import { CurrentUserResponseDto } from './dto/current-user-response.dto';
 import { PublicUserResponseDto } from './dto/public-user-response.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { UserService } from './users.service';
@@ -26,19 +26,21 @@ export class UserController {
   @Get('me')
   @Authenticated()
   @ApiOperation({ summary: '내 정보 조회' })
-  @ApiOkResponse({ type: MeUserResponseDto })
-  async getMe(@CurrentUser() currentUser: AuthenticatedUser): Promise<MeUserResponseDto> {
+  @ApiOkResponse({ type: CurrentUserResponseDto })
+  async getMe(
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ): Promise<CurrentUserResponseDto> {
     return this.userService.findMe(currentUser.userId);
   }
 
   @Patch('me')
   @Authenticated()
   @ApiOperation({ summary: '내 프로필 수정' })
-  @ApiOkResponse({ type: MeUserResponseDto })
+  @ApiOkResponse({ type: CurrentUserResponseDto })
   async updateMe(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() updateMeDto: UpdateMeDto,
-  ): Promise<MeUserResponseDto> {
+  ): Promise<CurrentUserResponseDto> {
     return this.userService.updateMe(currentUser.userId, updateMeDto);
   }
 

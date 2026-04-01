@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from './entities/user.entity';
-import { MeUserResponseDto } from './dto/me-user-response.dto';
+import { CurrentUserResponseDto } from './dto/current-user-response.dto';
 import { PublicUserResponseDto } from './dto/public-user-response.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { UserRepository } from './users.repository';
@@ -90,12 +90,12 @@ export class UserService {
     return this.toPublicResponse(user);
   }
 
-  async findMe(userId: number): Promise<MeUserResponseDto> {
+  async findMe(userId: number): Promise<CurrentUserResponseDto> {
     const user = await this.findActiveUserOrFail(userId);
     return this.toMeResponse(user);
   }
 
-  async updateMe(userId: number, updateMeDto: UpdateMeDto): Promise<MeUserResponseDto> {
+  async updateMe(userId: number, updateMeDto: UpdateMeDto): Promise<CurrentUserResponseDto> {
     const user = await this.findActiveUserOrFail(userId);
 
     if (updateMeDto.nickname) {
@@ -132,7 +132,7 @@ export class UserService {
     };
   }
 
-  toMeResponse(user: User): MeUserResponseDto {
+  toMeResponse(user: User): CurrentUserResponseDto {
     return {
       ...this.toPublicResponse(user),
       email: user.email,
