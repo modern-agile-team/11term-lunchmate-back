@@ -68,7 +68,7 @@ describe('Rooms Update (e2e)', () => {
     expect(updatedRoom.description).toBe('수정 후 설명');
     expect(updatedRoom.minAge).toBe(21);
     expect(updatedRoom.maxAge).toBe(25);
-    expect(updatedRoom.lunchAt).toBe(updatedLunchAt);
+    expect(updatedRoom.lunchAt.toISOString()).toBe(updatedLunchAt);
   });
 
   it('PATCH /rooms/:id 방장이 아닌 사용자가 수정하면 실패', async () => {

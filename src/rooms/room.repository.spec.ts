@@ -7,11 +7,12 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 
 describe('RoomRepository', () => {
   let roomRepository: RoomRepository;
-  let roomOrmRepository: Pick<Repository<Room>, 'update'>;
+  let roomOrmRepository: Pick<Repository<Room>, 'update' | 'softDelete'>;
 
   beforeEach(() => {
     roomOrmRepository = {
       update: jest.fn(),
+      softDelete: jest.fn(),
     };
 
     roomRepository = new RoomRepository(
@@ -88,6 +89,22 @@ describe('RoomRepository', () => {
 
       expect(result).toEqual(updateResult);
       expect(roomOrmRepository.update).toHaveBeenCalledWith(roomId, updateRoomDto);
+    });
+  });
+
+  describe('deleteRoom', () => {
+    it('roomId로 softDelete를 호출', async () => {
+      const roomId = 1;
+      const deleteResult = {
+        affected: 1,
+      };
+
+      (roomOrmRepository.softDelete as jest.Mock).mockResolvedValue(deleteResult);
+
+      const result = await roomRepository.deleteRoom(roomId);
+
+      expect(result).toEqual(deleteResult);
+      expect(roomOrmRepository.softDelete).toHaveBeenCalledWith(roomId);
     });
   });
 });

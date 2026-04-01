@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoomService } from './rooms.service';
 import { RoomRepository } from './room.repository';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, DeleteResult, EntityManager } from 'typeorm';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
@@ -91,6 +91,7 @@ const mockRoomRepository = {
   findRooms: jest.fn(),
   findParticipatingRoom: jest.fn(),
   updateRoom: jest.fn(),
+  deleteRoom: jest.fn(),
 };
 
 describe('RoomService', () => {
@@ -268,7 +269,7 @@ describe('RoomService', () => {
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(1);
     });
 
-    it('이미 창여중인 방이 있는 사용자가 방을 생성하면 BadRequestException을 반환', async () => {
+    it('이미 참여중인 방이 있는 사용자가 방을 생성하면 BadRequestException을 반환', async () => {
       mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce({ id: 99 });
 
       await expect(roomService.createRoom(mockUserSummary.id, createRoomDto)).rejects.toThrow(
@@ -350,6 +351,35 @@ describe('RoomService', () => {
       );
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('최소 나이가 최대 나이보다 크면 BadRequestException을 반환', async () => {
+      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+
+      await expect(
+        roomService.createRoom(mockUserSummary.id, {
+          ...createRoomDto,
+          minAge: 30,
+          maxAge: 24,
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockRoomRepository.findParticipatingRoom).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('과거 lunchAt으로 방을 생성하면 BadRequestException을 반환', async () => {
+      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+
+      await expect(
+        roomService.createRoom(mockUserSummary.id, {
+          ...createRoomDto,
+          lunchAt: '2026-03-26T23:59:59.999Z',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockRoomRepository.findParticipatingRoom).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
     });
   });
 
@@ -454,6 +484,55 @@ describe('RoomService', () => {
 
       expect(result).toEqual(mockRoomDetailDto);
       expect(mockRoomRepository.updateRoom).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteRoom', () => {
+    const deleteResult: DeleteResult = {
+      raw: [],
+      affected: 1,
+    };
+
+    it('방장이 방을 삭제하면 repository deleteRoom을 호출', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.deleteRoom.mockResolvedValueOnce(deleteResult);
+
+      await roomService.deleteRoom(mockRoomEntity.id, mockUserSummary.id);
+
+      expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
+      expect(mockRoomRepository.deleteRoom).toHaveBeenCalledWith(mockRoomEntity.id);
+    });
+
+    it('방장이 아닌 사용자가 삭제하면 ForbiddenException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+
+      await expect(roomService.deleteRoom(mockRoomEntity.id, 999)).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(mockRoomRepository.deleteRoom).not.toHaveBeenCalled();
+    });
+
+    it('존재하지 않는 방을 삭제하면 NotFoundException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(null);
+
+      await expect(roomService.deleteRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockRoomRepository.deleteRoom).not.toHaveBeenCalled();
+    });
+
+    it('삭제 결과 affected가 0이면 NotFoundException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.deleteRoom.mockResolvedValueOnce({
+        raw: [],
+        affected: 0,
+      });
+
+      await expect(roomService.deleteRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
