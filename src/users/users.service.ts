@@ -134,7 +134,14 @@ export class UserService {
 
   toMeResponse(user: User): CurrentUserResponseDto {
     return {
-      ...this.toPublicResponse(user),
+      id: user.id,
+      nickname: user.nickname,
+      birthDate: user.birthDate,
+      gender: user.gender,
+      schoolInfo: user.schoolInfo,
+      introduce: user.introduce,
+      mbti: user.mbti,
+      createdAt: user.createdAt,
       email: user.email,
     };
   }
