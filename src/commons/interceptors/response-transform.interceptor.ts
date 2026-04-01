@@ -18,9 +18,9 @@ export class ResponseTransformInterceptor<T> implements NestInterceptor<T, Respo
 
     return next.handle().pipe(
       map((data) => ({
-        message: message || data.message || 'success',
+        message: message ?? data?.message ?? 'success',
         statusCode,
-        data: data.data || data,
+        data: data?.data ?? data ?? null,
       })),
     );
   }
