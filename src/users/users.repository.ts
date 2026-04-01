@@ -3,6 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 
+export type UpdateMePatch = Partial<
+  Pick<User, 'nickname' | 'birthDate' | 'gender' | 'schoolInfo' | 'introduce' | 'mbti'>
+>;
+
 @Injectable()
 export class UserRepository {
   constructor(
@@ -132,8 +136,8 @@ export class UserRepository {
     });
   }
 
-  async save(user: User): Promise<User> {
-    return this.userRepository.save(user);
+  async updateMe(userId: number, patch: UpdateMePatch): Promise<void> {
+    await this.userRepository.update(userId, patch);
   }
 
   async softDelete(userId: number): Promise<void> {
