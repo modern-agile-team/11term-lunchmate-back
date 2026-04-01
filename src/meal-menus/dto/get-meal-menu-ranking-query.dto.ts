@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsOptional } from 'class-validator';
 import { ActionType } from '../entities/meal-menu-reaction.entity';
 import { MealType } from '../entities/meal-menu.entity';
@@ -19,7 +19,7 @@ export class GetMealMenuRankingQueryDto {
   @IsEnum(MealType)
   mealType?: MealType;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     enum: ActionType,
     example: ActionType.LIKE,
   })
