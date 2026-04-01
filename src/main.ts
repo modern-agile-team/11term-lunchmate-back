@@ -1,8 +1,9 @@
 import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { AppModule } from './app.module';
+import { ResponseTransformInterceptor } from './commons/interceptors/response-transform.interceptor';
 import { validationPipeOptions } from './commons/validation/validation-pipe-options';
 import { winstonLogger } from './config/winston.config';
 
@@ -12,8 +13,8 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
+  app.useGlobalInterceptors(new ResponseTransformInterceptor(app.get(Reflector)));
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
-
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Lunch Mate API')
     .setDescription('Lunch Mate backend API documentation')
