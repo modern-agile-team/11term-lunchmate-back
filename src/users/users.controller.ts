@@ -16,6 +16,7 @@ import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface
 import { CurrentUserResponseDto } from './dto/current-user-response.dto';
 import { PublicUserResponseDto } from './dto/public-user-response.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { User } from './entities/user.entity';
 import { UserService } from './users.service';
 
 @ApiTags('User')
@@ -30,7 +31,8 @@ export class UserController {
   async getMe(
     @CurrentUser() currentUser: AuthenticatedUser,
   ): Promise<CurrentUserResponseDto> {
-    return this.userService.findMe(currentUser.userId);
+    const user = await this.userService.findMe(currentUser.userId);
+    return this.toCurrentUserResponse(user);
   }
 
   @Patch('me')
@@ -41,7 +43,8 @@ export class UserController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() updateMeDto: UpdateMeDto,
   ): Promise<CurrentUserResponseDto> {
-    return this.userService.updateMe(currentUser.userId, updateMeDto);
+    const user = await this.userService.updateMe(currentUser.userId, updateMeDto);
+    return this.toCurrentUserResponse(user);
   }
 
   @Delete('me')
@@ -59,6 +62,27 @@ export class UserController {
   async findUserById(
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<PublicUserResponseDto> {
-    return this.userService.findPublicUserById(userId);
+    const user = await this.userService.findPublicUserById(userId);
+    return this.toPublicUserResponse(user);
+  }
+
+  private toPublicUserResponse(user: User): PublicUserResponseDto {
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      birthDate: user.birthDate,
+      gender: user.gender,
+      schoolInfo: user.schoolInfo,
+      introduce: user.introduce,
+      mbti: user.mbti,
+      createdAt: user.createdAt,
+    };
+  }
+
+  private toCurrentUserResponse(user: User): CurrentUserResponseDto {
+    return {
+      ...this.toPublicUserResponse(user),
+      email: user.email,
+    };
   }
 }
