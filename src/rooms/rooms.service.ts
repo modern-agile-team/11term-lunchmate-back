@@ -87,6 +87,12 @@ export class RoomService {
     };
   }
 
+  async findRoomMembersByRoomId(roomId: number) {
+    await this.findExistingRoomOrThrow(roomId);
+
+    return await this.roomMemberService.findRoomMembersByRoomId(roomId);
+  }
+
   async updateRoom(
     roomId: number,
     updateRoomDto: UpdateRoomDto,

@@ -70,6 +70,11 @@ export class RoomRepository {
           user: true,
         },
       },
+      order: {
+        roomMembers: {
+          createdAt: 'ASC' as const,
+        },
+      },
     };
 
     if (manager) return await manager.findOne(Room, queryOptions);

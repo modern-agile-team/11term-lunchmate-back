@@ -10,9 +10,15 @@ export class RoomMemberRepository {
     private readonly roomMemberRepository: Repository<RoomMember>,
   ) {}
 
-  async findRoomMembersById(roomid: number): Promise<RoomMember[]> {
+  async findRoomMembersByRoomId(roomId: number): Promise<RoomMember[]> {
     return await this.roomMemberRepository.find({
-      where: { room: { id: roomid } },
+      where: { room: { id: roomId } },
+      relations: {
+        user: true,
+      },
+      order: {
+        createdAt: 'ASC',
+      },
     });
   }
 

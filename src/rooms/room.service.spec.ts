@@ -48,7 +48,16 @@ void hostUser;
 const mockRoomDetailDto = {
   ...roomEntityBase,
   hostUserId: mockUserSummary.id,
-  roomMembers: [mockUserSummary],
+  roomMembers: [
+    {
+      id: mockUserSummary.id,
+      nickname: mockUserSummary.nickname,
+      age: 26,
+      gender: mockUserSummary.gender,
+      schoolInfo: mockUserSummary.schoolInfo,
+      mbti: null,
+    },
+  ],
 };
 
 const mockRoomListDto = {

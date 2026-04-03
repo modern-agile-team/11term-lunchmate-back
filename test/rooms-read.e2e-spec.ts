@@ -107,6 +107,11 @@ describe('Rooms Read (e2e)', () => {
     expect(response.body.lunchAt).toBe(lunchAt);
     expect(response.body.createdAt).toBe(new Date(room.createdAt).toISOString());
     expect(response.body.roomMembers).toHaveLength(1);
+    expect(response.body.roomMembers[0].id).toBe(hostUser.id);
     expect(response.body.roomMembers[0].nickname).toBe('상세호스트');
+    expect(response.body.roomMembers[0].age).toBe(26);
+    expect(response.body.roomMembers[0].gender).toBe('MALE');
+    expect(response.body.roomMembers[0].schoolInfo).toBe('인덕대학교');
+    expect(response.body.roomMembers[0].mbti).toBeNull();
   });
 });

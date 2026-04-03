@@ -38,9 +38,10 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomMember } from './entities/room-member.entity';
+import { ResponseRoomMemberListDto } from './dto/room-member.response.dto';
 
 @ApiTags('Room')
-@ApiExtraModels(ResponseRoomListDto, ResponseRoomDetailDto)
+@ApiExtraModels(ResponseRoomListDto, ResponseRoomDetailDto, ResponseRoomMemberListDto)
 @Controller('rooms')
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
@@ -189,5 +190,16 @@ export class RoomController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     await this.roomService.kickRoomMember(roomId, userId, user.userId);
+  }
+
+  @Get(':id/members')
+  @ApiOperation({ summary: '방 멤버 조회' })
+  @ApiParam({ name: 'id', description: '멤버를 조회할 방 ID', type: Number })
+  @ApiOkResponse({ type: ResponseRoomMemberListDto })
+  @ApiNotFoundResponse({ description: '존재하지 않는 방의 멤버를 조회하려는 경우' })
+  async findRoomMembersById(
+    @Param('id', ParseIntPipe) roomId: number,
+  ): Promise<ResponseRoomMemberListDto> {
+    return await this.roomService.findRoomMembersByRoomId(roomId);
   }
 }

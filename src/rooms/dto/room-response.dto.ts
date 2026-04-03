@@ -1,19 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RoomStatus, RoomType } from '../entities/room.entity';
-
-export class ResponseRoomMemberDto {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  nickname: string;
-
-  @ApiProperty({ enum: ['MALE', 'FEMALE'] })
-  gender: 'MALE' | 'FEMALE';
-
-  @ApiProperty()
-  schoolInfo: string;
-}
+import { ResponseRoomMemberDto } from './room-member.response.dto';
 
 export class ResponseRoomItemDto {
   @ApiProperty()

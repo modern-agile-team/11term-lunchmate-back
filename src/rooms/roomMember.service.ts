@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { RoomMemberRepository } from './roomMember.repository';
 import { EntityManager } from 'typeorm';
-import { RoomMember } from './entities/room-member.entity';
+import { ResponseRoomMemberListDto } from './dto/room-member.response.dto';
+import { RoomMemberMapper } from './mappers/room-member.mapper';
 
 @Injectable()
 export class RoomMemberService {
   constructor(private readonly roomMemberRepository: RoomMemberRepository) {}
 
-  async findRoomMembersById(roomId: number): Promise<RoomMember[]> {
-    return await this.roomMemberRepository.findRoomMembersById(roomId);
+  async findRoomMembersByRoomId(roomId: number): Promise<ResponseRoomMemberListDto> {
+    const roomMembers = await this.roomMemberRepository.findRoomMembersByRoomId(roomId);
+    return RoomMemberMapper.toListDto(roomMembers);
   }
 
   async findRoomMemberCount(manager: EntityManager, roomId: number): Promise<number> {
