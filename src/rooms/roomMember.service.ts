@@ -3,6 +3,7 @@ import { RoomMemberRepository } from './roomMember.repository';
 import { EntityManager } from 'typeorm';
 import { ResponseRoomMemberListDto } from './dto/room-member.response.dto';
 import { RoomMemberMapper } from './mappers/room-member.mapper';
+import { RoomMember } from './entities/room-member.entity';
 
 @Injectable()
 export class RoomMemberService {
@@ -15,6 +16,18 @@ export class RoomMemberService {
 
   async findRoomMemberCount(manager: EntityManager, roomId: number): Promise<number> {
     return await this.roomMemberRepository.findRoomMemberCount(manager, roomId);
+  }
+
+  async findParticipatingRoomByUserId(userId: number) {
+    return await this.roomMemberRepository.findParticipatingRoomByUserId(userId);
+  }
+
+  async createRoomMember(
+    manager: EntityManager,
+    userId: number,
+    roomId: number,
+  ): Promise<RoomMember> {
+    return await this.roomMemberRepository.createRoomMember(manager, userId, roomId);
   }
 
   async joinRoom(manager: EntityManager, roomId: number, userId: number) {

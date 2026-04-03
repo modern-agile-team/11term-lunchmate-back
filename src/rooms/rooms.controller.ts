@@ -46,6 +46,16 @@ import { ResponseRoomMemberListDto } from './dto/room-member.response.dto';
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
+  @Get('me')
+  @Authenticated()
+  @ApiOperation({ summary: '현재 사용자가 참여 중인 방 조회' })
+  @ApiOkResponse({ type: ResponseRoomDetailDto })
+  @ApiNotFoundResponse({ description: '현재 참여 중인 방이 없는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async findRoomByUserId(@CurrentUser() user: AuthenticatedUser): Promise<ResponseRoomDetailDto> {
+    return await this.roomService.findParticipatingRoomByUserId(user.userId);
+  }
+
   @Authenticated()
   @Post()
   @ApiOperation({ summary: '방 생성' })

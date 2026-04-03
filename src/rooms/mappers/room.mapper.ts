@@ -20,7 +20,7 @@ export class RoomMapper {
       maxAge: room.maxAge,
       place: room.place,
       lunchAt: room.lunchAt,
-      hostUserId: room.hostUser.id,
+      hostUserId: room.hostUserId,
     };
   }
 

@@ -52,7 +52,7 @@ const mockRoomDetailDto = {
     {
       id: mockUserSummary.id,
       nickname: mockUserSummary.nickname,
-      age: 26,
+      age: 27,
       gender: mockUserSummary.gender,
       schoolInfo: mockUserSummary.schoolInfo,
       mbti: null,
@@ -98,10 +98,8 @@ const mockManager = {
 
 const mockRoomRepository = {
   createRoom: jest.fn(),
-  createRoomMember: jest.fn(),
   findRoomById: jest.fn(),
   findRooms: jest.fn(),
-  findParticipatingRoom: jest.fn(),
   updateRoom: jest.fn(),
   deleteRoom: jest.fn(),
   increaseCurrentMembersCount: jest.fn(),
@@ -110,6 +108,9 @@ const mockRoomRepository = {
 };
 
 const mockRoomMemberService = {
+  createRoomMember: jest.fn(),
+  findParticipatingRoomByUserId: jest.fn(),
+  findRoomMembersByRoomId: jest.fn(),
   findRoomMemberCount: jest.fn(),
   joinRoom: jest.fn(),
   leaveRoom: jest.fn(),
@@ -276,9 +277,9 @@ describe('RoomService', () => {
 
   describe('createRoom', () => {
     it('방을 생성하고 생성된 방의 정보를 반환', async () => {
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
       mockRoomRepository.createRoom.mockResolvedValueOnce(mockRoomEntity);
-      mockRoomRepository.createRoomMember.mockResolvedValueOnce({
+      mockRoomMemberService.createRoomMember.mockResolvedValueOnce({
         room: { id: mockRoomEntity.id },
         user: { id: mockUserSummary.id },
       });
@@ -288,7 +289,9 @@ describe('RoomService', () => {
       const result = await roomService.createRoom(mockUserSummary.id, createRoomDto);
 
       expect(result).toEqual(mockRoomDetailDto);
-      expect(mockRoomRepository.findParticipatingRoom).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
+        mockUserSummary.id,
+      );
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
       expect(roomMapperSpy).toHaveBeenCalledWith(mockRoomEntity);
       expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
@@ -296,7 +299,7 @@ describe('RoomService', () => {
         mockUserSummary.id,
         createRoomDto,
       );
-      expect(mockRoomRepository.createRoomMember).toHaveBeenCalledWith(
+      expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
         mockRoomEntity.id,
@@ -305,21 +308,21 @@ describe('RoomService', () => {
     });
 
     it('이미 참여중인 방이 있는 사용자가 방을 생성하면 BadRequestException을 반환', async () => {
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce({ id: 99 });
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce({ id: 99 });
 
       await expect(roomService.createRoom(mockUserSummary.id, createRoomDto)).rejects.toThrow(
         BadRequestException,
       );
 
       expect(mockRoomRepository.createRoom).not.toHaveBeenCalled();
-      expect(mockRoomRepository.createRoomMember).not.toHaveBeenCalled();
+      expect(mockRoomMemberService.createRoomMember).not.toHaveBeenCalled();
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
     });
 
     it('방 생성 중 createRoom이 실패하면 예외를 던지고 이후 로직을 실행하지 않음', async () => {
       const createRoomError = new Error('create room failed');
 
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
       mockRoomRepository.createRoom.mockRejectedValueOnce(createRoomError);
 
       await expect(roomService.createRoom(mockUserSummary.id, createRoomDto)).rejects.toThrow(
@@ -331,7 +334,7 @@ describe('RoomService', () => {
         mockUserSummary.id,
         createRoomDto,
       );
-      expect(mockRoomRepository.createRoomMember).not.toHaveBeenCalled();
+      expect(mockRoomMemberService.createRoomMember).not.toHaveBeenCalled();
       expect(mockRoomRepository.findRoomById).not.toHaveBeenCalled();
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(1);
     });
@@ -339,9 +342,9 @@ describe('RoomService', () => {
     it('방 생성 중 createRoomMember가 실패하면 예외를 던지고 최종 조회를 실행하지 않음', async () => {
       const createRoomMemberError = new Error('create room member failed');
 
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
       mockRoomRepository.createRoom.mockResolvedValueOnce(mockRoomEntity);
-      mockRoomRepository.createRoomMember.mockRejectedValueOnce(createRoomMemberError);
+      mockRoomMemberService.createRoomMember.mockRejectedValueOnce(createRoomMemberError);
 
       await expect(roomService.createRoom(mockUserSummary.id, createRoomDto)).rejects.toThrow(
         createRoomMemberError,
@@ -352,7 +355,7 @@ describe('RoomService', () => {
         mockUserSummary.id,
         createRoomDto,
       );
-      expect(mockRoomRepository.createRoomMember).toHaveBeenCalledWith(
+      expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
         mockRoomEntity.id,
@@ -362,9 +365,9 @@ describe('RoomService', () => {
     });
 
     it('방 생성 후 findRoomById가 null을 반환하면 NotFoundException을 던짐', async () => {
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
       mockRoomRepository.createRoom.mockResolvedValueOnce(mockRoomEntity);
-      mockRoomRepository.createRoomMember.mockResolvedValueOnce({
+      mockRoomMemberService.createRoomMember.mockResolvedValueOnce({
         room: { id: mockRoomEntity.id },
         user: { id: mockUserSummary.id },
       });
@@ -379,7 +382,7 @@ describe('RoomService', () => {
         mockUserSummary.id,
         createRoomDto,
       );
-      expect(mockRoomRepository.createRoomMember).toHaveBeenCalledWith(
+      expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
         mockRoomEntity.id,
@@ -389,7 +392,7 @@ describe('RoomService', () => {
     });
 
     it('최소 나이가 최대 나이보다 크면 BadRequestException을 반환', async () => {
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
 
       await expect(
         roomService.createRoom(mockUserSummary.id, {
@@ -399,12 +402,14 @@ describe('RoomService', () => {
         }),
       ).rejects.toThrow(BadRequestException);
 
-      expect(mockRoomRepository.findParticipatingRoom).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
+        mockUserSummary.id,
+      );
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
     });
 
     it('과거 lunchAt으로 방을 생성하면 BadRequestException을 반환', async () => {
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
 
       await expect(
         roomService.createRoom(mockUserSummary.id, {
@@ -413,7 +418,9 @@ describe('RoomService', () => {
         }),
       ).rejects.toThrow(BadRequestException);
 
-      expect(mockRoomRepository.findParticipatingRoom).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
+        mockUserSummary.id,
+      );
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
     });
   });
@@ -590,7 +597,7 @@ describe('RoomService', () => {
 
       mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
       mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
       mockRoomMemberService.findRoomMemberCount.mockResolvedValueOnce(1);
       mockRoomRepository.increaseCurrentMembersCount.mockResolvedValueOnce(undefined);
       mockRoomMemberService.joinRoom.mockResolvedValueOnce(newMember);
@@ -600,7 +607,9 @@ describe('RoomService', () => {
       expect(result).toEqual(newMember);
       expect(mockUserService.findMe).toHaveBeenCalledWith(mockUserSummary.id);
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
-      expect(mockRoomRepository.findParticipatingRoom).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
+        mockUserSummary.id,
+      );
       expect(mockRoomMemberService.findRoomMemberCount).toHaveBeenCalledWith(
         mockManager,
         mockRoomEntity.id,
@@ -624,13 +633,13 @@ describe('RoomService', () => {
         NotFoundException,
       );
 
-      expect(mockRoomRepository.findParticipatingRoom).not.toHaveBeenCalled();
+      expect(mockRoomMemberService.findParticipatingRoomByUserId).not.toHaveBeenCalled();
     });
 
     it('이미 참여 중이면 BadRequestException을 반환', async () => {
       mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
       mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce({ id: 123 });
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce({ id: 123 });
 
       await expect(roomService.joinRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
         BadRequestException,
@@ -642,7 +651,7 @@ describe('RoomService', () => {
     it('정원이 가득 찼으면 BadRequestException을 반환', async () => {
       mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
       mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
       mockRoomMemberService.findRoomMemberCount.mockResolvedValueOnce(
         mockRoomEntity.maxMembersCount,
       );
@@ -660,7 +669,7 @@ describe('RoomService', () => {
         gender: 'FEMALE',
       });
       mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
-      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
 
       await expect(roomService.joinRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
         BadRequestException,
@@ -756,7 +765,11 @@ describe('RoomService', () => {
         mockManager,
         mockRoomEntity.id,
       );
-      expect(mockRoomMemberService.leaveRoom).toHaveBeenCalledWith(mockManager, mockRoomEntity.id, 2);
+      expect(mockRoomMemberService.leaveRoom).toHaveBeenCalledWith(
+        mockManager,
+        mockRoomEntity.id,
+        2,
+      );
     });
 
     it('방장이 아닌 사용자가 강제 퇴장시키면 ForbiddenException을 반환', async () => {
@@ -783,9 +796,9 @@ describe('RoomService', () => {
       mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
       mockRoomMemberService.isRoomMember.mockResolvedValueOnce(false);
 
-      await expect(roomService.kickRoomMember(mockRoomEntity.id, 2, mockUserSummary.id)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        roomService.kickRoomMember(mockRoomEntity.id, 2, mockUserSummary.id),
+      ).rejects.toThrow(BadRequestException);
 
       expect(mockRoomRepository.decreaseCurrentMembersCount).not.toHaveBeenCalled();
     });

@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { calculateAge } from '../src/commons/utils/age.util';
 import { RoomStatus, RoomType } from '../src/rooms/entities/room.entity';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
@@ -109,7 +110,7 @@ describe('Rooms Read (e2e)', () => {
     expect(response.body.roomMembers).toHaveLength(1);
     expect(response.body.roomMembers[0].id).toBe(hostUser.id);
     expect(response.body.roomMembers[0].nickname).toBe('상세호스트');
-    expect(response.body.roomMembers[0].age).toBe(26);
+    expect(response.body.roomMembers[0].age).toBe(calculateAge('2000-01-01'));
     expect(response.body.roomMembers[0].gender).toBe('MALE');
     expect(response.body.roomMembers[0].schoolInfo).toBe('인덕대학교');
     expect(response.body.roomMembers[0].mbti).toBeNull();
