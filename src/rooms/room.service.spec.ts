@@ -9,6 +9,8 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomStatus, RoomType } from './entities/room.entity';
 import { RoomMapper } from './mappers/room.mapper';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
+import { RoomMemberService } from './roomMember.service';
+import { UserService } from '../users/users.service';
 
 const mockUserSummary = {
   id: 1,
@@ -92,6 +94,21 @@ const mockRoomRepository = {
   findParticipatingRoom: jest.fn(),
   updateRoom: jest.fn(),
   deleteRoom: jest.fn(),
+  increaseCurrentMembersCount: jest.fn(),
+  decreaseCurrentMembersCount: jest.fn(),
+  updateRoomHostUser: jest.fn(),
+};
+
+const mockRoomMemberService = {
+  findRoomMemberCount: jest.fn(),
+  joinRoom: jest.fn(),
+  leaveRoom: jest.fn(),
+  isRoomMember: jest.fn(),
+  findFirstJoinedMemberId: jest.fn(),
+};
+
+const mockUserService = {
+  findMe: jest.fn(),
 };
 
 describe('RoomService', () => {
@@ -102,7 +119,7 @@ describe('RoomService', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-03-27T00:00:00.000Z'));
     jest.restoreAllMocks();
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     roomMapperSpy = jest.spyOn(RoomMapper, 'toDetailDto');
 
     mockDataSource.transaction.mockImplementation(
@@ -121,6 +138,14 @@ describe('RoomService', () => {
         {
           provide: RoomRepository,
           useValue: mockRoomRepository,
+        },
+        {
+          provide: RoomMemberService,
+          useValue: mockRoomMemberService,
+        },
+        {
+          provide: UserService,
+          useValue: mockUserService,
         },
       ],
     }).compile();
@@ -533,6 +558,172 @@ describe('RoomService', () => {
       await expect(roomService.deleteRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('joinRoom', () => {
+    const mockCurrentUser = {
+      id: mockUserSummary.id,
+      email: 'test@gmail.com',
+      nickname: mockUserSummary.nickname,
+      gender: 'MALE' as const,
+      birthDate: '2005-01-01',
+      schoolInfo: mockUserSummary.schoolInfo,
+    };
+
+    it('사용자가 방에 참여하면 멤버를 생성하고 반환', async () => {
+      const newMember = {
+        id: 10,
+        room: { id: mockRoomEntity.id },
+        user: { id: mockUserSummary.id },
+      };
+
+      mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findRoomMemberCount.mockResolvedValueOnce(1);
+      mockRoomRepository.increaseCurrentMembersCount.mockResolvedValueOnce(undefined);
+      mockRoomMemberService.joinRoom.mockResolvedValueOnce(newMember);
+
+      const result = await roomService.joinRoom(mockRoomEntity.id, mockUserSummary.id);
+
+      expect(result).toEqual(newMember);
+      expect(mockUserService.findMe).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
+      expect(mockRoomRepository.findParticipatingRoom).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockRoomMemberService.findRoomMemberCount).toHaveBeenCalledWith(
+        mockManager,
+        mockRoomEntity.id,
+      );
+      expect(mockRoomRepository.increaseCurrentMembersCount).toHaveBeenCalledWith(
+        mockManager,
+        mockRoomEntity.id,
+      );
+      expect(mockRoomMemberService.joinRoom).toHaveBeenCalledWith(
+        mockManager,
+        mockRoomEntity.id,
+        mockUserSummary.id,
+      );
+    });
+
+    it('존재하지 않는 방에 참여하면 NotFoundException을 반환', async () => {
+      mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(null);
+
+      await expect(roomService.joinRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockRoomRepository.findParticipatingRoom).not.toHaveBeenCalled();
+    });
+
+    it('이미 참여 중이면 BadRequestException을 반환', async () => {
+      mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce({ id: 123 });
+
+      await expect(roomService.joinRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(mockRoomMemberService.findRoomMemberCount).not.toHaveBeenCalled();
+    });
+
+    it('정원이 가득 찼으면 BadRequestException을 반환', async () => {
+      mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+      mockRoomMemberService.findRoomMemberCount.mockResolvedValueOnce(
+        mockRoomEntity.maxMembersCount,
+      );
+
+      await expect(roomService.joinRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(mockRoomRepository.increaseCurrentMembersCount).not.toHaveBeenCalled();
+    });
+
+    it('사용자 정보가 방 조건에 맞지 않으면 BadRequestException을 반환', async () => {
+      mockUserService.findMe.mockResolvedValueOnce({
+        ...mockCurrentUser,
+        gender: 'FEMALE',
+      });
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.findParticipatingRoom.mockResolvedValueOnce(null);
+
+      await expect(roomService.joinRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('leaveRoom', () => {
+    it('일반 멤버가 방을 나가면 멤버 수를 줄이고 멤버를 삭제', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomMemberService.isRoomMember.mockResolvedValueOnce(true);
+      mockRoomRepository.decreaseCurrentMembersCount.mockResolvedValueOnce(undefined);
+      mockRoomMemberService.leaveRoom.mockResolvedValueOnce({ affected: 1 });
+      mockRoomMemberService.findRoomMemberCount.mockResolvedValueOnce(1);
+
+      await roomService.leaveRoom(mockRoomEntity.id, mockUserSummary.id + 1);
+
+      expect(mockRoomRepository.decreaseCurrentMembersCount).toHaveBeenCalledWith(
+        mockManager,
+        mockRoomEntity.id,
+      );
+      expect(mockRoomMemberService.leaveRoom).toHaveBeenCalledWith(
+        mockManager,
+        mockRoomEntity.id,
+        mockUserSummary.id + 1,
+      );
+      expect(mockRoomRepository.updateRoomHostUser).not.toHaveBeenCalled();
+    });
+
+    it('방장이 나가면 처음 들어왔던 일반 참여자를 새 방장으로 변경', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomMemberService.isRoomMember.mockResolvedValueOnce(true);
+      mockRoomRepository.decreaseCurrentMembersCount.mockResolvedValueOnce(undefined);
+      mockRoomMemberService.leaveRoom.mockResolvedValueOnce({ affected: 1 });
+      mockRoomMemberService.findFirstJoinedMemberId.mockResolvedValueOnce(2);
+      mockRoomRepository.updateRoomHostUser.mockResolvedValueOnce({ affected: 1 });
+      mockRoomMemberService.findRoomMemberCount.mockResolvedValueOnce(1);
+
+      await roomService.leaveRoom(mockRoomEntity.id, mockUserSummary.id);
+
+      expect(mockRoomMemberService.findFirstJoinedMemberId).toHaveBeenCalledWith(
+        mockManager,
+        mockRoomEntity.id,
+        mockUserSummary.id,
+      );
+      expect(mockRoomRepository.updateRoomHostUser).toHaveBeenCalledWith(mockManager, 1, 2);
+    });
+
+    it('마지막 멤버가 나가면 방을 삭제', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomMemberService.isRoomMember.mockResolvedValueOnce(true);
+      mockRoomRepository.decreaseCurrentMembersCount.mockResolvedValueOnce(undefined);
+      mockRoomMemberService.leaveRoom.mockResolvedValueOnce({ affected: 1 });
+      mockRoomMemberService.findFirstJoinedMemberId.mockResolvedValueOnce(undefined);
+      mockRoomMemberService.findRoomMemberCount.mockResolvedValueOnce(0);
+      mockRoomRepository.deleteRoom.mockResolvedValueOnce({ raw: [], affected: 1 });
+
+      await roomService.leaveRoom(mockRoomEntity.id, mockUserSummary.id);
+
+      expect(mockRoomRepository.deleteRoom).toHaveBeenCalledWith(mockRoomEntity.id, mockManager);
+    });
+
+    it('참여하지 않은 사용자가 나가기를 요청하면 BadRequestException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomMemberService.isRoomMember.mockResolvedValueOnce(false);
+
+      await expect(roomService.leaveRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
     });
   });
 });
