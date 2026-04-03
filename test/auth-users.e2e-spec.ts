@@ -25,7 +25,8 @@ describe('Auth and Users (e2e)', () => {
     await dataSource.createQueryBuilder().delete().from(User).execute();
   });
 
-  function expectErrorResponse(
+  // Assert the error response shape produced by AllExceptionFilter.
+  function expectExceptionFilterErrorResponse(
     response: request.Response,
     statusCode: number,
     message: string,
@@ -87,7 +88,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Yonsei University',
     });
 
-    expectErrorResponse(response, 409, 'Email already exists.');
+    expectExceptionFilterErrorResponse(response, 409, 'Email already exists.');
   });
 
   it('닉네임 중복 회원가입 실패', async () => {
@@ -109,7 +110,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Yonsei University',
     });
 
-    expectErrorResponse(response, 409, 'Nickname already exists.');
+    expectExceptionFilterErrorResponse(response, 409, 'Nickname already exists.');
   });
 
   it('로그인 성공', async () => {
@@ -148,7 +149,7 @@ describe('Auth and Users (e2e)', () => {
       password: 'invalid-password',
     });
 
-    expectErrorResponse(response, 401, AUTH_ERROR_MESSAGES.invalidCredentials);
+    expectExceptionFilterErrorResponse(response, 401, AUTH_ERROR_MESSAGES.invalidCredentials);
   });
 
   it('존재하지 않는 사용자 로그인 실패', async () => {
@@ -157,7 +158,7 @@ describe('Auth and Users (e2e)', () => {
       password: 'password1234',
     });
 
-    expectErrorResponse(response, 401, AUTH_ERROR_MESSAGES.invalidCredentials);
+    expectExceptionFilterErrorResponse(response, 401, AUTH_ERROR_MESSAGES.invalidCredentials);
   });
 
   it('refresh 성공 및 새 access token 발급', async () => {
@@ -183,7 +184,11 @@ describe('Auth and Users (e2e)', () => {
       refreshToken: signupResponse.body.refreshToken,
     });
 
-    expectErrorResponse(reusedRefreshResponse, 401, AUTH_ERROR_MESSAGES.invalidRefreshToken);
+    expectExceptionFilterErrorResponse(
+      reusedRefreshResponse,
+      401,
+      AUTH_ERROR_MESSAGES.invalidRefreshToken,
+    );
   });
 
   it('잘못된 refresh token 거부', async () => {
@@ -191,7 +196,7 @@ describe('Auth and Users (e2e)', () => {
       refreshToken: 'invalid.refresh.token.value',
     });
 
-    expectErrorResponse(response, 401, AUTH_ERROR_MESSAGES.invalidRefreshToken);
+    expectExceptionFilterErrorResponse(response, 401, AUTH_ERROR_MESSAGES.invalidRefreshToken);
   });
 
   it('로그아웃 후 refresh 재사용 실패', async () => {
@@ -214,13 +219,17 @@ describe('Auth and Users (e2e)', () => {
       refreshToken: signupResponse.body.refreshToken,
     });
 
-    expectErrorResponse(refreshResponse, 401, AUTH_ERROR_MESSAGES.invalidRefreshToken);
+    expectExceptionFilterErrorResponse(
+      refreshResponse,
+      401,
+      AUTH_ERROR_MESSAGES.invalidRefreshToken,
+    );
 
     const logoutAgainResponse = await request(app.getHttpServer())
       .post('/auth/logout')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
-    expectErrorResponse(logoutAgainResponse, 401, 'Unauthorized');
+    expectExceptionFilterErrorResponse(logoutAgainResponse, 401, 'Unauthorized');
   });
 
   it('같은 refresh token 동시 요청 시 한 번만 성공', async () => {
@@ -274,7 +283,7 @@ describe('Auth and Users (e2e)', () => {
   it('GET /users/me 인증 없이 접근 시 401', async () => {
     const response = await request(app.getHttpServer()).get('/users/me');
 
-    expectErrorResponse(response, 401, 'Unauthorized');
+    expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
   });
 
   it('PATCH /users/me 프로필 수정 성공', async () => {
@@ -328,7 +337,7 @@ describe('Auth and Users (e2e)', () => {
         nickname: 'taken-nickname',
       });
 
-    expectErrorResponse(response, 409, 'Nickname already exists.');
+    expectExceptionFilterErrorResponse(response, 409, 'Nickname already exists.');
   });
 
   it('DELETE /users/me 후 soft delete 반영 및 재로그인 실패', async () => {
@@ -362,6 +371,6 @@ describe('Auth and Users (e2e)', () => {
       password: 'password1234',
     });
 
-    expectErrorResponse(loginResponse, 401, AUTH_ERROR_MESSAGES.invalidCredentials);
+    expectExceptionFilterErrorResponse(loginResponse, 401, AUTH_ERROR_MESSAGES.invalidCredentials);
   });
 });
