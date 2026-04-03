@@ -151,4 +151,108 @@ describe('Rooms Join/Leave (e2e)', () => {
     expect(updatedRoom?.hostUser.id).toBe(guestSignupResponse.body.user.id);
     expect(updatedRoom?.currentMembersCount).toBe(1);
   });
+
+  it('DELETE /rooms/:roomId/members/:userId 방장이 일반 멤버를 강제 퇴장', async () => {
+    const hostSignupResponse = await signupUser(httpApp, 'host-kick@gmail.com', '강퇴방장');
+    const guestSignupResponse = await signupUser(httpApp, 'user-kick@gmail.com', '강퇴대상');
+    const hostUser = await dataSource.getRepository(User).findOneByOrFail({
+      id: hostSignupResponse.body.user.id,
+    });
+    const room = await createRoomFixture(dataSource, hostUser, {
+      currentMembersCount: 1,
+      minAge: 20,
+      maxAge: 30,
+    });
+
+    await request(httpApp())
+      .post(`/rooms/${room.id}/join`)
+      .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
+
+    const response = await request(httpApp())
+      .delete(`/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
+      .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
+
+    expect(response.status).toBe(204);
+
+    const updatedRoom = await dataSource.getRepository(Room).findOneByOrFail({
+      id: room.id,
+    });
+    const kickedMember = await dataSource.getRepository(RoomMember).findOne({
+      where: {
+        room: { id: room.id },
+        user: { id: guestSignupResponse.body.user.id },
+      },
+    });
+
+    expect(updatedRoom.currentMembersCount).toBe(1);
+    expect(kickedMember).toBeNull();
+  });
+
+  it('DELETE /rooms/:roomId/members/:userId 방장이 아닌 사용자가 강제 퇴장시키면 실패', async () => {
+    const hostSignupResponse = await signupUser(httpApp, 'host-kick-forbidden@gmail.com', '방장');
+    const guestSignupResponse = await signupUser(
+      httpApp,
+      'user-kick-forbidden@gmail.com',
+      '참여자',
+    );
+    const otherSignupResponse = await signupUser(
+      httpApp,
+      'other-kick-forbidden@gmail.com',
+      '일반유저',
+    );
+    const hostUser = await dataSource.getRepository(User).findOneByOrFail({
+      id: hostSignupResponse.body.user.id,
+    });
+    const room = await createRoomFixture(dataSource, hostUser, {
+      currentMembersCount: 1,
+      minAge: 20,
+      maxAge: 30,
+    });
+
+    await request(httpApp())
+      .post(`/rooms/${room.id}/join`)
+      .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
+
+    const response = await request(httpApp())
+      .delete(`/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
+      .set('Authorization', `Bearer ${otherSignupResponse.body.accessToken}`);
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe('강제퇴장은 방장만 할 수 있습니다.');
+  });
+
+  it('DELETE /rooms/:roomId/members/:userId 자기 자신을 강제 퇴장시키려 하면 실패', async () => {
+    const hostSignupResponse = await signupUser(httpApp, 'host-kick-self@gmail.com', '방장본인');
+    const hostUser = await dataSource.getRepository(User).findOneByOrFail({
+      id: hostSignupResponse.body.user.id,
+    });
+    const room = await createRoomFixture(dataSource, hostUser);
+
+    const response = await request(httpApp())
+      .delete(`/rooms/${room.id}/members/${hostSignupResponse.body.user.id}`)
+      .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('자기 자신을 강제퇴장 시킬 수 없습니다.');
+  });
+
+  it('DELETE /rooms/:roomId/members/:userId 참여하지 않은 사용자를 강제 퇴장시키려 하면 실패', async () => {
+    const hostSignupResponse = await signupUser(httpApp, 'host-kick-missing@gmail.com', '방장');
+    const guestSignupResponse = await signupUser(
+      httpApp,
+      'user-kick-missing@gmail.com',
+      '미참여유저',
+    );
+    const hostUser = await dataSource.getRepository(User).findOneByOrFail({
+      id: hostSignupResponse.body.user.id,
+    });
+    const room = await createRoomFixture(dataSource, hostUser);
+
+    const response = await request(httpApp())
+      .delete(`/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
+      .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('현재 방에 참여중인 사용자가 아닙니다.');
+  });
 });

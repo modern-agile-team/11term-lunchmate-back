@@ -61,8 +61,8 @@ export class RoomRepository {
     });
   }
 
-  async findRoomById(roomId: number): Promise<Room | null> {
-    return await this.roomRepository.findOne({
+  async findRoomById(roomId: number, manager?: EntityManager): Promise<Room | null> {
+    const queryOptions = {
       where: { id: roomId },
       relations: {
         hostUser: true,
@@ -70,7 +70,11 @@ export class RoomRepository {
           user: true,
         },
       },
-    });
+    };
+
+    if (manager) return await manager.findOne(Room, queryOptions);
+
+    return await this.roomRepository.findOne(queryOptions);
   }
 
   async findRooms(query: FindRoomsQueryDto): Promise<Room[]> {

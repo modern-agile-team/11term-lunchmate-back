@@ -32,6 +32,7 @@ const mockRoomEntity = {
   place: '학식당 앞',
   lunchAt: '2099-03-27T03:30:00.000Z',
   createdAt: '2026-03-27T06:26:40.062Z',
+  hostUserId: mockUserSummary.id,
   hostUser: mockUserSummary,
   roomMembers: [
     {
@@ -724,6 +725,60 @@ describe('RoomService', () => {
       );
 
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('kickRoomMember', () => {
+    it('방장이 일반 멤버를 강제 퇴장시키면 멤버 수를 줄이고 멤버를 삭제', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomMemberService.isRoomMember.mockResolvedValueOnce(true);
+      mockRoomRepository.decreaseCurrentMembersCount.mockResolvedValueOnce(undefined);
+      mockRoomMemberService.leaveRoom.mockResolvedValueOnce({ affected: 1 });
+
+      await roomService.kickRoomMember(mockRoomEntity.id, 2, mockUserSummary.id);
+
+      expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id, mockManager);
+      expect(mockRoomMemberService.isRoomMember).toHaveBeenCalledWith(
+        mockRoomEntity.id,
+        2,
+        mockManager,
+      );
+      expect(mockRoomRepository.decreaseCurrentMembersCount).toHaveBeenCalledWith(
+        mockManager,
+        mockRoomEntity.id,
+      );
+      expect(mockRoomMemberService.leaveRoom).toHaveBeenCalledWith(mockManager, mockRoomEntity.id, 2);
+    });
+
+    it('방장이 아닌 사용자가 강제 퇴장시키면 ForbiddenException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+
+      await expect(roomService.kickRoomMember(mockRoomEntity.id, 2, 999)).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(mockRoomRepository.decreaseCurrentMembersCount).not.toHaveBeenCalled();
+    });
+
+    it('자기 자신을 강제 퇴장시키려 하면 BadRequestException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+
+      await expect(
+        roomService.kickRoomMember(mockRoomEntity.id, mockUserSummary.id, mockUserSummary.id),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockRoomMemberService.isRoomMember).not.toHaveBeenCalled();
+    });
+
+    it('참여 중이지 않은 사용자를 강제 퇴장시키려 하면 BadRequestException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomMemberService.isRoomMember.mockResolvedValueOnce(false);
+
+      await expect(roomService.kickRoomMember(mockRoomEntity.id, 2, mockUserSummary.id)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(mockRoomRepository.decreaseCurrentMembersCount).not.toHaveBeenCalled();
     });
   });
 });

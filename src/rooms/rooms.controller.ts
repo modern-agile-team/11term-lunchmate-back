@@ -165,4 +165,29 @@ export class RoomController {
   ) {
     await this.roomService.leaveRoom(roomId, user.userId);
   }
+
+  @Delete('/:roomId/members/:userId')
+  @Authenticated()
+  @HttpCode(204)
+  @ApiOperation({
+    summary: '방 멤버 강제 퇴장',
+    description:
+      '방장만 다른 참여자를 강제 퇴장시킬 수 있으며, 성공 시 응답 본문 없이 204 No Content를 반환',
+  })
+  @ApiParam({ name: 'roomId', description: '강제 퇴장할 방 ID', type: Number })
+  @ApiParam({ name: 'userId', description: '강제 퇴장할 사용자 ID', type: Number })
+  @ApiNoContentResponse({ description: '강제 퇴장 성공, 응답 본문은 반환되지 않음' })
+  @ApiBadRequestResponse({
+    description: '대상 사용자가 방에 없거나, 방장/자기 자신을 강제 퇴장시키려는 경우',
+  })
+  @ApiForbiddenResponse({ description: '방장이 아닌 사용자가 강제 퇴장을 시도한 경우' })
+  @ApiNotFoundResponse({ description: '존재하지 않는 방에서 강제 퇴장을 시도한 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async kickRoomMember(
+    @Param('roomId', ParseIntPipe) roomId: number,
+    @Param('userId', ParseIntPipe) userId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.roomService.kickRoomMember(roomId, userId, user.userId);
+  }
 }

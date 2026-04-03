@@ -10,6 +10,12 @@ export class RoomMemberRepository {
     private readonly roomMemberRepository: Repository<RoomMember>,
   ) {}
 
+  async findRoomMembersById(roomid: number): Promise<RoomMember[]> {
+    return await this.roomMemberRepository.find({
+      where: { room: { id: roomid } },
+    });
+  }
+
   async findRoomMemberCount(manager: EntityManager, roomId: number): Promise<number> {
     return await manager.count(RoomMember, {
       where: {
@@ -18,13 +24,17 @@ export class RoomMemberRepository {
     });
   }
 
-  async isRoomMember(roomId: number, userId: number): Promise<boolean> {
-    return await this.roomMemberRepository.exists({
+  async isRoomMember(roomId: number, userId: number, manager?: EntityManager): Promise<boolean> {
+    const queryOptions = {
       where: {
         room: { id: roomId },
         user: { id: userId },
       },
-    });
+    };
+
+    if (manager) return await manager.exists(RoomMember, queryOptions);
+
+    return await this.roomMemberRepository.exists(queryOptions);
   }
 
   async joinRoom(manager: EntityManager, roomId: number, userId: number) {
