@@ -1,14 +1,6 @@
 import { BaseTableEntity } from '../../commons/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  RelationId,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { RoomMember } from './room-member.entity';
 
 export enum RoomType {
@@ -85,6 +77,6 @@ export class Room extends BaseTableEntity {
   @JoinColumn({ name: 'host_user_id' })
   hostUser: User;
 
-  @RelationId((room: Room) => room.hostUser)
+  @Column({ name: 'host_user_id' })
   hostUserId: number;
 }
