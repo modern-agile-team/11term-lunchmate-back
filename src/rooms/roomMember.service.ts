@@ -18,8 +18,8 @@ export class RoomMemberService {
     return await this.roomMemberRepository.findRoomMemberCount(manager, roomId);
   }
 
-  async findParticipatingRoomByUserId(userId: number) {
-    return await this.roomMemberRepository.findParticipatingRoomByUserId(userId);
+  async findParticipatingRoomByUserId(userId: number, manager?: EntityManager) {
+    return await this.roomMemberRepository.findParticipatingRoomByUserId(userId, manager);
   }
 
   async createRoomMember(

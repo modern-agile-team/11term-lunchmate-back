@@ -212,4 +212,16 @@ export class RoomController {
   ): Promise<ResponseRoomMemberListDto> {
     return await this.roomService.findRoomMembersByRoomId(roomId);
   }
+
+  @Post('quick-join')
+  @Authenticated()
+  @HttpCode(201)
+  @ApiOperation({ summary: '빠른 참여' })
+  @ApiCreatedResponse({ description: '사용자 조건에 맞는 방에 빠르게 참여 성공' })
+  @ApiBadRequestResponse({ description: '이미 참여 중인 방이 있는 경우' })
+  @ApiNotFoundResponse({ description: '참여 가능한 방이 없는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async quickJoin(@CurrentUser() user: AuthenticatedUser): Promise<RoomMember> {
+    return await this.roomService.quickJoin(user.userId);
+  }
 }

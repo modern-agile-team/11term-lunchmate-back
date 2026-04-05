@@ -23,6 +23,7 @@ import { Room, RoomStatus, RoomType } from './entities/room.entity';
 import { calculateAge } from 'src/commons/utils/age.util';
 import { RoomMember } from './entities/room-member.entity';
 import { MeUserResponseDto } from 'src/users/dto/me-user-response.dto';
+import { UserConditionsParam } from './types/room.type';
 
 @Injectable()
 export class RoomService {
@@ -101,6 +102,18 @@ export class RoomService {
     return RoomMapper.toDetailDto(room.room);
   }
 
+  async findJoinableRoomsOrThrow(user: MeUserResponseDto, manager: EntityManager) {
+    const userConditions: UserConditionsParam = {
+      age: calculateAge(user.birthDate),
+      gender: user.gender,
+    };
+
+    const rooms = await this.roomRepository.findJoinableRooms(userConditions, manager);
+    if (rooms.length < 1) throw new NotFoundException('현재 참여할 수 있는 방이 없습니다.');
+
+    return rooms;
+  }
+
   async updateRoom(
     roomId: number,
     updateRoomDto: UpdateRoomDto,
@@ -146,6 +159,21 @@ export class RoomService {
     return await this.joinRoomTransaction(existingRoom, userId);
   }
 
+  async quickJoin(userId: number): Promise<RoomMember> {
+    const user = await this.userService.findMe(userId);
+
+    return await this.dataSource.transaction(async (manager) => {
+      await this.validateParticipatingRoom(userId, manager);
+
+      const rooms = await this.findJoinableRoomsOrThrow(user, manager);
+      const roomsCount = rooms.length;
+      const randomNum = Math.floor(Math.random() * roomsCount);
+      const randomRoom = rooms[randomNum];
+
+      return await this.joinRoomAndIncreaseMemberCount(manager, randomRoom, userId);
+    });
+  }
+
   async leaveRoom(roomId: number, userId: number): Promise<void> {
     const existingRoom = await this.findExistingRoomOrThrow(roomId);
 
@@ -163,13 +191,17 @@ export class RoomService {
 
   async joinRoomTransaction(room: Room, userId: number): Promise<RoomMember> {
     return await this.dataSource.transaction(async (manager) => {
-      const memberCount = await this.roomMemberService.findRoomMemberCount(manager, room.id);
-      if (room.maxMembersCount <= memberCount)
-        throw new BadRequestException('방 인원이 가득 차 참여할 수 없습니다.');
-
-      await this.roomRepository.increaseCurrentMembersCount(manager, room.id);
-      return await this.roomMemberService.joinRoom(manager, room.id, userId);
+      return this.joinRoomAndIncreaseMemberCount(manager, room, userId);
     });
+  }
+
+  async joinRoomAndIncreaseMemberCount(manager: EntityManager, room: Room, userId: number) {
+    const membersCount = await this.roomMemberService.findRoomMemberCount(manager, room.id);
+    if (room.maxMembersCount <= membersCount)
+      throw new BadRequestException('방 인원이 가득 차 참여할 수 없습니다.');
+
+    await this.roomRepository.increaseCurrentMembersCount(manager, room.id);
+    return await this.roomMemberService.joinRoom(manager, room.id, userId);
   }
 
   async leaveRoomTransaction(room: Room, userId: number): Promise<void> {
@@ -248,8 +280,11 @@ export class RoomService {
       throw new BadRequestException('사용자 정보가 방 조건에 맞지 않습니다.');
   }
 
-  async validateParticipatingRoom(userId: number): Promise<void> {
-    const participatingRoom = await this.roomMemberService.findParticipatingRoomByUserId(userId);
+  async validateParticipatingRoom(userId: number, manager?: EntityManager): Promise<void> {
+    const participatingRoom = await this.roomMemberService.findParticipatingRoomByUserId(
+      userId,
+      manager,
+    );
     if (participatingRoom) throw new BadRequestException('이미 참여 중인 방이 있습니다.');
   }
 

@@ -100,6 +100,7 @@ const mockRoomRepository = {
   createRoom: jest.fn(),
   findRoomById: jest.fn(),
   findRooms: jest.fn(),
+  findJoinableRooms: jest.fn(),
   updateRoom: jest.fn(),
   deleteRoom: jest.fn(),
   increaseCurrentMembersCount: jest.fn(),
@@ -291,6 +292,7 @@ describe('RoomService', () => {
       expect(result).toEqual(mockRoomDetailDto);
       expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
         mockUserSummary.id,
+        undefined,
       );
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
       expect(roomMapperSpy).toHaveBeenCalledWith(mockRoomEntity);
@@ -404,6 +406,7 @@ describe('RoomService', () => {
 
       expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
         mockUserSummary.id,
+        undefined,
       );
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
     });
@@ -420,6 +423,7 @@ describe('RoomService', () => {
 
       expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
         mockUserSummary.id,
+        undefined,
       );
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
     });
@@ -609,6 +613,7 @@ describe('RoomService', () => {
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
       expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
         mockUserSummary.id,
+        undefined,
       );
       expect(mockRoomMemberService.findRoomMemberCount).toHaveBeenCalledWith(
         mockManager,
@@ -676,6 +681,81 @@ describe('RoomService', () => {
       );
 
       expect(mockDataSource.transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('quickJoin', () => {
+    const mockCurrentUser = {
+      id: mockUserSummary.id,
+      email: 'test@gmail.com',
+      nickname: mockUserSummary.nickname,
+      gender: 'MALE' as const,
+      birthDate: '2005-01-01',
+      schoolInfo: mockUserSummary.schoolInfo,
+    };
+
+    it('조건에 맞는 방 중 하나를 골라 빠르게 참여', async () => {
+      const anotherRoom = {
+        ...mockRoomEntity,
+        id: 2,
+      };
+      const newMember = {
+        id: 10,
+        room: { id: anotherRoom.id },
+        user: { id: mockUserSummary.id },
+      };
+      jest.spyOn(Math, 'random').mockReturnValueOnce(0.9);
+
+      mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
+      mockRoomRepository.findJoinableRooms.mockResolvedValueOnce([mockRoomEntity, anotherRoom]);
+      mockRoomMemberService.findRoomMemberCount.mockResolvedValueOnce(1);
+      mockRoomRepository.increaseCurrentMembersCount.mockResolvedValueOnce(undefined);
+      mockRoomMemberService.joinRoom.mockResolvedValueOnce(newMember);
+
+      const result = await roomService.quickJoin(mockUserSummary.id);
+
+      expect(result).toEqual(newMember);
+      expect(mockUserService.findMe).toHaveBeenCalledWith(mockUserSummary.id);
+      expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
+        mockUserSummary.id,
+        mockManager,
+      );
+      expect(mockRoomRepository.findJoinableRooms).toHaveBeenCalledWith(
+        {
+          age: 22,
+          gender: 'MALE',
+        },
+        mockManager,
+      );
+      expect(mockRoomMemberService.findRoomMemberCount).toHaveBeenCalledWith(mockManager, 2);
+      expect(mockRoomRepository.increaseCurrentMembersCount).toHaveBeenCalledWith(mockManager, 2);
+      expect(mockRoomMemberService.joinRoom).toHaveBeenCalledWith(
+        mockManager,
+        2,
+        mockUserSummary.id,
+      );
+    });
+
+    it('이미 참여 중인 방이 있으면 BadRequestException을 반환', async () => {
+      mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce({ id: 123 });
+
+      await expect(roomService.quickJoin(mockUserSummary.id)).rejects.toThrow(BadRequestException);
+
+      expect(mockRoomRepository.findJoinableRooms).not.toHaveBeenCalled();
+      expect(mockRoomRepository.increaseCurrentMembersCount).not.toHaveBeenCalled();
+    });
+
+    it('참여 가능한 방이 없으면 NotFoundException을 반환', async () => {
+      mockUserService.findMe.mockResolvedValueOnce(mockCurrentUser);
+      mockRoomMemberService.findParticipatingRoomByUserId.mockResolvedValueOnce(null);
+      mockRoomRepository.findJoinableRooms.mockResolvedValueOnce([]);
+
+      await expect(roomService.quickJoin(mockUserSummary.id)).rejects.toThrow(NotFoundException);
+
+      expect(mockRoomRepository.findJoinableRooms).toHaveBeenCalled();
+      expect(mockRoomRepository.increaseCurrentMembersCount).not.toHaveBeenCalled();
     });
   });
 

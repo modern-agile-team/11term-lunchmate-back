@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { Room } from '../src/rooms/entities/room.entity';
+import { Room, RoomType } from '../src/rooms/entities/room.entity';
 import { RoomMember } from '../src/rooms/entities/room-member.entity';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
@@ -80,6 +80,76 @@ describe('Rooms Join/Leave (e2e)', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe('이미 참여 중인 방이 있습니다.');
+  });
+
+  it('POST /rooms/quick-join 조건에 맞는 방에 빠르게 참여', async () => {
+    const hostOneSignupResponse = await signupUser(httpApp, 'quick-host-1@gmail.com', '빠른방장1');
+    const hostTwoSignupResponse = await signupUser(httpApp, 'quick-host-2@gmail.com', '빠른방장2');
+    const guestSignupResponse = await signupUser(httpApp, 'quick-user@gmail.com', '빠른참여자');
+    const hostOne = await dataSource.getRepository(User).findOneByOrFail({
+      id: hostOneSignupResponse.body.user.id,
+    });
+    const hostTwo = await dataSource.getRepository(User).findOneByOrFail({
+      id: hostTwoSignupResponse.body.user.id,
+    });
+    const firstRoom = await createRoomFixture(dataSource, hostOne, {
+      title: '빠른 참여 후보 1',
+      currentMembersCount: 1,
+      minAge: 20,
+      maxAge: 30,
+    });
+    const secondRoom = await createRoomFixture(dataSource, hostTwo, {
+      title: '빠른 참여 후보 2',
+      currentMembersCount: 1,
+      minAge: 20,
+      maxAge: 30,
+    });
+
+    const response = await request(httpApp())
+      .post('/rooms/quick-join')
+      .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
+
+    expect(response.status).toBe(201);
+
+    const joinedMember = await dataSource.getRepository(RoomMember).findOne({
+      where: {
+        user: { id: guestSignupResponse.body.user.id },
+      },
+      relations: {
+        room: true,
+      },
+    });
+
+    expect(joinedMember).not.toBeNull();
+    expect([firstRoom.id, secondRoom.id]).toContain(joinedMember!.room.id);
+
+    const joinedRoom = await dataSource.getRepository(Room).findOneByOrFail({
+      id: joinedMember!.room.id,
+    });
+
+    expect(joinedRoom.currentMembersCount).toBe(2);
+  });
+
+  it('POST /rooms/quick-join 참여 가능한 방이 없으면 실패', async () => {
+    const hostSignupResponse = await signupUser(httpApp, 'quick-no-room-host@gmail.com', '여성방장');
+    const guestSignupResponse = await signupUser(httpApp, 'quick-no-room-user@gmail.com', '남성유저');
+    const hostUser = await dataSource.getRepository(User).findOneByOrFail({
+      id: hostSignupResponse.body.user.id,
+    });
+
+    await createRoomFixture(dataSource, hostUser, {
+      roomType: RoomType.FEMALE,
+      currentMembersCount: 1,
+      minAge: 20,
+      maxAge: 30,
+    });
+
+    const response = await request(httpApp())
+      .post('/rooms/quick-join')
+      .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('현재 참여할 수 있는 방이 없습니다.');
   });
 
   it('DELETE /rooms/:id/leave 참여 중인 사용자가 방에서 나감', async () => {
