@@ -20,10 +20,14 @@ import {
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
+import { PublicUserResponseDto } from '../users/dto/public-user-response.dto';
+import { User } from '../users/entities/user.entity';
 import { CreateFriendRequestDto } from './dto/create-friend-request.dto';
+import { FriendListItemResponseDto } from './dto/friend-list-item-response.dto';
 import { FriendListResponseDto } from './dto/friend-list-response.dto';
 import { FriendRequestResponseDto } from './dto/friend-request-response.dto';
 import { GetFriendListQueryDto } from './dto/get-friend-list-query.dto';
+import { Friend } from './entities/friend.entity';
 import { FriendService } from './friends.service';
 
 @ApiTags('Friend')
@@ -39,7 +43,8 @@ export class FriendController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Query() query: GetFriendListQueryDto,
   ): Promise<FriendListResponseDto> {
-    return this.friendService.findFriends(currentUser.userId, query.status);
+    const friends = await this.friendService.findFriends(currentUser.userId, query.status);
+    return this.toFriendListResponse(friends, currentUser.userId);
   }
 
   @Post('requests')
@@ -50,7 +55,11 @@ export class FriendController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() createFriendRequestDto: CreateFriendRequestDto,
   ): Promise<FriendRequestResponseDto> {
-    return this.friendService.createRequest(currentUser.userId, createFriendRequestDto.receiverId);
+    const friend = await this.friendService.createRequest(
+      currentUser.userId,
+      createFriendRequestDto.receiverId,
+    );
+    return this.toFriendRequestResponse(friend);
   }
 
   @Patch('requests/:friendshipId/accept')
@@ -61,7 +70,8 @@ export class FriendController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('friendshipId', ParseIntPipe) friendshipId: number,
   ): Promise<FriendRequestResponseDto> {
-    return this.friendService.acceptRequest(currentUser.userId, friendshipId);
+    const friend = await this.friendService.acceptRequest(currentUser.userId, friendshipId);
+    return this.toFriendRequestResponse(friend);
   }
 
   @Patch('requests/:friendshipId/reject')
@@ -72,7 +82,8 @@ export class FriendController {
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('friendshipId', ParseIntPipe) friendshipId: number,
   ): Promise<FriendRequestResponseDto> {
-    return this.friendService.rejectRequest(currentUser.userId, friendshipId);
+    const friend = await this.friendService.rejectRequest(currentUser.userId, friendshipId);
+    return this.toFriendRequestResponse(friend);
   }
 
   @Delete('requests/:friendshipId')
@@ -97,5 +108,47 @@ export class FriendController {
     @Param('friendshipId', ParseIntPipe) friendshipId: number,
   ): Promise<void> {
     await this.friendService.deleteFriend(currentUser.userId, friendshipId);
+  }
+
+  private toFriendRequestResponse(friend: Friend): FriendRequestResponseDto {
+    return {
+      id: friend.id,
+      requesterId: friend.requester.id,
+      receiverId: friend.receiver.id,
+      status: friend.status,
+      createdAt: friend.createdAt,
+    };
+  }
+
+  private toFriendListResponse(
+    friends: Friend[],
+    currentUserId: number,
+  ): FriendListResponseDto {
+    return {
+      items: friends.map((friend) => this.toFriendListItem(friend, currentUserId)),
+    };
+  }
+
+  private toFriendListItem(friend: Friend, currentUserId: number): FriendListItemResponseDto {
+    const otherUser = friend.requester.id === currentUserId ? friend.receiver : friend.requester;
+
+    return {
+      friendshipId: friend.id,
+      status: friend.status,
+      user: this.toPublicUserResponse(otherUser),
+    };
+  }
+
+  private toPublicUserResponse(user: User): PublicUserResponseDto {
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      birthDate: user.birthDate,
+      gender: user.gender,
+      schoolInfo: user.schoolInfo,
+      introduce: user.introduce,
+      mbti: user.mbti,
+      createdAt: user.createdAt,
+    };
   }
 }

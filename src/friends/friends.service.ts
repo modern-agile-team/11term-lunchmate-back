@@ -6,10 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserService } from '../users/users.service';
-import { FriendListItemResponseDto } from './dto/friend-list-item-response.dto';
-import { FriendListResponseDto } from './dto/friend-list-response.dto';
 import { Friend, FriendStatus } from './entities/friend.entity';
-import { FriendRequestResponseDto } from './dto/friend-request-response.dto';
 import { FriendRepository } from './friends.repository';
 
 @Injectable()
@@ -19,48 +16,36 @@ export class FriendService {
     private readonly userService: UserService,
   ) {}
 
-  async createRequest(requesterId: number, receiverId: number): Promise<FriendRequestResponseDto> {
+  async createRequest(requesterId: number, receiverId: number): Promise<Friend> {
     await this.validateReceiver(requesterId, receiverId);
     await this.ensureRequestableRelation(requesterId, receiverId);
 
-    const friendRequest = await this.friendRepository.createOrRestoreRequest(
+    return this.friendRepository.createOrRestoreRequest(
       requesterId,
       receiverId,
     );
-
-    return this.toResponse(friendRequest);
   }
 
-  async acceptRequest(
-    currentUserId: number,
-    friendshipId: number,
-  ): Promise<FriendRequestResponseDto> {
+  async acceptRequest(currentUserId: number, friendshipId: number): Promise<Friend> {
     const friendRequest = await this.findRequestOrFail(friendshipId);
     this.ensureReceiverOwnsRequest(friendRequest, currentUserId);
     this.ensurePendingRequest(friendRequest);
 
-    const acceptedRequest = await this.friendRepository.updateStatus(
+    return this.friendRepository.updateStatus(
       friendRequest,
       FriendStatus.ACCEPTED,
     );
-
-    return this.toResponse(acceptedRequest);
   }
 
-  async rejectRequest(
-    currentUserId: number,
-    friendshipId: number,
-  ): Promise<FriendRequestResponseDto> {
+  async rejectRequest(currentUserId: number, friendshipId: number): Promise<Friend> {
     const friendRequest = await this.findRequestOrFail(friendshipId);
     this.ensureReceiverOwnsRequest(friendRequest, currentUserId);
     this.ensurePendingRequest(friendRequest);
 
-    const rejectedRequest = await this.friendRepository.updateStatus(
+    return this.friendRepository.updateStatus(
       friendRequest,
       FriendStatus.REJECTED,
     );
-
-    return this.toResponse(rejectedRequest);
   }
 
   async cancelRequest(currentUserId: number, friendshipId: number): Promise<void> {
@@ -79,14 +64,9 @@ export class FriendService {
     await this.friendRepository.softDelete(friendRelation.id);
   }
 
-  async findFriends(currentUserId: number, status?: 'accepted'): Promise<FriendListResponseDto> {
+  async findFriends(currentUserId: number, status?: 'accepted'): Promise<Friend[]> {
     this.validateFriendListStatus(status);
-
-    const relations = await this.friendRepository.findAcceptedRelationsForUser(currentUserId);
-
-    return {
-      items: relations.map((relation) => this.toFriendListItem(relation, currentUserId)),
-    };
+    return this.friendRepository.findAcceptedRelationsForUser(currentUserId);
   }
 
   private async validateReceiver(requesterId: number, receiverId: number): Promise<void> {
@@ -168,25 +148,5 @@ export class FriendService {
     if (status && status !== 'accepted') {
       throw new BadRequestException('Only status=accepted is supported.');
     }
-  }
-
-  private toResponse(friend: Friend): FriendRequestResponseDto {
-    return {
-      id: friend.id,
-      requesterId: friend.requester.id,
-      receiverId: friend.receiver.id,
-      status: friend.status,
-      createdAt: friend.createdAt,
-    };
-  }
-
-  private toFriendListItem(friend: Friend, currentUserId: number): FriendListItemResponseDto {
-    const otherUser = friend.requester.id === currentUserId ? friend.receiver : friend.requester;
-
-    return {
-      friendshipId: friend.id,
-      status: friend.status,
-      user: this.userService.toPublicResponse(otherUser),
-    };
   }
 }
