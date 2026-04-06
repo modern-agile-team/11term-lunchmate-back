@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { USER_ERROR_MESSAGES } from './user.constants';
 import { UpdateMePatch, UserRepository } from './users.repository';
 
 @Injectable()
@@ -27,7 +28,7 @@ export class UserService {
     const existingUser = await this.userRepository.existsByEmail(email);
 
     if (existingUser) {
-      throw new ConflictException('Email already exists.');
+      throw new ConflictException(USER_ERROR_MESSAGES.emailAlreadyExists);
     }
   }
 
@@ -37,7 +38,7 @@ export class UserService {
       : await this.userRepository.existsByNickname(nickname);
 
     if (existingUser) {
-      throw new ConflictException('Nickname already exists.');
+      throw new ConflictException(USER_ERROR_MESSAGES.nicknameAlreadyExists);
     }
   }
 
@@ -77,7 +78,7 @@ export class UserService {
     const user = await this.userRepository.findActiveUserById(userId);
 
     if (!user) {
-      throw new NotFoundException('User not found.');
+      throw new NotFoundException(USER_ERROR_MESSAGES.userNotFound);
     }
 
     return user;

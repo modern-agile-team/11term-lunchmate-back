@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AUTH_ERROR_MESSAGES } from '../src/auth/auth.constants';
+import { USER_ERROR_MESSAGES } from '../src/users/user.constants';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
 
@@ -88,7 +89,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Yonsei University',
     });
 
-    expectExceptionFilterErrorResponse(response, 409, 'Email already exists.');
+    expectExceptionFilterErrorResponse(response, 409, USER_ERROR_MESSAGES.emailAlreadyExists);
   });
 
   it('닉네임 중복 회원가입 실패', async () => {
@@ -110,7 +111,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Yonsei University',
     });
 
-    expectExceptionFilterErrorResponse(response, 409, 'Nickname already exists.');
+    expectExceptionFilterErrorResponse(response, 409, USER_ERROR_MESSAGES.nicknameAlreadyExists);
   });
 
   it('로그인 성공', async () => {
@@ -381,7 +382,7 @@ describe('Auth and Users (e2e)', () => {
         nickname: 'taken-nickname',
       });
 
-    expectExceptionFilterErrorResponse(response, 409, 'Nickname already exists.');
+    expectExceptionFilterErrorResponse(response, 409, USER_ERROR_MESSAGES.nicknameAlreadyExists);
   });
 
   it('DELETE /users/me 후 soft delete 반영 및 재로그인 실패', async () => {
