@@ -2,16 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 import { MealType } from '../entities/meal-menu.entity';
 
 export class MealMenuDetailResponseDto {
-  @ApiProperty()
   id: number;
 
-  @ApiProperty()
   mealDate: string;
 
   @ApiProperty({ enum: MealType })
   mealType: MealType;
 
-  @ApiProperty()
   menuName: string;
 
   @ApiProperty({ nullable: true })
@@ -20,9 +17,7 @@ export class MealMenuDetailResponseDto {
   @ApiProperty({ nullable: true })
   calorie: number | null;
 
-  @ApiProperty()
   likeCount: number;
 
-  @ApiProperty()
   dislikeCount: number;
 }
