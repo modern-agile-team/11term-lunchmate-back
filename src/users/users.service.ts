@@ -1,7 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from './entities/user.entity';
-import { CurrentUserResponseDto } from './dto/current-user-response.dto';
-import { PublicUserResponseDto } from './dto/public-user-response.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { UpdateMePatch, UserRepository } from './users.repository';
 
@@ -85,17 +83,15 @@ export class UserService {
     return user;
   }
 
-  async findPublicUserById(userId: number): Promise<PublicUserResponseDto> {
-    const user = await this.findActiveUserOrFail(userId);
-    return this.toPublicResponse(user);
+  async findPublicUserById(userId: number): Promise<User> {
+    return this.findActiveUserOrFail(userId);
   }
 
-  async findMe(userId: number): Promise<CurrentUserResponseDto> {
-    const user = await this.findActiveUserOrFail(userId);
-    return this.toMeResponse(user);
+  async findMe(userId: number): Promise<User> {
+    return this.findActiveUserOrFail(userId);
   }
 
-  async updateMe(userId: number, updateMeDto: UpdateMeDto): Promise<CurrentUserResponseDto> {
+  async updateMe(userId: number, updateMeDto: UpdateMeDto): Promise<User> {
     const user = await this.findActiveUserOrFail(userId);
     const patch = this.toUpdateMePatch(user, updateMeDto);
 
@@ -104,46 +100,18 @@ export class UserService {
     }
 
     if (Object.keys(patch).length === 0) {
-      return this.toMeResponse(user);
+      return user;
     }
 
     await this.userRepository.updateMe(userId, patch);
 
-    const updatedUser = await this.findActiveUserOrFail(userId);
-    return this.toMeResponse(updatedUser);
+    return this.findActiveUserOrFail(userId);
   }
 
   async withdraw(userId: number): Promise<void> {
     await this.findActiveUserOrFail(userId);
     await this.revokeTokens(userId);
     await this.userRepository.softDelete(userId);
-  }
-
-  toPublicResponse(user: User): PublicUserResponseDto {
-    return {
-      id: user.id,
-      nickname: user.nickname,
-      birthDate: user.birthDate,
-      gender: user.gender,
-      schoolInfo: user.schoolInfo,
-      introduce: user.introduce,
-      mbti: user.mbti,
-      createdAt: user.createdAt,
-    };
-  }
-
-  toMeResponse(user: User): CurrentUserResponseDto {
-    return {
-      id: user.id,
-      nickname: user.nickname,
-      birthDate: user.birthDate,
-      gender: user.gender,
-      schoolInfo: user.schoolInfo,
-      introduce: user.introduce,
-      mbti: user.mbti,
-      createdAt: user.createdAt,
-      email: user.email,
-    };
   }
 
   private toUpdateMePatch(user: User, updateMeDto: UpdateMeDto): UpdateMePatch {
