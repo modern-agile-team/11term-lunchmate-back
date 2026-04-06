@@ -84,6 +84,8 @@ export class MealMenusService {
     };
   }
 
+  // Keep list responses independent so later list-only fields can change without
+  // coupling them to detail responses.
   private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
     return {
       id: mealMenu.id,
@@ -97,6 +99,8 @@ export class MealMenusService {
     };
   }
 
+  // Keep detail responses mapped separately even while the current fields match
+  // list items, so the detail contract can evolve on its own.
   private toDetailResponse(mealMenu: MealMenu): MealMenuDetailResponseDto {
     return {
       id: mealMenu.id,
