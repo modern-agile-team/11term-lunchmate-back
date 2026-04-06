@@ -19,9 +19,7 @@ export class MealMenusService {
       mealType: query.mealType,
     });
 
-    return {
-      items: mealMenus.map((mealMenu) => this.toListItem(mealMenu)),
-    };
+    return this.toListResponse(mealMenus);
   }
 
   async findMealMenuRankings(query: GetMealMenuRankingQueryDto): Promise<MealMenuListResponseDto> {
@@ -31,18 +29,11 @@ export class MealMenusService {
       actionType: query.actionType,
     });
 
-    return {
-      items: mealMenus.map((mealMenu) => this.toListItem(mealMenu)),
-    };
+    return this.toListResponse(mealMenus);
   }
 
   async findMealMenuById(mealMenuId: number): Promise<MealMenuDetailResponseDto> {
-    const mealMenu = await this.mealMenuRepository.findById(mealMenuId);
-
-    if (!mealMenu) {
-      throw new NotFoundException('Meal menu not found.');
-    }
-
+    const mealMenu = await this.findMealMenuOrFail(mealMenuId);
     return this.toDetailResponse(mealMenu);
   }
 
@@ -50,37 +41,48 @@ export class MealMenusService {
     userId: number,
     mealMenuId: number,
   ): Promise<MealMenuReactionResponseDto> {
-    const mealMenu = await this.mealMenuRepository.findById(mealMenuId);
-
-    if (!mealMenu) {
-      throw new NotFoundException('Meal menu not found.');
-    }
+    await this.findMealMenuOrFail(mealMenuId);
 
     const updatedMealMenu = await this.mealMenuRepository.applyLike(userId, mealMenuId);
-
-    return {
-      actionType: ActionType.LIKE,
-      likeCount: updatedMealMenu.likeCount,
-      dislikeCount: updatedMealMenu.dislikeCount,
-    };
+    return this.toReactionResponse(ActionType.LIKE, updatedMealMenu);
   }
 
   async dislikeMealMenu(
     userId: number,
     mealMenuId: number,
   ): Promise<MealMenuReactionResponseDto> {
+    await this.findMealMenuOrFail(mealMenuId);
+
+    const updatedMealMenu = await this.mealMenuRepository.applyDislike(userId, mealMenuId);
+    return this.toReactionResponse(ActionType.DISLIKE, updatedMealMenu);
+  }
+
+  // Keep controllers thin: service owns domain-level not-found handling and
+  // chooses the response DTO shape for each MealMenu use case.
+  private async findMealMenuOrFail(mealMenuId: number): Promise<MealMenu> {
     const mealMenu = await this.mealMenuRepository.findById(mealMenuId);
 
     if (!mealMenu) {
       throw new NotFoundException('Meal menu not found.');
     }
 
-    const updatedMealMenu = await this.mealMenuRepository.applyDislike(userId, mealMenuId);
+    return mealMenu;
+  }
 
+  private toListResponse(mealMenus: MealMenu[]): MealMenuListResponseDto {
     return {
-      actionType: ActionType.DISLIKE,
-      likeCount: updatedMealMenu.likeCount,
-      dislikeCount: updatedMealMenu.dislikeCount,
+      items: mealMenus.map((mealMenu) => this.toListItem(mealMenu)),
+    };
+  }
+
+  private toReactionResponse(
+    actionType: ActionType,
+    mealMenu: MealMenu,
+  ): MealMenuReactionResponseDto {
+    return {
+      actionType,
+      likeCount: mealMenu.likeCount,
+      dislikeCount: mealMenu.dislikeCount,
     };
   }
 
