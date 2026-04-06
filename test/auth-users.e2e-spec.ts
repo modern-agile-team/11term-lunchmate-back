@@ -9,6 +9,8 @@ import { createAuthUserTestApp } from './test-app';
 
 jest.setTimeout(30000);
 
+const UNAUTHORIZED_MESSAGE = 'Unauthorized';
+
 describe('Auth and Users (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
@@ -230,7 +232,7 @@ describe('Auth and Users (e2e)', () => {
       .post('/auth/logout')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
-    expectExceptionFilterErrorResponse(logoutAgainResponse, 401, 'Unauthorized');
+    expectExceptionFilterErrorResponse(logoutAgainResponse, 401, UNAUTHORIZED_MESSAGE);
   });
 
   it('같은 refresh token 동시 요청 시 한 번만 성공', async () => {
@@ -281,10 +283,16 @@ describe('Auth and Users (e2e)', () => {
     expect(response.body.introduce).toBe('안녕하세요');
   });
 
+  it('GET /users/:userId 존재하지 않는 사용자 조회 시 404', async () => {
+    const response = await request(app.getHttpServer()).get('/users/999999');
+
+    expectExceptionFilterErrorResponse(response, 404, USER_ERROR_MESSAGES.userNotFound);
+  });
+
   it('GET /users/me 인증 없이 접근 시 401', async () => {
     const response = await request(app.getHttpServer()).get('/users/me');
 
-    expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
+    expectExceptionFilterErrorResponse(response, 401, UNAUTHORIZED_MESSAGE);
   });
 
   it('PATCH /users/me 프로필 수정 성공', async () => {
