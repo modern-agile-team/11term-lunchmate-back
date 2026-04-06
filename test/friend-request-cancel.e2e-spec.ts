@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { FRIEND_ERROR_MESSAGES } from '../src/friends/friend.constants';
 import { Friend, FriendStatus } from '../src/friends/entities/friend.entity';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
@@ -25,6 +26,19 @@ describe('Friend Request Cancel (e2e)', () => {
     await dataSource.createQueryBuilder().delete().from(Friend).execute();
     await dataSource.createQueryBuilder().delete().from(User).execute();
   });
+
+  function expectExceptionFilterErrorResponse(
+    response: request.Response,
+    statusCode: number,
+    message: string,
+  ): void {
+    expect(response.status).toBe(statusCode);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode,
+      message,
+    });
+  }
 
   async function signupUser(params: {
     email: string;
@@ -107,7 +121,7 @@ describe('Friend Request Cancel (e2e)', () => {
       .delete(`/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
-    expect(response.status).toBe(403);
+    expectExceptionFilterErrorResponse(response, 403, FRIEND_ERROR_MESSAGES.requesterOnly);
   });
 
   it('제3자 취소 시도 시 403', async () => {
@@ -121,7 +135,7 @@ describe('Friend Request Cancel (e2e)', () => {
       .delete(`/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${thirdUser.body.accessToken}`);
 
-    expect(response.status).toBe(403);
+    expectExceptionFilterErrorResponse(response, 403, FRIEND_ERROR_MESSAGES.requesterOnly);
   });
 
   it('존재하지 않는 요청 취소 시 404', async () => {
@@ -134,7 +148,7 @@ describe('Friend Request Cancel (e2e)', () => {
       .delete('/friends/requests/999999')
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
-    expect(response.status).toBe(404);
+    expectExceptionFilterErrorResponse(response, 404, FRIEND_ERROR_MESSAGES.requestNotFound);
   });
 
   it('이미 ACCEPTED 요청 취소 시 409', async () => {
@@ -148,7 +162,7 @@ describe('Friend Request Cancel (e2e)', () => {
       .delete(`/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
-    expect(response.status).toBe(409);
+    expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyProcessed);
   });
 
   it('이미 REJECTED 요청 취소 시 409', async () => {
@@ -162,7 +176,7 @@ describe('Friend Request Cancel (e2e)', () => {
       .delete(`/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
-    expect(response.status).toBe(409);
+    expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyProcessed);
   });
 
   it('인증 없이 취소 시 401', async () => {
@@ -172,7 +186,7 @@ describe('Friend Request Cancel (e2e)', () => {
       `/friends/requests/${friendRequest.body.id}`,
     );
 
-    expect(response.status).toBe(401);
+    expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
   });
 
   it('취소 후 같은 방향 재신청이 다시 가능함', async () => {
