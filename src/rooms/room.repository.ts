@@ -38,29 +38,6 @@ export class RoomRepository {
     });
   }
 
-  async createRoomMember(
-    manager: EntityManager,
-    userId: number,
-    roomId: number,
-  ): Promise<RoomMember> {
-    return await manager.save(RoomMember, {
-      room: { id: roomId },
-      user: { id: userId },
-    });
-  }
-
-  async findParticipatingRoom(userId: number): Promise<RoomMember | null> {
-    return await this.roomMemberRepository.findOne({
-      where: {
-        user: { id: userId },
-        room: { status: RoomStatus.OPEN },
-      },
-      relations: {
-        room: true,
-      },
-    });
-  }
-
   async findRoomById(roomId: number, manager?: EntityManager): Promise<Room | null> {
     const queryOptions = {
       where: { id: roomId },
@@ -68,6 +45,11 @@ export class RoomRepository {
         hostUser: true,
         roomMembers: {
           user: true,
+        },
+      },
+      order: {
+        roomMembers: {
+          createdAt: 'ASC' as const,
         },
       },
     };

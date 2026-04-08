@@ -43,7 +43,7 @@ export class RoomService {
 
       const roomId = newRoom.id;
 
-      await this.roomRepository.createRoomMember(manager, userId, roomId);
+      await this.roomMemberService.createRoomMember(manager, userId, roomId);
 
       return roomId;
     });
@@ -85,6 +85,20 @@ export class RoomService {
     return {
       openRoomsCount,
     };
+  }
+
+  async findRoomMembersByRoomId(roomId: number) {
+    await this.findExistingRoomOrThrow(roomId);
+
+    return await this.roomMemberService.findRoomMembersByRoomId(roomId);
+  }
+
+  async findParticipatingRoomByUserId(userId: number) {
+    const room = await this.roomMemberService.findParticipatingRoomByUserId(userId);
+
+    if (!room) throw new BadRequestException('현재 참여중인 방이 없습니다.');
+
+    return RoomMapper.toDetailDto(room.room);
   }
 
   async updateRoom(
@@ -235,7 +249,7 @@ export class RoomService {
   }
 
   async validateParticipatingRoom(userId: number): Promise<void> {
-    const participatingRoom = await this.roomRepository.findParticipatingRoom(userId);
+    const participatingRoom = await this.roomMemberService.findParticipatingRoomByUserId(userId);
     if (participatingRoom) throw new BadRequestException('이미 참여 중인 방이 있습니다.');
   }
 

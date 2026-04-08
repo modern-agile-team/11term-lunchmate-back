@@ -38,12 +38,23 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomMember } from './entities/room-member.entity';
+import { ResponseRoomMemberListDto } from './dto/room-member.response.dto';
 
 @ApiTags('Room')
-@ApiExtraModels(ResponseRoomListDto, ResponseRoomDetailDto)
+@ApiExtraModels(ResponseRoomListDto, ResponseRoomDetailDto, ResponseRoomMemberListDto)
 @Controller('rooms')
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
+
+  @Get('me')
+  @Authenticated()
+  @ApiOperation({ summary: '현재 사용자가 참여 중인 방 조회' })
+  @ApiOkResponse({ type: ResponseRoomDetailDto })
+  @ApiNotFoundResponse({ description: '현재 참여 중인 방이 없는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async findRoomByUserId(@CurrentUser() user: AuthenticatedUser): Promise<ResponseRoomDetailDto> {
+    return await this.roomService.findParticipatingRoomByUserId(user.userId);
+  }
 
   @Authenticated()
   @Post()
@@ -189,5 +200,16 @@ export class RoomController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     await this.roomService.kickRoomMember(roomId, userId, user.userId);
+  }
+
+  @Get(':id/members')
+  @ApiOperation({ summary: '방 멤버 조회' })
+  @ApiParam({ name: 'id', description: '멤버를 조회할 방 ID', type: Number })
+  @ApiOkResponse({ type: ResponseRoomMemberListDto })
+  @ApiNotFoundResponse({ description: '존재하지 않는 방의 멤버를 조회하려는 경우' })
+  async findRoomMembersById(
+    @Param('id', ParseIntPipe) roomId: number,
+  ): Promise<ResponseRoomMemberListDto> {
+    return await this.roomService.findRoomMembersByRoomId(roomId);
   }
 }

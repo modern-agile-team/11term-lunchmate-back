@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoomMember } from './entities/room-member.entity';
 import { EntityManager, Not, Repository } from 'typeorm';
+import { RoomStatus } from './entities/room.entity';
 
 @Injectable()
 export class RoomMemberRepository {
@@ -10,9 +11,50 @@ export class RoomMemberRepository {
     private readonly roomMemberRepository: Repository<RoomMember>,
   ) {}
 
-  async findRoomMembersById(roomid: number): Promise<RoomMember[]> {
+  async createRoomMember(
+    manager: EntityManager,
+    userId: number,
+    roomId: number,
+  ): Promise<RoomMember> {
+    return await manager.save(RoomMember, {
+      room: { id: roomId },
+      user: { id: userId },
+    });
+  }
+
+  async findParticipatingRoomByUserId(userId: number): Promise<RoomMember | null> {
+    return await this.roomMemberRepository.findOne({
+      where: {
+        user: { id: userId },
+        room: { status: RoomStatus.OPEN },
+      },
+      relations: {
+        room: {
+          hostUser: true,
+          roomMembers: {
+            user: true,
+          },
+        },
+      },
+      order: {
+        room: {
+          roomMembers: {
+            createdAt: 'ASC',
+          },
+        },
+      },
+    });
+  }
+
+  async findRoomMembersByRoomId(roomId: number): Promise<RoomMember[]> {
     return await this.roomMemberRepository.find({
-      where: { room: { id: roomid } },
+      where: { room: { id: roomId } },
+      relations: {
+        user: true,
+      },
+      order: {
+        createdAt: 'ASC',
+      },
     });
   }
 

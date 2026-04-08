@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { Room } from '../src/rooms/entities/room.entity';
+import { calculateAge } from '../src/commons/utils/age.util';
 import { createAuthUserTestApp } from './test-app';
 import { clearRoomTables, futureLunchAt } from './rooms.e2e-helper';
 
@@ -58,7 +59,12 @@ describe('Rooms Create (e2e)', () => {
     expect(response.body.hostUserId).toBe(signupResponse.body.user.id);
     expect(response.body.currentMembersCount).toBe(1);
     expect(response.body.roomMembers).toHaveLength(1);
+    expect(response.body.roomMembers[0].id).toBe(signupResponse.body.user.id);
     expect(response.body.roomMembers[0].nickname).toBe('길동홍');
+    expect(response.body.roomMembers[0].age).toBe(calculateAge('2000-01-01'));
+    expect(response.body.roomMembers[0].gender).toBe('MALE');
+    expect(response.body.roomMembers[0].schoolInfo).toBe('인덕대학교');
+    expect(response.body.roomMembers[0].mbti).toBeNull();
     expect(response.body.lunchAt).toBe(lunchAt);
 
     const createdRoom = await dataSource.getRepository(Room).findOne({
