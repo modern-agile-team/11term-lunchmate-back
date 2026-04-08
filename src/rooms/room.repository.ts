@@ -7,6 +7,7 @@ import { RoomMember } from './entities/room-member.entity';
 import { Room, RoomStatus } from './entities/room.entity';
 import {
   Between,
+  DeleteResult,
   EntityManager,
   FindOptionsWhere,
   LessThan,
@@ -120,5 +121,9 @@ export class RoomRepository {
 
   async updateRoom(roomId: number, updateRoomDto: UpdateRoomDto): Promise<UpdateResult> {
     return await this.roomRepository.update(roomId, updateRoomDto);
+  }
+
+  async deleteRoom(roomId: number): Promise<DeleteResult> {
+    return await this.roomRepository.softDelete(roomId);
   }
 }

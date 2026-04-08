@@ -1,10 +1,22 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
   ApiExtraModels,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -95,5 +107,24 @@ export class RoomController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponseRoomDetailDto> {
     return await this.roomService.updateRoom(roomId, updateRoomDto, user.userId);
+  }
+
+  @Delete(':id')
+  @Authenticated()
+  @HttpCode(204)
+  @ApiOperation({
+    summary: '방 삭제',
+    description: '방장만 방을 삭제할 수 있으며, 성공 시 응답 본문 없이 204 No Content를 반환',
+  })
+  @ApiParam({ name: 'id', description: '삭제할 방 ID', type: Number })
+  @ApiNoContentResponse({ description: '방 삭제 성공, 응답 본문은 반환되지 않음' })
+  @ApiForbiddenResponse({ description: '방장이 아닌 사용자가 삭제를 시도한 경우' })
+  @ApiNotFoundResponse({ description: '존재하지 않는 방을 삭제하려는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async deleteRoom(
+    @Param('id', ParseIntPipe) roomId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.roomService.deleteRoom(roomId, user.userId);
   }
 }

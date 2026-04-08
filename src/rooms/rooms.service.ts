@@ -114,4 +114,15 @@ export class RoomService {
     if (dto.lunchAt && dayjs(dto.lunchAt).isBefore(dayjs()))
       throw new BadRequestException('lunchAt은 현재보다 미래여야 합니다.');
   }
+
+  async deleteRoom(roomId: number, userId: number) {
+    const existingRoom = await this.roomRepository.findRoomById(roomId);
+    if (!existingRoom) throw new NotFoundException('존재하지 않는 방입니다.');
+
+    if (existingRoom.hostUser.id !== userId)
+      throw new ForbiddenException('방장만 방을 삭제할 수 있습니다.');
+
+    const deletedRoom = await this.roomRepository.deleteRoom(roomId);
+    if (!deletedRoom.affected) throw new NotFoundException('존재하지 않는 방입니다.');
+  }
 }
