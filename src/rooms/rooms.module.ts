@@ -10,15 +10,18 @@ import { UserService } from 'src/users/users.service';
 import { User } from 'src/users/entities/user.entity';
 import { UserRepository } from 'src/users/users.repository';
 import { RoomMemberService } from './roomMember.service';
+import { RoomGateway } from './rooms.gateway';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Room, RoomMember, User])],
+  imports: [TypeOrmModule.forFeature([Room, RoomMember, User]), AuthModule],
   controllers: [RoomController],
   providers: [
     RoomService,
     RoomRepository,
     RoomMemberService,
     RoomMemberRepository,
+    RoomGateway,
     UserService,
     UserRepository,
   ],

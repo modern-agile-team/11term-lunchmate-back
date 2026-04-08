@@ -12,7 +12,7 @@ jest.setTimeout(30000);
 describe('Rooms Delete (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
-  const httpApp = () => app.getHttpAdapter().getInstance();
+  const httpApp = () => app.getHttpServer();
 
   beforeAll(async () => {
     app = (await createAuthUserTestApp()) as INestApplication<App>;
@@ -64,7 +64,7 @@ describe('Rooms Delete (e2e)', () => {
       .set('Authorization', `Bearer ${otherSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(403);
-    expect(response.body.message).toBe('방장만 방을 삭제할 수 있습니다.');
+    expect(response.body.error.message).toBe('방장만 방을 삭제할 수 있습니다.');
   });
 
   it('DELETE /rooms/:id 존재하지 않는 방을 삭제하면 실패한다', async () => {
@@ -75,6 +75,6 @@ describe('Rooms Delete (e2e)', () => {
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);
-    expect(response.body.message).toBe('존재하지 않는 방입니다.');
+    expect(response.body.error.message).toBe('존재하지 않는 방입니다.');
   });
 });

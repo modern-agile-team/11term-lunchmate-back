@@ -12,7 +12,7 @@ jest.setTimeout(30000);
 describe('Rooms Update (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
-  const httpApp = () => app.getHttpAdapter().getInstance();
+  const httpApp = () => app.getHttpServer();
 
   beforeAll(async () => {
     app = (await createAuthUserTestApp()) as INestApplication<App>;
@@ -68,7 +68,7 @@ describe('Rooms Update (e2e)', () => {
     expect(updatedRoom.description).toBe('수정 후 설명');
     expect(updatedRoom.minAge).toBe(21);
     expect(updatedRoom.maxAge).toBe(25);
-    expect(updatedRoom.lunchAt.toISOString()).toBe(updatedLunchAt);
+    expect(new Date(updatedRoom.lunchAt).toISOString()).toBe(updatedLunchAt);
   });
 
   it('PATCH /rooms/:id 방장이 아닌 사용자가 수정하면 실패', async () => {
@@ -89,7 +89,7 @@ describe('Rooms Update (e2e)', () => {
       });
 
     expect(response.status).toBe(403);
-    expect(response.body.message).toBe('방장만 방을 수정할 수 있습니다.');
+    expect(response.body.error.message).toBe('방장만 방을 수정할 수 있습니다.');
   });
 
   it('PATCH /rooms/:id 잘못된 수정값이면 실패', async () => {
@@ -110,7 +110,7 @@ describe('Rooms Update (e2e)', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toBe('최소 나이와 최대 나이 옵션이 올바르지 않습니다.');
+    expect(response.body.error.message).toBe('최소 나이와 최대 나이 옵션이 올바르지 않습니다.');
   });
 
   it('PATCH /rooms/:id 존재하지 않는 방을 수정하면 실패', async () => {
@@ -124,6 +124,6 @@ describe('Rooms Update (e2e)', () => {
       });
 
     expect(response.status).toBe(404);
-    expect(response.body.message).toBe('존재하지 않는 방입니다.');
+    expect(response.body.error.message).toBe('존재하지 않는 방입니다.');
   });
 });

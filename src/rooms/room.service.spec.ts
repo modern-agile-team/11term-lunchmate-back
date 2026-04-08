@@ -11,6 +11,7 @@ import { RoomMapper } from './mappers/room.mapper';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
 import { RoomMemberService } from './roomMember.service';
 import { UserService } from '../users/users.service';
+import { RoomGateway } from './rooms.gateway';
 
 const mockUserSummary = {
   id: 1,
@@ -123,6 +124,11 @@ const mockUserService = {
   findMe: jest.fn(),
 };
 
+const mockRoomGateway = {
+  emitMembersUpdated: jest.fn(),
+  emitRoomDeleted: jest.fn(),
+};
+
 describe('RoomService', () => {
   let roomService: RoomService;
   let roomMapperSpy: jest.SpiedFunction<typeof RoomMapper.toDetailDto>;
@@ -154,6 +160,10 @@ describe('RoomService', () => {
         {
           provide: RoomMemberService,
           useValue: mockRoomMemberService,
+        },
+        {
+          provide: RoomGateway,
+          useValue: mockRoomGateway,
         },
         {
           provide: UserService,
