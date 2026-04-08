@@ -1,6 +1,11 @@
-import { RoomRepository } from './room.repository';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { RoomRepository } from './room.repository';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import dayjs from 'dayjs';
 import {
@@ -11,6 +16,7 @@ import {
 import { RoomMapper } from './mappers/room.mapper';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
+import { UpdateRoomDto } from './dto/update-room.dto';
 
 @Injectable()
 export class RoomService {
@@ -20,14 +26,10 @@ export class RoomService {
   ) {}
 
   async createRoom(userId: number, createRoomDto: CreateRoomDto): Promise<ResponseRoomDetailDto> {
-    if (dayjs(createRoomDto.lunchAt).isBefore(dayjs()))
-      throw new BadRequestException('lunchAt은 현재보다 미래여야 합니다.');
-
-    if (createRoomDto.minAge > createRoomDto.maxAge)
-      throw new BadRequestException('최소 나이와 최대 나이 옵션이 올바르지 않습니다.');
-
     const participatingRoom = await this.roomRepository.findParticipatingRoom(userId);
     if (participatingRoom) throw new BadRequestException('이미 참여 중인 방이 있습니다.');
+
+    this.validationProperty(createRoomDto);
 
     const newRoomId = await this.dataSource.transaction(async (manager) => {
       const newRoom = await this.roomRepository.createRoom(manager, userId, createRoomDto);
@@ -78,5 +80,38 @@ export class RoomService {
     return {
       openRoomsCount,
     };
+  }
+
+  async updateRoom(
+    roomId: number,
+    updateRoomDto: UpdateRoomDto,
+    userId: number,
+  ): Promise<ResponseRoomDetailDto> {
+    const existingRoom = await this.roomRepository.findRoomById(roomId);
+    if (!existingRoom) throw new NotFoundException('존재하지 않는 방입니다.');
+
+    if (existingRoom.hostUser.id !== userId)
+      throw new ForbiddenException('방장만 방을 수정할 수 있습니다.');
+
+    if (Object.keys(updateRoomDto).length < 1) return RoomMapper.toDetailDto(existingRoom);
+
+    const mergeRoomForValidation = {
+      minAge: updateRoomDto.minAge ?? existingRoom.minAge,
+      maxAge: updateRoomDto.maxAge ?? existingRoom.maxAge,
+      lunchAt: updateRoomDto.lunchAt ?? existingRoom.lunchAt,
+    };
+    this.validationProperty(mergeRoomForValidation);
+
+    await this.roomRepository.updateRoom(roomId, updateRoomDto);
+
+    return await this.findRoomById(roomId);
+  }
+
+  validationProperty(dto: { minAge?: number; maxAge?: number; lunchAt?: string }): void {
+    if (dto.minAge !== undefined && dto.maxAge !== undefined && dto.minAge > dto.maxAge)
+      throw new BadRequestException('최소 나이와 최대 나이 옵션이 올바르지 않습니다.');
+
+    if (dto.lunchAt && dayjs(dto.lunchAt).isBefore(dayjs()))
+      throw new BadRequestException('lunchAt은 현재보다 미래여야 합니다.');
   }
 }

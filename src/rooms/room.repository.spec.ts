@@ -3,12 +3,21 @@ import { RoomRepository } from './room.repository';
 import { Room, RoomStatus, RoomType } from './entities/room.entity';
 import { RoomMember } from './entities/room-member.entity';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
 
 describe('RoomRepository', () => {
   let roomRepository: RoomRepository;
+  let roomOrmRepository: Pick<Repository<Room>, 'update'>;
 
   beforeEach(() => {
-    roomRepository = new RoomRepository({} as Repository<Room>, {} as Repository<RoomMember>);
+    roomOrmRepository = {
+      update: jest.fn(),
+    };
+
+    roomRepository = new RoomRepository(
+      roomOrmRepository as Repository<Room>,
+      {} as Repository<RoomMember>,
+    );
   });
 
   describe('findRoomFilter', () => {
@@ -59,6 +68,26 @@ describe('RoomRepository', () => {
       const result = roomRepository.findRoomFilter(query);
 
       expect(result.lunchAt).toEqual(LessThanOrEqual('2026-03-31 14:00:00'));
+    });
+  });
+
+  describe('updateRoom', () => {
+    it('roomId와 수정 DTO로 update를 호출', async () => {
+      const roomId = 1;
+      const updateRoomDto: UpdateRoomDto = {
+        title: '수정된 방 제목',
+        minAge: 21,
+      };
+      const updateResult = {
+        affected: 1,
+      };
+
+      (roomOrmRepository.update as jest.Mock).mockResolvedValue(updateResult);
+
+      const result = await roomRepository.updateRoom(roomId, updateRoomDto);
+
+      expect(result).toEqual(updateResult);
+      expect(roomOrmRepository.update).toHaveBeenCalledWith(roomId, updateRoomDto);
     });
   });
 });

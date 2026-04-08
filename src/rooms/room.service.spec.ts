@@ -2,9 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RoomService } from './rooms.service';
 import { RoomRepository } from './room.repository';
 import { DataSource, EntityManager } from 'typeorm';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomStatus, RoomType } from './entities/room.entity';
 import { RoomMapper } from './mappers/room.mapper';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
@@ -89,6 +90,7 @@ const mockRoomRepository = {
   findRoomById: jest.fn(),
   findRooms: jest.fn(),
   findParticipatingRoom: jest.fn(),
+  updateRoom: jest.fn(),
 };
 
 describe('RoomService', () => {
@@ -98,6 +100,7 @@ describe('RoomService', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-03-27T00:00:00.000Z'));
+    jest.restoreAllMocks();
     jest.clearAllMocks();
     roomMapperSpy = jest.spyOn(RoomMapper, 'toDetailDto');
 
@@ -347,6 +350,110 @@ describe('RoomService', () => {
       );
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('updateRoom', () => {
+    const updateRoomDto: UpdateRoomDto = {
+      title: '수정된 방 제목',
+      minAge: 21,
+      maxAge: 25,
+      lunchAt: '2099-03-28T03:30:00.000Z',
+    };
+
+    it('방장이 방 정보를 수정하면 수정된 방 정보를 반환', async () => {
+      const updatedRoomEntity = {
+        ...mockRoomEntity,
+        title: '수정된 방 제목',
+        minAge: 21,
+        maxAge: 25,
+        lunchAt: '2099-03-28T03:30:00.000Z',
+      };
+      const updatedRoomDetailDto = {
+        ...mockRoomDetailDto,
+        title: '수정된 방 제목',
+        minAge: 21,
+        maxAge: 25,
+        lunchAt: '2099-03-28T03:30:00.000Z',
+      };
+
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.updateRoom.mockResolvedValueOnce({ affected: 1 });
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(updatedRoomEntity);
+      roomMapperSpy.mockReturnValueOnce(updatedRoomDetailDto);
+
+      const result = await roomService.updateRoom(
+        mockRoomEntity.id,
+        updateRoomDto,
+        mockUserSummary.id,
+      );
+
+      expect(result).toEqual(updatedRoomDetailDto);
+      expect(mockRoomRepository.findRoomById).toHaveBeenNthCalledWith(1, mockRoomEntity.id);
+      expect(mockRoomRepository.updateRoom).toHaveBeenCalledWith(mockRoomEntity.id, updateRoomDto);
+      expect(mockRoomRepository.findRoomById).toHaveBeenNthCalledWith(2, mockRoomEntity.id);
+    });
+
+    it('방장이 아닌 사용자가 수정하면 ForbiddenException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+
+      await expect(roomService.updateRoom(mockRoomEntity.id, updateRoomDto, 999)).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(mockRoomRepository.updateRoom).not.toHaveBeenCalled();
+    });
+
+    it('존재하지 않는 방을 수정하면 NotFoundException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(null);
+
+      await expect(
+        roomService.updateRoom(mockRoomEntity.id, updateRoomDto, mockUserSummary.id),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockRoomRepository.updateRoom).not.toHaveBeenCalled();
+    });
+
+    it('수정 후 minAge가 maxAge보다 크면 BadRequestException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+
+      await expect(
+        roomService.updateRoom(
+          mockRoomEntity.id,
+          {
+            minAge: 30,
+          },
+          mockUserSummary.id,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockRoomRepository.updateRoom).not.toHaveBeenCalled();
+    });
+
+    it('과거 lunchAt으로 수정하면 BadRequestException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+
+      await expect(
+        roomService.updateRoom(
+          mockRoomEntity.id,
+          {
+            lunchAt: '2026-03-26T23:59:59.999Z',
+          },
+          mockUserSummary.id,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockRoomRepository.updateRoom).not.toHaveBeenCalled();
+    });
+
+    it('수정할 값이 없으면 기존 방 정보를 그대로 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      roomMapperSpy.mockReturnValueOnce(mockRoomDetailDto);
+
+      const result = await roomService.updateRoom(mockRoomEntity.id, {}, mockUserSummary.id);
+
+      expect(result).toEqual(mockRoomDetailDto);
+      expect(mockRoomRepository.updateRoom).not.toHaveBeenCalled();
     });
   });
 });

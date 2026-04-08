@@ -1,3 +1,4 @@
+import { UpdateRoomDto } from './dto/update-room.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { Injectable } from '@nestjs/common';
@@ -12,6 +13,7 @@ import {
   LessThanOrEqual,
   MoreThanOrEqual,
   Repository,
+  UpdateResult,
 } from 'typeorm';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
 
@@ -114,5 +116,9 @@ export class RoomRepository {
         status: RoomStatus.OPEN,
       },
     });
+  }
+
+  async updateRoom(roomId: number, updateRoomDto: UpdateRoomDto): Promise<UpdateResult> {
+    return await this.roomRepository.update(roomId, updateRoomDto);
   }
 }
