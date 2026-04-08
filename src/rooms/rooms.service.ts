@@ -24,6 +24,7 @@ import { calculateAge } from 'src/commons/utils/age.util';
 import { RoomMember } from './entities/room-member.entity';
 import { MeUserResponseDto } from 'src/users/dto/me-user-response.dto';
 import { UserConditionsParam } from './types/room.type';
+import { RoomGateway } from './rooms.gateway';
 
 @Injectable()
 export class RoomService {
@@ -31,6 +32,7 @@ export class RoomService {
     private readonly dataSource: DataSource,
     private readonly roomRepository: RoomRepository,
     private readonly roomMemberService: RoomMemberService,
+    private readonly roomGateway: RoomGateway,
     private readonly userService: UserService,
   ) {}
 
@@ -146,6 +148,8 @@ export class RoomService {
 
     const deletedRoom = await this.roomRepository.deleteRoom(roomId);
     if (!deletedRoom.affected) throw new NotFoundException('존재하지 않는 방입니다.');
+
+    this.roomGateway.emitRoomDeleted(roomId);
   }
 
   async joinRoom(roomId: number, userId: number): Promise<RoomMember> {
@@ -156,13 +160,17 @@ export class RoomService {
 
     this.validateJoinRoom(existingRoom, currentUser);
 
-    return await this.joinRoomTransaction(existingRoom, userId);
+    const joinedMember = await this.joinRoomTransaction(existingRoom, userId);
+
+    this.roomGateway.emitMembersUpdated(roomId);
+
+    return joinedMember;
   }
 
   async quickJoin(userId: number): Promise<RoomMember> {
     const user = await this.userService.findMe(userId);
 
-    return await this.dataSource.transaction(async (manager) => {
+    const joinedMember = await this.dataSource.transaction(async (manager) => {
       await this.validateParticipatingRoom(userId, manager);
 
       const rooms = await this.findJoinableRoomsOrThrow(user, manager);
@@ -172,6 +180,10 @@ export class RoomService {
 
       return await this.joinRoomAndIncreaseMemberCount(manager, randomRoom, userId);
     });
+
+    this.roomGateway.emitMembersUpdated(joinedMember.room.id);
+
+    return joinedMember;
   }
 
   async leaveRoom(roomId: number, userId: number): Promise<void> {
@@ -179,7 +191,10 @@ export class RoomService {
 
     await this.validateExistingRoomMember(roomId, userId);
 
-    await this.leaveRoomTransaction(existingRoom, userId);
+    const isDelete = await this.leaveRoomTransaction(existingRoom, userId);
+
+    if (isDelete) this.roomGateway.emitRoomDeleted(roomId);
+    else this.roomGateway.emitMembersUpdated(roomId);
   }
 
   async kickRoomMember(roomId: number, targetUserId: number, currentUserId: number): Promise<void> {
@@ -187,6 +202,8 @@ export class RoomService {
       await this.validateKickRoomMember(manager, roomId, targetUserId, currentUserId);
       await this.leaveRoomAndDecreaseMemberCount(manager, roomId, targetUserId);
     });
+
+    this.roomGateway.emitMembersUpdated(roomId);
   }
 
   async joinRoomTransaction(room: Room, userId: number): Promise<RoomMember> {
@@ -204,14 +221,20 @@ export class RoomService {
     return await this.roomMemberService.joinRoom(manager, room.id, userId);
   }
 
-  async leaveRoomTransaction(room: Room, userId: number): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+  async leaveRoomTransaction(room: Room, userId: number): Promise<boolean> {
+    return await this.dataSource.transaction(async (manager) => {
       await this.leaveRoomAndDecreaseMemberCount(manager, room.id, userId);
 
       await this.updateHostUser(manager, room, userId);
 
+      let isDeleteRoom: boolean = false;
       const roomMembersCount = await this.roomMemberService.findRoomMemberCount(manager, room.id);
-      if (roomMembersCount < 1) await this.roomRepository.deleteRoom(room.id, manager);
+      if (roomMembersCount < 1) {
+        await this.roomRepository.deleteRoom(room.id, manager);
+        isDeleteRoom = true;
+      }
+
+      return isDeleteRoom;
     });
   }
 

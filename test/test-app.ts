@@ -1,9 +1,11 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
+import { WinstonModule } from 'nest-winston';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { newDb } from 'pg-mem';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { transports } from 'winston';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/auth/auth.module';
@@ -61,6 +63,9 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
       ConfigModule.forRoot({
         isGlobal: true,
         ignoreEnvFile: true,
+      }),
+      WinstonModule.forRoot({
+        transports: [new transports.Console({ silent: true })],
       }),
       TypeOrmModule.forRootAsync({
         useFactory: () => ({

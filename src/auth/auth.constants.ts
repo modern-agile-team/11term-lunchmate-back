@@ -7,5 +7,7 @@ export const JWT_DEFAULTS = {
 
 export const AUTH_ERROR_MESSAGES = {
   invalidCredentials: 'Invalid email or password.',
+  invalidAccessToken: 'Access token is invalid.',
   invalidRefreshToken: 'Refresh token is invalid.',
+  invaludTokenFormat: 'Token 포맷이 잘못되었습니다.',
 } as const;
