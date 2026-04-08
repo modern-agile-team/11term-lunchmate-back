@@ -123,7 +123,25 @@ export class RoomRepository {
     return await this.roomRepository.update(roomId, updateRoomDto);
   }
 
-  async deleteRoom(roomId: number): Promise<DeleteResult> {
+  async deleteRoom(roomId: number, manager?: EntityManager): Promise<DeleteResult> {
+    if (manager) {
+      return await manager.softDelete(Room, roomId);
+    }
+
     return await this.roomRepository.softDelete(roomId);
+  }
+
+  async increaseCurrentMembersCount(manager: EntityManager, roomId: number) {
+    return await manager.increment(Room, { id: roomId }, 'currentMembersCount', 1);
+  }
+
+  async decreaseCurrentMembersCount(manager: EntityManager, roomId: number) {
+    return await manager.decrement(Room, { id: roomId }, 'currentMembersCount', 1);
+  }
+
+  async updateRoomHostUser(manager: EntityManager, roomId: number, newHostUserId: number) {
+    return await manager.update(Room, roomId, {
+      hostUserId: newHostUserId,
+    });
   }
 }

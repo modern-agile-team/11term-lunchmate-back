@@ -76,4 +76,7 @@ export class Room extends BaseTableEntity {
   @ManyToOne(() => User, (user) => user.rooms)
   @JoinColumn({ name: 'host_user_id' })
   hostUser: User;
+
+  @Column({ name: 'host_user_id' })
+  hostUserId: number;
 }

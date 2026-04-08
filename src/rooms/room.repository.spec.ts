@@ -8,6 +8,9 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 describe('RoomRepository', () => {
   let roomRepository: RoomRepository;
   let roomOrmRepository: Pick<Repository<Room>, 'update' | 'softDelete'>;
+  const manager = {
+    update: jest.fn(),
+  };
 
   beforeEach(() => {
     roomOrmRepository = {
@@ -105,6 +108,23 @@ describe('RoomRepository', () => {
 
       expect(result).toEqual(deleteResult);
       expect(roomOrmRepository.softDelete).toHaveBeenCalledWith(roomId);
+    });
+  });
+
+  describe('updateRoomHostUser', () => {
+    it('roomId와 새로운 hostUserId로 host를 변경', async () => {
+      const updateResult = {
+        affected: 1,
+      };
+
+      (manager.update as jest.Mock).mockResolvedValue(updateResult);
+
+      const result = await roomRepository.updateRoomHostUser(manager as never, 1, 2);
+
+      expect(result).toEqual(updateResult);
+      expect(manager.update).toHaveBeenCalledWith(Room, 1, {
+        hostUserId: 2,
+      });
     });
   });
 });
