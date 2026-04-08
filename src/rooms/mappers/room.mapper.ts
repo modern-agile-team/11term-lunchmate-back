@@ -1,8 +1,13 @@
-import { ResponseRoomDetailDto } from '../dto/room-response.dto';
+import {
+  ResponseRoomDetailDto,
+  ResponseRoomListDto,
+  ResponseRoomItemDto,
+} from '../dto/room-response.dto';
 import { Room } from '../entities/room.entity';
+import { RoomMemberMapper } from './room-member.mapper';
 
 export class RoomMapper {
-  static toDetailDto(room: Room): ResponseRoomDetailDto {
+  static toItemDto(room: Room): ResponseRoomItemDto {
     return {
       id: room.id,
       title: room.title,
@@ -15,14 +20,27 @@ export class RoomMapper {
       maxAge: room.maxAge,
       place: room.place,
       lunchAt: room.lunchAt,
+      hostUserId: room.hostUserId,
+    };
+  }
+
+  static toListDto(
+    rooms: Room[],
+    nextCursor: number | null,
+    hasNext: boolean,
+  ): ResponseRoomListDto {
+    return {
+      items: rooms.map((room) => this.toItemDto(room)),
+      nextCursor,
+      hasNext,
+    };
+  }
+
+  static toDetailDto(room: Room): ResponseRoomDetailDto {
+    return {
+      ...this.toItemDto(room),
       createdAt: room.createdAt,
-      hostUserId: room.hostUser.id,
-      roomMembers: room.roomMembers.map((member) => ({
-        id: member.user.id,
-        nickname: member.user.nickname,
-        gender: member.user.gender,
-        schoolInfo: member.user.schoolInfo,
-      })),
+      roomMembers: room.roomMembers.map((member) => RoomMemberMapper.toItemDto(member)),
     };
   }
 }

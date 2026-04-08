@@ -111,6 +111,26 @@ export class AuthService {
     await this.userService.revokeTokens(userId);
   }
 
+  async verifyAccessToken(accessToken: string): Promise<JwtAccessPayload> {
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtAccessPayload>(accessToken, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET', JWT_DEFAULTS.accessSecret),
+      });
+
+      if (payload.type !== 'access') {
+        throw new UnauthorizedException(AUTH_ERROR_MESSAGES.invalidAccessToken);
+      }
+
+      return payload;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      throw new UnauthorizedException(AUTH_ERROR_MESSAGES.invalidAccessToken);
+    }
+  }
+
   private async issueTokens(
     userId: number,
     email: string,

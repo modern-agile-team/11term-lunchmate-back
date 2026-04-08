@@ -2,19 +2,17 @@ import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { RoomMember } from '../src/rooms/entities/room-member.entity';
 import { Room } from '../src/rooms/entities/room.entity';
-import { User } from '../src/users/entities/user.entity';
+import { calculateAge } from '../src/commons/utils/age.util';
 import { createAuthUserTestApp } from './test-app';
+import { clearRoomTables, futureLunchAt } from './rooms.e2e-helper';
 
 jest.setTimeout(30000);
 
-describe('Rooms (e2e)', () => {
+describe('Rooms Create (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
-  const httpApp = () => app.getHttpAdapter().getInstance();
-  const futureLunchAt = (hoursFromNow: number) =>
-    new Date(Date.now() + hoursFromNow * 60 * 60 * 1000).toISOString();
+  const httpApp = () => app.getHttpServer();
 
   beforeAll(async () => {
     app = (await createAuthUserTestApp()) as INestApplication<App>;
@@ -26,12 +24,12 @@ describe('Rooms (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.createQueryBuilder().delete().from(RoomMember).execute();
-    await dataSource.createQueryBuilder().delete().from(Room).execute();
-    await dataSource.createQueryBuilder().delete().from(User).execute();
+    await clearRoomTables(dataSource);
   });
 
   it('POST /rooms 방 생성 성공', async () => {
+    const lunchAt = futureLunchAt(1);
+
     const signupResponse = await request(httpApp()).post('/auth/signup').send({
       email: 'test123@gmail.com',
       password: '1q2w3e4r',
@@ -50,7 +48,7 @@ describe('Rooms (e2e)', () => {
         roomType: 'MALE',
         maxMembersCount: 4,
         place: '학식당 앞',
-        lunchAt: futureLunchAt(1),
+        lunchAt,
         minAge: 20,
         maxAge: 24,
       });
@@ -61,7 +59,13 @@ describe('Rooms (e2e)', () => {
     expect(response.body.hostUserId).toBe(signupResponse.body.user.id);
     expect(response.body.currentMembersCount).toBe(1);
     expect(response.body.roomMembers).toHaveLength(1);
+    expect(response.body.roomMembers[0].id).toBe(signupResponse.body.user.id);
     expect(response.body.roomMembers[0].nickname).toBe('길동홍');
+    expect(response.body.roomMembers[0].age).toBe(calculateAge('2000-01-01'));
+    expect(response.body.roomMembers[0].gender).toBe('MALE');
+    expect(response.body.roomMembers[0].schoolInfo).toBe('인덕대학교');
+    expect(response.body.roomMembers[0].mbti).toBeNull();
+    expect(response.body.lunchAt).toBe(lunchAt);
 
     const createdRoom = await dataSource.getRepository(Room).findOne({
       where: { id: response.body.id },
@@ -72,6 +76,7 @@ describe('Rooms (e2e)', () => {
 
     expect(createdRoom).not.toBeNull();
     expect(createdRoom?.hostUser.id).toBe(signupResponse.body.user.id);
+    expect(response.body.createdAt).toBe(new Date(createdRoom!.createdAt).toISOString());
   });
 
   it('POST /rooms 이미 참여 중인 방이 있으면 생성 실패', async () => {
@@ -115,7 +120,7 @@ describe('Rooms (e2e)', () => {
       });
 
     expect(secondResponse.status).toBe(400);
-    expect(secondResponse.body.message).toBe('이미 참여 중인 방이 있습니다.');
+    expect(secondResponse.body.error.message).toBe('이미 참여 중인 방이 있습니다.');
 
     const roomCount = await dataSource.getRepository(Room).count();
 

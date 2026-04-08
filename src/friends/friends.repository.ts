@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Friend, FriendStatus } from './entities/friend.entity';
 
@@ -12,10 +12,8 @@ export class FriendRepository {
   ) {}
 
   async findActiveRelationsBetweenUsers(userId: number, otherUserId: number): Promise<Friend[]> {
-    return this.friendRepository
-      .createQueryBuilder('friend')
-      .leftJoinAndSelect('friend.requester', 'requester')
-      .leftJoinAndSelect('friend.receiver', 'receiver')
+    // Bidirectional requester/receiver matching still needs query builder.
+    return this.createRelationQuery()
       .where(
         '(requester.id = :userId AND receiver.id = :otherUserId) OR (requester.id = :otherUserId AND receiver.id = :userId)',
         { userId, otherUserId },
@@ -24,21 +22,16 @@ export class FriendRepository {
   }
 
   async findAcceptedRelationsForUser(userId: number): Promise<Friend[]> {
-    return this.friendRepository
-      .createQueryBuilder('friend')
-      .leftJoinAndSelect('friend.requester', 'requester')
-      .leftJoinAndSelect('friend.receiver', 'receiver')
+    // Friend list lookup combines joined users with OR filtering on both sides.
+    return this.createRelationQuery()
       .where('(requester.id = :userId OR receiver.id = :userId)', { userId })
       .andWhere('friend.status = :status', { status: FriendStatus.ACCEPTED })
       .getMany();
   }
 
   async findRestorableRequest(requesterId: number, receiverId: number): Promise<Friend | null> {
-    return this.friendRepository
-      .createQueryBuilder('friend')
-      .withDeleted()
-      .leftJoinAndSelect('friend.requester', 'requester')
-      .leftJoinAndSelect('friend.receiver', 'receiver')
+    // Restorable lookup needs withDeleted plus joined requester/receiver filtering.
+    return this.createRelationQuery({ withDeleted: true })
       .where('requester.id = :requesterId', { requesterId })
       .andWhere('receiver.id = :receiverId', { receiverId })
       .andWhere('friend.deleted_at IS NOT NULL')

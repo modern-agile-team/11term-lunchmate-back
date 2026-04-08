@@ -2,10 +2,11 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { WinstonModule } from 'nest-winston';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { newDb } from 'pg-mem';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { transports } from 'winston';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
 import { AuthModule } from '../src/auth/auth.module';
@@ -51,6 +52,7 @@ export async function createCoreTestApp(): Promise<INestApplication> {
   const app = moduleFixture.createNestApplication();
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   await app.init();
+  await app.listen(0, '127.0.0.1');
 
   return app;
 }
@@ -68,7 +70,7 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
         ignoreEnvFile: true,
       }),
       WinstonModule.forRoot({
-        transports: winstonOptions,
+        transports: [new transports.Console({ silent: true })],
       }),
       TypeOrmModule.forRootAsync({
         useFactory: () => ({
@@ -116,6 +118,7 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
   const app = moduleFixture.createNestApplication();
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   await app.init();
+  await app.listen(0, '127.0.0.1');
 
   return app;
 }
