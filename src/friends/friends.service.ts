@@ -32,10 +32,7 @@ export class FriendService {
     this.ensureReceiverOwnsRequest(friendRequest, currentUserId);
     this.ensurePendingRequest(friendRequest);
 
-    return this.friendRepository.updateStatus(
-      friendRequest,
-      FriendStatus.ACCEPTED,
-    );
+    return this.friendRepository.updateStatus(friendRequest.id, FriendStatus.ACCEPTED);
   }
 
   async rejectRequest(currentUserId: number, friendshipId: number): Promise<Friend> {
@@ -43,10 +40,7 @@ export class FriendService {
     this.ensureReceiverOwnsRequest(friendRequest, currentUserId);
     this.ensurePendingRequest(friendRequest);
 
-    return this.friendRepository.updateStatus(
-      friendRequest,
-      FriendStatus.REJECTED,
-    );
+    return this.friendRepository.updateStatus(friendRequest.id, FriendStatus.REJECTED);
   }
 
   async cancelRequest(currentUserId: number, friendshipId: number): Promise<void> {
