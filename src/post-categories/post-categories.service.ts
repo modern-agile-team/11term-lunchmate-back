@@ -6,7 +6,7 @@ import { PostCategory } from './entities/post-category.entity';
 export class PostCategoryService {
   constructor(private readonly postCategoryRepository: PostCategoryRepository) {}
 
-  async findCategories(): Promise<PostCategory[]> {
-    return await this.postCategoryRepository.findCategories();
+  async findPostCategories(): Promise<PostCategory[]> {
+    return await this.postCategoryRepository.findPostCategories();
   }
 }

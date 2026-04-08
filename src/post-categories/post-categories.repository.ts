@@ -10,7 +10,11 @@ export class PostCategoryRepository {
     private readonly postCategoryRepository: Repository<PostCategory>,
   ) {}
 
-  async findCategories(): Promise<PostCategory[]> {
-    return await this.postCategoryRepository.find();
+  async findPostCategories(): Promise<PostCategory[]> {
+    return await this.postCategoryRepository.find({
+      order: {
+        id: 'ASC',
+      },
+    });
   }
 }
