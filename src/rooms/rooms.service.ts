@@ -22,9 +22,9 @@ import { UserService } from 'src/users/users.service';
 import { Room, RoomStatus, RoomType } from './entities/room.entity';
 import { calculateAge } from 'src/commons/utils/age.util';
 import { RoomMember } from './entities/room-member.entity';
-import { MeUserResponseDto } from 'src/users/dto/me-user-response.dto';
 import { UserConditionsParam } from './types/room.type';
 import { RoomGateway } from './rooms.gateway';
+import { CurrentUserResponseDto } from 'src/users/dto/current-user-response.dto';
 
 @Injectable()
 export class RoomService {
@@ -104,7 +104,7 @@ export class RoomService {
     return RoomMapper.toDetailDto(room.room);
   }
 
-  async findJoinableRoomsOrThrow(user: MeUserResponseDto, manager: EntityManager) {
+  async findJoinableRoomsOrThrow(user: CurrentUserResponseDto, manager: EntityManager) {
     const userConditions: UserConditionsParam = {
       age: calculateAge(user.birthDate),
       gender: user.gender,
@@ -287,7 +287,7 @@ export class RoomService {
     await this.validateExistingRoomMember(currentRoom.id, targetUserId, manager);
   }
 
-  validateJoinRoom(room: Room, user: MeUserResponseDto): void {
+  validateJoinRoom(room: Room, user: CurrentUserResponseDto): void {
     if (room.status !== RoomStatus.OPEN) throw new BadRequestException('입장할 수 없는 방입니다.');
 
     const roomTypeByGender = {

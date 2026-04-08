@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { MealMenu, MealType } from './entities/meal-menu.entity';
 import { ActionType, MealMenuReaction } from './entities/meal-menu-reaction.entity';
 import { User } from '../users/entities/user.entity';
@@ -27,36 +27,27 @@ export class MealMenuRepository {
   ) {}
 
   async findMany(params: FindMealMenusParams): Promise<MealMenu[]> {
-    const query = this.mealMenuRepository
-      .createQueryBuilder('mealMenu')
-      .orderBy('mealMenu.meal_date', 'DESC')
-      .addOrderBy('mealMenu.id', 'DESC');
+    const query = this.applyReadFilters(
+      this.mealMenuRepository.createQueryBuilder('mealMenu'),
+      params,
+    );
 
-    if (params.mealDate) {
-      query.andWhere('mealMenu.meal_date = :mealDate', { mealDate: params.mealDate });
-    }
-
-    if (params.mealType && params.mealType !== MealType.ALL) {
-      query.andWhere('mealMenu.meal_type = :mealType', { mealType: params.mealType });
-    }
+    query.orderBy('mealMenu.meal_date', 'DESC').addOrderBy('mealMenu.id', 'DESC');
 
     return query.getMany();
   }
 
   async findById(mealMenuId: number): Promise<MealMenu | null> {
+    // Single-record lookups stay on repository helpers unless they need joins or
+    // more complex query composition.
     return this.mealMenuRepository.findOneBy({ id: mealMenuId });
   }
 
   async findRankings(params: FindMealMenuRankingsParams): Promise<MealMenu[]> {
-    const query = this.mealMenuRepository.createQueryBuilder('mealMenu');
-
-    if (params.mealDate) {
-      query.andWhere('mealMenu.meal_date = :mealDate', { mealDate: params.mealDate });
-    }
-
-    if (params.mealType && params.mealType !== MealType.ALL) {
-      query.andWhere('mealMenu.meal_type = :mealType', { mealType: params.mealType });
-    }
+    const query = this.applyReadFilters(
+      this.mealMenuRepository.createQueryBuilder('mealMenu'),
+      params,
+    );
 
     if (params.actionType === ActionType.LIKE) {
       query.orderBy('mealMenu.like_count', 'DESC');
@@ -73,6 +64,7 @@ export class MealMenuRepository {
     userId: number,
     mealMenuId: number,
   ): Promise<MealMenuReaction | null> {
+    // Reaction lookup remains simple enough for a standard findOne query.
     return this.mealMenuReactionRepository.findOne({
       where: {
         user: { id: userId },
@@ -163,5 +155,20 @@ export class MealMenuRepository {
 
       return mealMenu;
     });
+  }
+
+  private applyReadFilters(
+    query: SelectQueryBuilder<MealMenu>,
+    params: FindMealMenusParams | FindMealMenuRankingsParams,
+  ): SelectQueryBuilder<MealMenu> {
+    if (params.mealDate) {
+      query.andWhere('mealMenu.meal_date = :mealDate', { mealDate: params.mealDate });
+    }
+
+    if (params.mealType && params.mealType !== MealType.ALL) {
+      query.andWhere('mealMenu.meal_type = :mealType', { mealType: params.mealType });
+    }
+
+    return query;
   }
 }

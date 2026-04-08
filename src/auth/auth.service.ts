@@ -4,12 +4,21 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../users/users.service';
+import { User } from '../users/entities/user.entity';
 import { AUTH_ERROR_MESSAGES, JWT_DEFAULTS } from './auth.constants';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignupDto } from './dto/signup.dto';
-import { AuthResponseDto, AuthTokensResponseDto } from './dto/auth-response.dto';
 import { JwtAccessPayload, JwtRefreshPayload } from './interfaces/jwt-payload.interface';
+
+export type AuthTokensResult = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type AuthResult = AuthTokensResult & {
+  user: User;
+};
 
 @Injectable()
 export class AuthService {
@@ -19,7 +28,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async signup(signupDto: SignupDto): Promise<AuthResponseDto> {
+  async signup(signupDto: SignupDto): Promise<AuthResult> {
     await this.assertSignupAvailable(signupDto);
     const hashedPassword = await bcrypt.hash(signupDto.password, 10);
     const user = await this.userService.createUser({
@@ -42,21 +51,21 @@ export class AuthService {
 
     return {
       ...tokens,
-      user: this.userService.toMeResponse(user),
+      user,
     };
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(loginDto: LoginDto): Promise<AuthResult> {
     const user = await this.validateCredentials(loginDto);
     const tokens = await this.issueTokens(user.id, user.email, user.nickname, user.tokenVersion);
 
     return {
       ...tokens,
-      user: this.userService.toMeResponse(user),
+      user,
     };
   }
 
-  async refresh(refreshTokenDto: RefreshTokenDto): Promise<AuthTokensResponseDto> {
+  async refresh(refreshTokenDto: RefreshTokenDto): Promise<AuthTokensResult> {
     const payload = await this.verifyRefreshToken(refreshTokenDto.refreshToken);
     const user = await this.userService.findByIdForRefresh(payload.sub);
 
@@ -127,7 +136,7 @@ export class AuthService {
     email: string,
     nickname: string,
     tokenVersion: number,
-  ): Promise<AuthTokensResponseDto> {
+  ): Promise<AuthTokensResult> {
     const tokens = await this.issueTokensWithoutPersisting(userId, email, nickname, tokenVersion);
     const refreshTokenHash = await this.createRefreshTokenHash(tokens.refreshToken);
     await this.userService.updateRefreshTokenHash(userId, refreshTokenHash);
@@ -140,7 +149,7 @@ export class AuthService {
     email: string,
     nickname: string,
     tokenVersion: number,
-  ): Promise<AuthTokensResponseDto> {
+  ): Promise<AuthTokensResult> {
     const accessTokenId = randomUUID();
     const refreshTokenId = randomUUID();
 

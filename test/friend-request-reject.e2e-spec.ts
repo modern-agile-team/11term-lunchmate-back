@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { FRIEND_ERROR_MESSAGES } from '../src/friends/friend.constants';
 import { Friend, FriendStatus } from '../src/friends/entities/friend.entity';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
@@ -25,6 +26,19 @@ describe('Friend Request Reject (e2e)', () => {
     await dataSource.createQueryBuilder().delete().from(Friend).execute();
     await dataSource.createQueryBuilder().delete().from(User).execute();
   });
+
+  function expectExceptionFilterErrorResponse(
+    response: request.Response,
+    statusCode: number,
+    message: string,
+  ): void {
+    expect(response.status).toBe(statusCode);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode,
+      message,
+    });
+  }
 
   async function signupUser(params: {
     email: string;
@@ -99,13 +113,13 @@ describe('Friend Request Reject (e2e)', () => {
       .patch(`/friends/requests/${friendRequest.body.id}/reject`)
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
-    expect(requesterResponse.status).toBe(403);
+    expectExceptionFilterErrorResponse(requesterResponse, 403, FRIEND_ERROR_MESSAGES.receiverOnly);
 
     const thirdUserResponse = await request(app.getHttpServer())
       .patch(`/friends/requests/${friendRequest.body.id}/reject`)
       .set('Authorization', `Bearer ${thirdUser.body.accessToken}`);
 
-    expect(thirdUserResponse.status).toBe(403);
+    expectExceptionFilterErrorResponse(thirdUserResponse, 403, FRIEND_ERROR_MESSAGES.receiverOnly);
   });
 
   it('존재하지 않는 친구 요청 거절 시 404', async () => {
@@ -118,7 +132,7 @@ describe('Friend Request Reject (e2e)', () => {
       .patch('/friends/requests/999999/reject')
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
-    expect(response.status).toBe(404);
+    expectExceptionFilterErrorResponse(response, 404, FRIEND_ERROR_MESSAGES.requestNotFound);
   });
 
   it('이미 REJECTED 인 요청 재거절 시 409', async () => {
@@ -132,7 +146,7 @@ describe('Friend Request Reject (e2e)', () => {
       .patch(`/friends/requests/${friendRequest.body.id}/reject`)
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
-    expect(response.status).toBe(409);
+    expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyProcessed);
   });
 
   it('이미 ACCEPTED 인 요청 재거절 시 409', async () => {
@@ -146,7 +160,7 @@ describe('Friend Request Reject (e2e)', () => {
       .patch(`/friends/requests/${friendRequest.body.id}/reject`)
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
-    expect(response.status).toBe(409);
+    expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyProcessed);
   });
 
   it('인증 없이 친구 신청 거절 시 401', async () => {
@@ -156,6 +170,6 @@ describe('Friend Request Reject (e2e)', () => {
       `/friends/requests/${friendRequest.body.id}/reject`,
     );
 
-    expect(response.status).toBe(401);
+    expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
   });
 });

@@ -6,10 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserService } from '../users/users.service';
-import { FriendListItemResponseDto } from './dto/friend-list-item-response.dto';
-import { FriendListResponseDto } from './dto/friend-list-response.dto';
+import { FRIEND_ERROR_MESSAGES } from './friend.constants';
 import { Friend, FriendStatus } from './entities/friend.entity';
-import { FriendRequestResponseDto } from './dto/friend-request-response.dto';
 import { FriendRepository } from './friends.repository';
 
 @Injectable()
@@ -19,48 +17,36 @@ export class FriendService {
     private readonly userService: UserService,
   ) {}
 
-  async createRequest(requesterId: number, receiverId: number): Promise<FriendRequestResponseDto> {
+  async createRequest(requesterId: number, receiverId: number): Promise<Friend> {
     await this.validateReceiver(requesterId, receiverId);
     await this.ensureRequestableRelation(requesterId, receiverId);
 
-    const friendRequest = await this.friendRepository.createOrRestoreRequest(
+    return this.friendRepository.createOrRestoreRequest(
       requesterId,
       receiverId,
     );
-
-    return this.toResponse(friendRequest);
   }
 
-  async acceptRequest(
-    currentUserId: number,
-    friendshipId: number,
-  ): Promise<FriendRequestResponseDto> {
+  async acceptRequest(currentUserId: number, friendshipId: number): Promise<Friend> {
     const friendRequest = await this.findRequestOrFail(friendshipId);
     this.ensureReceiverOwnsRequest(friendRequest, currentUserId);
     this.ensurePendingRequest(friendRequest);
 
-    const acceptedRequest = await this.friendRepository.updateStatus(
+    return this.friendRepository.updateStatus(
       friendRequest,
       FriendStatus.ACCEPTED,
     );
-
-    return this.toResponse(acceptedRequest);
   }
 
-  async rejectRequest(
-    currentUserId: number,
-    friendshipId: number,
-  ): Promise<FriendRequestResponseDto> {
+  async rejectRequest(currentUserId: number, friendshipId: number): Promise<Friend> {
     const friendRequest = await this.findRequestOrFail(friendshipId);
     this.ensureReceiverOwnsRequest(friendRequest, currentUserId);
     this.ensurePendingRequest(friendRequest);
 
-    const rejectedRequest = await this.friendRepository.updateStatus(
+    return this.friendRepository.updateStatus(
       friendRequest,
       FriendStatus.REJECTED,
     );
-
-    return this.toResponse(rejectedRequest);
   }
 
   async cancelRequest(currentUserId: number, friendshipId: number): Promise<void> {
@@ -79,19 +65,14 @@ export class FriendService {
     await this.friendRepository.softDelete(friendRelation.id);
   }
 
-  async findFriends(currentUserId: number, status?: 'accepted'): Promise<FriendListResponseDto> {
+  async findFriends(currentUserId: number, status?: 'accepted'): Promise<Friend[]> {
     this.validateFriendListStatus(status);
-
-    const relations = await this.friendRepository.findAcceptedRelationsForUser(currentUserId);
-
-    return {
-      items: relations.map((relation) => this.toFriendListItem(relation, currentUserId)),
-    };
+    return this.friendRepository.findAcceptedRelationsForUser(currentUserId);
   }
 
   private async validateReceiver(requesterId: number, receiverId: number): Promise<void> {
     if (requesterId === receiverId) {
-      throw new BadRequestException('Cannot send friend request to yourself.');
+      throw new BadRequestException(FRIEND_ERROR_MESSAGES.cannotRequestSelf);
     }
 
     await this.userService.findActiveUserOrFail(receiverId);
@@ -108,7 +89,7 @@ export class FriendService {
     );
 
     if (sameDirectionRelation) {
-      throw new ConflictException('Friend request already exists.');
+      throw new ConflictException(FRIEND_ERROR_MESSAGES.requestAlreadyExists);
     }
 
     const reverseRelation = existingRelations.find(
@@ -116,11 +97,11 @@ export class FriendService {
     );
 
     if (reverseRelation?.status === FriendStatus.PENDING) {
-      throw new ConflictException('Friend request from the target user already exists.');
+      throw new ConflictException(FRIEND_ERROR_MESSAGES.reversePendingExists);
     }
 
     if (reverseRelation?.status === FriendStatus.ACCEPTED) {
-      throw new ConflictException('Already friends.');
+      throw new ConflictException(FRIEND_ERROR_MESSAGES.alreadyFriends);
     }
   }
 
@@ -128,7 +109,7 @@ export class FriendService {
     const friendRequest = await this.friendRepository.findById(friendshipId);
 
     if (!friendRequest) {
-      throw new NotFoundException('Friend request not found.');
+      throw new NotFoundException(FRIEND_ERROR_MESSAGES.requestNotFound);
     }
 
     return friendRequest;
@@ -136,57 +117,37 @@ export class FriendService {
 
   private ensureReceiverOwnsRequest(friendRequest: Friend, currentUserId: number): void {
     if (friendRequest.receiver.id !== currentUserId) {
-      throw new ForbiddenException('Only the receiver can process this request.');
+      throw new ForbiddenException(FRIEND_ERROR_MESSAGES.receiverOnly);
     }
   }
 
   private ensureRequesterOwnsRequest(friendRequest: Friend, currentUserId: number): void {
     if (friendRequest.requester.id !== currentUserId) {
-      throw new ForbiddenException('Only the requester can cancel this request.');
+      throw new ForbiddenException(FRIEND_ERROR_MESSAGES.requesterOnly);
     }
   }
 
   private ensurePendingRequest(friendRequest: Friend): void {
     if (friendRequest.status !== FriendStatus.PENDING) {
-      throw new ConflictException('Friend request has already been processed.');
+      throw new ConflictException(FRIEND_ERROR_MESSAGES.alreadyProcessed);
     }
   }
 
   private ensureAcceptedFriend(friend: Friend): void {
     if (friend.status !== FriendStatus.ACCEPTED) {
-      throw new ConflictException('Only accepted friends can be deleted.');
+      throw new ConflictException(FRIEND_ERROR_MESSAGES.acceptedOnly);
     }
   }
 
   private ensureUserRelatedToFriend(friend: Friend, currentUserId: number): void {
     if (friend.requester.id !== currentUserId && friend.receiver.id !== currentUserId) {
-      throw new ForbiddenException('Only related users can delete this friendship.');
+      throw new ForbiddenException(FRIEND_ERROR_MESSAGES.relatedUsersOnly);
     }
   }
 
   private validateFriendListStatus(status?: 'accepted'): void {
     if (status && status !== 'accepted') {
-      throw new BadRequestException('Only status=accepted is supported.');
+      throw new BadRequestException(FRIEND_ERROR_MESSAGES.acceptedStatusOnly);
     }
-  }
-
-  private toResponse(friend: Friend): FriendRequestResponseDto {
-    return {
-      id: friend.id,
-      requesterId: friend.requester.id,
-      receiverId: friend.receiver.id,
-      status: friend.status,
-      createdAt: friend.createdAt,
-    };
-  }
-
-  private toFriendListItem(friend: Friend, currentUserId: number): FriendListItemResponseDto {
-    const otherUser = friend.requester.id === currentUserId ? friend.receiver : friend.requester;
-
-    return {
-      friendshipId: friend.id,
-      status: friend.status,
-      user: this.userService.toPublicResponse(otherUser),
-    };
   }
 }

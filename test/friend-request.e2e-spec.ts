@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { FRIEND_ERROR_MESSAGES } from '../src/friends/friend.constants';
 import { Friend, FriendStatus } from '../src/friends/entities/friend.entity';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
@@ -25,6 +26,19 @@ describe('Friend Request (e2e)', () => {
     await dataSource.createQueryBuilder().delete().from(Friend).execute();
     await dataSource.createQueryBuilder().delete().from(User).execute();
   });
+
+  function expectExceptionFilterErrorResponse(
+    response: request.Response,
+    statusCode: number,
+    message: string,
+  ): void {
+    expect(response.status).toBe(statusCode);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode,
+      message,
+    });
+  }
 
   async function signupUser(params: {
     email: string;
@@ -99,7 +113,7 @@ describe('Friend Request (e2e)', () => {
         receiverId: user.body.user.id,
       });
 
-    expect(response.status).toBe(400);
+    expectExceptionFilterErrorResponse(response, 400, FRIEND_ERROR_MESSAGES.cannotRequestSelf);
   });
 
   it('존재하지 않는 사용자에게 신청 시 404', async () => {
@@ -115,7 +129,7 @@ describe('Friend Request (e2e)', () => {
         receiverId: 999999,
       });
 
-    expect(response.status).toBe(404);
+    expectExceptionFilterErrorResponse(response, 404, 'User not found.');
   });
 
   it('동일 방향 중복 신청 시 409', async () => {
@@ -142,7 +156,7 @@ describe('Friend Request (e2e)', () => {
         receiverId: receiver.body.user.id,
       });
 
-    expect(response.status).toBe(409);
+    expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.requestAlreadyExists);
   });
 
   it('반대 방향 pending 관계가 있으면 409', async () => {
@@ -169,7 +183,7 @@ describe('Friend Request (e2e)', () => {
         receiverId: secondUser.body.user.id,
       });
 
-    expect(response.status).toBe(409);
+    expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.reversePendingExists);
   });
 
   it('이미 친구인 경우 409', async () => {
@@ -195,7 +209,7 @@ describe('Friend Request (e2e)', () => {
         receiverId: receiver.body.user.id,
       });
 
-    expect(response.status).toBe(409);
+    expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyFriends);
   });
 
   it('인증 없이 친구 신청 시 401', async () => {
@@ -208,6 +222,6 @@ describe('Friend Request (e2e)', () => {
       receiverId: receiver.body.user.id,
     });
 
-    expect(response.status).toBe(401);
+    expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
   });
 });

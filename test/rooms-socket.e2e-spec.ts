@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import { AddressInfo } from 'net';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -56,11 +55,8 @@ describe('Rooms Socket (e2e)', () => {
 
   beforeAll(async () => {
     app = (await createAuthUserTestApp()) as INestApplication<App>;
-    await app.listen(0, '127.0.0.1');
     dataSource = app.get(DataSource);
-    const server = app.getHttpServer() as unknown as { address(): AddressInfo };
-    const address = server.address();
-    baseUrl = `http://127.0.0.1:${address.port}`;
+    baseUrl = await app.getUrl();
   });
 
   afterAll(async () => {

@@ -79,7 +79,7 @@ describe('Rooms Join/Leave (e2e)', () => {
       .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toBe('이미 참여 중인 방이 있습니다.');
+    expect(response.body.error.message).toBe('이미 참여 중인 방이 있습니다.');
   });
 
   it('POST /rooms/quick-join 조건에 맞는 방에 빠르게 참여', async () => {
@@ -149,7 +149,7 @@ describe('Rooms Join/Leave (e2e)', () => {
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);
-    expect(response.body.message).toBe('현재 참여할 수 있는 방이 없습니다.');
+    expect(response.body.error.message).toBe('현재 참여할 수 있는 방이 없습니다.');
   });
 
   it('DELETE /rooms/:id/leave 참여 중인 사용자가 방에서 나감', async () => {
@@ -288,7 +288,7 @@ describe('Rooms Join/Leave (e2e)', () => {
       .set('Authorization', `Bearer ${otherSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(403);
-    expect(response.body.message).toBe('강제퇴장은 방장만 할 수 있습니다.');
+    expect(response.body.error.message).toBe('강제퇴장은 방장만 할 수 있습니다.');
   });
 
   it('DELETE /rooms/:roomId/members/:userId 자기 자신을 강제 퇴장시키려 하면 실패', async () => {
@@ -303,7 +303,7 @@ describe('Rooms Join/Leave (e2e)', () => {
       .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toBe('자기 자신을 강제퇴장 시킬 수 없습니다.');
+    expect(response.body.error.message).toBe('자기 자신을 강제퇴장 시킬 수 없습니다.');
   });
 
   it('DELETE /rooms/:roomId/members/:userId 참여하지 않은 사용자를 강제 퇴장시키려 하면 실패', async () => {
@@ -323,6 +323,6 @@ describe('Rooms Join/Leave (e2e)', () => {
       .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toBe('현재 방에 참여중인 사용자가 아닙니다.');
+    expect(response.body.error.message).toBe('현재 방에 참여중인 사용자가 아닙니다.');
   });
 });

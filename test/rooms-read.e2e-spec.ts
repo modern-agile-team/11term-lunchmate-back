@@ -13,7 +13,7 @@ jest.setTimeout(30000);
 describe('Rooms Read (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
-  const httpApp = () => app.getHttpAdapter().getInstance();
+  const httpApp = () => app.getHttpServer();
 
   beforeAll(async () => {
     app = (await createAuthUserTestApp()) as INestApplication<App>;

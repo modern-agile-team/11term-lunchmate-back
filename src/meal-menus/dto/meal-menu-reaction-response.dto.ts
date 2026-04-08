@@ -5,9 +5,7 @@ export class MealMenuReactionResponseDto {
   @ApiProperty({ enum: ActionType })
   actionType: ActionType;
 
-  @ApiProperty()
   likeCount: number;
 
-  @ApiProperty()
   dislikeCount: number;
 }

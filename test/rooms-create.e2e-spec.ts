@@ -12,7 +12,7 @@ jest.setTimeout(30000);
 describe('Rooms Create (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
-  const httpApp = () => app.getHttpAdapter().getInstance();
+  const httpApp = () => app.getHttpServer();
 
   beforeAll(async () => {
     app = (await createAuthUserTestApp()) as INestApplication<App>;
@@ -120,7 +120,7 @@ describe('Rooms Create (e2e)', () => {
       });
 
     expect(secondResponse.status).toBe(400);
-    expect(secondResponse.body.message).toBe('이미 참여 중인 방이 있습니다.');
+    expect(secondResponse.body.error.message).toBe('이미 참여 중인 방이 있습니다.');
 
     const roomCount = await dataSource.getRepository(Room).count();
 
