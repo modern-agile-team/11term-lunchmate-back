@@ -71,7 +71,6 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
       }),
       WinstonModule.forRoot({
         transports: [new transports.Console({ silent: true })],
-        // transports: winstonOptions,
       }),
       TypeOrmModule.forRootAsync({
         useFactory: () => ({
