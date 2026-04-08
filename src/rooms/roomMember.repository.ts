@@ -22,8 +22,11 @@ export class RoomMemberRepository {
     });
   }
 
-  async findParticipatingRoomByUserId(userId: number): Promise<RoomMember | null> {
-    return await this.roomMemberRepository.findOne({
+  async findParticipatingRoomByUserId(
+    userId: number,
+    manager?: EntityManager,
+  ): Promise<RoomMember | null> {
+    const queryOptions = {
       where: {
         user: { id: userId },
         room: { status: RoomStatus.OPEN },
@@ -39,11 +42,14 @@ export class RoomMemberRepository {
       order: {
         room: {
           roomMembers: {
-            createdAt: 'ASC',
+            createdAt: 'ASC' as const,
           },
         },
       },
-    });
+    };
+
+    if (manager) return await manager.findOne(RoomMember, queryOptions);
+    return await this.roomMemberRepository.findOne(queryOptions);
   }
 
   async findRoomMembersByRoomId(roomId: number): Promise<RoomMember[]> {

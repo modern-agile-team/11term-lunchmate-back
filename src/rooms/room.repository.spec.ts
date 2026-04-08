@@ -1,7 +1,6 @@
 import { Between, LessThan, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { RoomRepository } from './room.repository';
 import { Room, RoomStatus, RoomType } from './entities/room.entity';
-import { RoomMember } from './entities/room-member.entity';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 
@@ -18,10 +17,7 @@ describe('RoomRepository', () => {
       softDelete: jest.fn(),
     };
 
-    roomRepository = new RoomRepository(
-      roomOrmRepository as Repository<Room>,
-      {} as Repository<RoomMember>,
-    );
+    roomRepository = new RoomRepository(roomOrmRepository as Repository<Room>);
   });
 
   describe('findRoomFilter', () => {

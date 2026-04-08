@@ -3,8 +3,7 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RoomMember } from './entities/room-member.entity';
-import { Room, RoomStatus } from './entities/room.entity';
+import { Room, RoomStatus, RoomType } from './entities/room.entity';
 import {
   Between,
   DeleteResult,
@@ -17,14 +16,13 @@ import {
   UpdateResult,
 } from 'typeorm';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
+import { UserConditionsParam } from './types/room.type';
 
 @Injectable()
 export class RoomRepository {
   constructor(
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-    @InjectRepository(RoomMember)
-    private readonly roomMemberRepository: Repository<RoomMember>,
   ) {}
 
   async createRoom(
@@ -103,6 +101,23 @@ export class RoomRepository {
         status: RoomStatus.OPEN,
       },
     });
+  }
+
+  async findJoinableRooms(
+    userConditions: UserConditionsParam,
+    manager: EntityManager,
+  ): Promise<Room[]> {
+    return await manager
+      .createQueryBuilder(Room, 'room')
+      .where('room.status = :status', { status: RoomStatus.OPEN })
+      .andWhere('(room.roomType = :type OR room.roomType = :any)', {
+        type: RoomType[userConditions.gender],
+        any: RoomType.ANY,
+      })
+      .andWhere('room.maxAge >= :age', { age: userConditions.age })
+      .andWhere('room.minAge <= :age', { age: userConditions.age })
+      .andWhere('room.currentMembersCount < room.maxMembersCount')
+      .getMany();
   }
 
   async updateRoom(roomId: number, updateRoomDto: UpdateRoomDto): Promise<UpdateResult> {
