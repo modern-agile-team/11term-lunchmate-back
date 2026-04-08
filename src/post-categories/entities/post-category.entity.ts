@@ -8,6 +8,7 @@ export class PostCategory {
 
   @Column({
     length: 50,
+    unique: true,
   })
   name: string;
 
