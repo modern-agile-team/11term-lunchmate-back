@@ -1,12 +1,17 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBody,
   ApiCreatedResponse,
   ApiExtraModels,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RoomService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -19,6 +24,7 @@ import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
 
 @ApiTags('Room')
 @ApiExtraModels(ResponseRoomListDto, ResponseRoomDetailDto)
@@ -29,7 +35,12 @@ export class RoomController {
   @Authenticated()
   @Post()
   @ApiOperation({ summary: '방 생성' })
+  @ApiBody({ type: CreateRoomDto })
   @ApiCreatedResponse({ type: ResponseRoomDetailDto })
+  @ApiBadRequestResponse({
+    description: '방 생성 요청 값이 올바르지 않거나 이미 참여 중인 방이 있는 경우',
+  })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async createRoom(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() createRoomDto: CreateRoomDto,
@@ -48,6 +59,7 @@ export class RoomController {
   @ApiQuery({ name: 'lunchAtFrom', required: false, type: String })
   @ApiQuery({ name: 'lunchAtTo', required: false, type: String })
   @ApiOkResponse({ type: ResponseRoomListDto })
+  @ApiBadRequestResponse({ description: '조회 조건이 올바르지 않은 경우' })
   async findRooms(@Query() query: FindRoomsQueryDto): Promise<ResponseRoomListDto> {
     return await this.roomService.findRooms(query);
   }
@@ -56,6 +68,7 @@ export class RoomController {
   @ApiOperation({ summary: '방 상세 조회' })
   @ApiParam({ name: 'id', description: '조회할 방 ID', type: Number })
   @ApiOkResponse({ type: ResponseRoomDetailDto })
+  @ApiNotFoundResponse({ description: '존재하지 않는 방을 조회하려는 경우' })
   async findRoomById(@Param('id', ParseIntPipe) roomId: number): Promise<ResponseRoomDetailDto> {
     return await this.roomService.findRoomById(roomId);
   }
@@ -65,5 +78,22 @@ export class RoomController {
   @ApiOkResponse({ type: ResponseOpenRoomsCountDto })
   async findOpenRoomsCount(): Promise<ResponseOpenRoomsCountDto> {
     return await this.roomService.findOpenRoomsCount();
+  }
+
+  @Patch(':id')
+  @Authenticated()
+  @ApiOperation({ summary: '방 수정' })
+  @ApiParam({ name: 'id', description: '수정할 방 ID', type: Number })
+  @ApiBody({ type: UpdateRoomDto })
+  @ApiOkResponse({ type: ResponseRoomDetailDto })
+  @ApiBadRequestResponse({ description: '수정 요청 값이 올바르지 않은 경우' })
+  @ApiForbiddenResponse({ description: '방장이 아닌 사용자가 수정을 시도한 경우' })
+  @ApiNotFoundResponse({ description: '존재하지 않는 방을 수정하려는 경우' })
+  async updateRoom(
+    @Param('id', ParseIntPipe) roomId: number,
+    @Body() updateRoomDto: UpdateRoomDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ResponseRoomDetailDto> {
+    return await this.roomService.updateRoom(roomId, updateRoomDto, user.userId);
   }
 }
