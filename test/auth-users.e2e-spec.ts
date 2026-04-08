@@ -288,6 +288,50 @@ describe('Auth and Users (e2e)', () => {
     expect(response.body.mbti).toBe('ISTP');
   });
 
+  it('PATCH /users/me 변경이 없으면 저장 없이 현재 정보 반환', async () => {
+    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+      email: 'noop@example.com',
+      password: 'password1234',
+      birthDate: '1999-01-01',
+      gender: 'MALE',
+      nickname: 'noop-user',
+      schoolInfo: 'Hongik University',
+      introduce: '그대로 유지',
+      mbti: 'INTJ',
+    });
+
+    const beforeUpdate = await dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .addSelect('user.updatedAt')
+      .where('user.id = :userId', { userId: signupResponse.body.user.id })
+      .getOne();
+
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    const response = await request(app.getHttpServer())
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
+      .send({
+        schoolInfo: 'Hongik University',
+        introduce: '그대로 유지',
+        mbti: 'INTJ',
+      });
+
+    const afterUpdate = await dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .addSelect('user.updatedAt')
+      .where('user.id = :userId', { userId: signupResponse.body.user.id })
+      .getOne();
+
+    expect(response.status).toBe(200);
+    expect(response.body.schoolInfo).toBe('Hongik University');
+    expect(response.body.introduce).toBe('그대로 유지');
+    expect(response.body.mbti).toBe('INTJ');
+    expect(afterUpdate?.updatedAt).toBe(beforeUpdate?.updatedAt);
+  });
+
   it('PATCH /users/me 에서 중복 닉네임 거부', async () => {
     await request(app.getHttpServer()).post('/auth/signup').send({
       email: 'first-user@example.com',

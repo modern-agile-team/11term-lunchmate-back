@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MeUserResponseDto } from '../../users/dto/me-user-response.dto';
+import { CurrentUserResponseDto } from '../../users/dto/current-user-response.dto';
 
 export class AuthTokensResponseDto {
   @ApiProperty()
@@ -10,6 +10,6 @@ export class AuthTokensResponseDto {
 }
 
 export class AuthResponseDto extends AuthTokensResponseDto {
-  @ApiProperty({ type: MeUserResponseDto })
-  user: MeUserResponseDto;
+  @ApiProperty({ type: CurrentUserResponseDto })
+  user: CurrentUserResponseDto;
 }

@@ -1,9 +1,9 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from './entities/user.entity';
-import { MeUserResponseDto } from './dto/me-user-response.dto';
+import { CurrentUserResponseDto } from './dto/current-user-response.dto';
 import { PublicUserResponseDto } from './dto/public-user-response.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { UserRepository } from './users.repository';
+import { UpdateMePatch, UserRepository } from './users.repository';
 
 @Injectable()
 export class UserService {
@@ -90,27 +90,27 @@ export class UserService {
     return this.toPublicResponse(user);
   }
 
-  async findMe(userId: number): Promise<MeUserResponseDto> {
+  async findMe(userId: number): Promise<CurrentUserResponseDto> {
     const user = await this.findActiveUserOrFail(userId);
     return this.toMeResponse(user);
   }
 
-  async updateMe(userId: number, updateMeDto: UpdateMeDto): Promise<MeUserResponseDto> {
+  async updateMe(userId: number, updateMeDto: UpdateMeDto): Promise<CurrentUserResponseDto> {
     const user = await this.findActiveUserOrFail(userId);
+    const patch = this.toUpdateMePatch(user, updateMeDto);
 
-    if (updateMeDto.nickname) {
-      await this.assertNicknameAvailable(updateMeDto.nickname, userId);
+    if (patch.nickname !== undefined) {
+      await this.assertNicknameAvailable(patch.nickname, userId);
     }
 
-    user.nickname = updateMeDto.nickname ?? user.nickname;
-    user.birthDate = updateMeDto.birthDate ?? user.birthDate;
-    user.gender = updateMeDto.gender ?? user.gender;
-    user.schoolInfo = updateMeDto.schoolInfo ?? user.schoolInfo;
-    user.introduce = updateMeDto.introduce ?? user.introduce;
-    user.mbti = updateMeDto.mbti ?? user.mbti;
+    if (Object.keys(patch).length === 0) {
+      return this.toMeResponse(user);
+    }
 
-    const savedUser = await this.userRepository.save(user);
-    return this.toMeResponse(savedUser);
+    await this.userRepository.updateMe(userId, patch);
+
+    const updatedUser = await this.findActiveUserOrFail(userId);
+    return this.toMeResponse(updatedUser);
   }
 
   async withdraw(userId: number): Promise<void> {
@@ -132,10 +132,47 @@ export class UserService {
     };
   }
 
-  toMeResponse(user: User): MeUserResponseDto {
+  toMeResponse(user: User): CurrentUserResponseDto {
     return {
-      ...this.toPublicResponse(user),
+      id: user.id,
+      nickname: user.nickname,
+      birthDate: user.birthDate,
+      gender: user.gender,
+      schoolInfo: user.schoolInfo,
+      introduce: user.introduce,
+      mbti: user.mbti,
+      createdAt: user.createdAt,
       email: user.email,
     };
+  }
+
+  private toUpdateMePatch(user: User, updateMeDto: UpdateMeDto): UpdateMePatch {
+    const patch: UpdateMePatch = {};
+
+    if (updateMeDto.nickname !== undefined && updateMeDto.nickname !== user.nickname) {
+      patch.nickname = updateMeDto.nickname;
+    }
+
+    if (updateMeDto.birthDate !== undefined && updateMeDto.birthDate !== user.birthDate) {
+      patch.birthDate = updateMeDto.birthDate;
+    }
+
+    if (updateMeDto.gender !== undefined && updateMeDto.gender !== user.gender) {
+      patch.gender = updateMeDto.gender;
+    }
+
+    if (updateMeDto.schoolInfo !== undefined && updateMeDto.schoolInfo !== user.schoolInfo) {
+      patch.schoolInfo = updateMeDto.schoolInfo;
+    }
+
+    if (updateMeDto.introduce !== undefined && updateMeDto.introduce !== user.introduce) {
+      patch.introduce = updateMeDto.introduce;
+    }
+
+    if (updateMeDto.mbti !== undefined && updateMeDto.mbti !== user.mbti) {
+      patch.mbti = updateMeDto.mbti;
+    }
+
+    return patch;
   }
 }
