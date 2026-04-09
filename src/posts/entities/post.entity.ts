@@ -38,6 +38,12 @@ export class Post extends BaseTableEntity {
   })
   commentCount: number;
 
+  @Column({
+    default: false,
+    name: 'is_anonymous',
+  })
+  isAnonymous: boolean;
+
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
 
