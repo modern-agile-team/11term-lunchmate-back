@@ -9,5 +9,6 @@ import { PostCategoryRepository } from './post-categories.repository';
   imports: [TypeOrmModule.forFeature([PostCategory])],
   controllers: [PostCategoryController],
   providers: [PostCategoryService, PostCategoryRepository],
+  exports: [PostCategoryService],
 })
 export class PostCategoryModule {}
