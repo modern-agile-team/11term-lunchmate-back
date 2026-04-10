@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, LessThan, Repository } from 'typeorm';
 import { CreatePostDto } from './dtos/create-post.dto';
+import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 
 @Injectable()
 export class PostRepository {
@@ -30,6 +31,25 @@ export class PostRepository {
         category: true,
         user: true,
       },
+    });
+  }
+
+  async findPosts(query: FindPostsQueryDto, limit: number): Promise<Post[]> {
+    const where: FindOptionsWhere<Post> = {};
+
+    if (query.categoryId !== undefined) where.category = { id: query.categoryId };
+    if (query.cursor !== undefined) where.id = LessThan(query.cursor);
+
+    return await this.postRepository.find({
+      where,
+      relations: {
+        user: true,
+        category: true,
+      },
+      order: {
+        id: 'DESC',
+      },
+      take: limit + 1,
     });
   }
 }
