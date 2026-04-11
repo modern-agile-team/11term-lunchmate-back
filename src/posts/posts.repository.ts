@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
-import { FindOptionsWhere, LessThan, Repository, UpdateResult } from 'typeorm';
+import { DeleteResult, FindOptionsWhere, LessThan, Repository, UpdateResult } from 'typeorm';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { UpdatePostPayloadDto } from './dtos/update-post.dto';
@@ -56,5 +56,9 @@ export class PostRepository {
 
   async updatePost(postId: number, updatePostPayload: UpdatePostPayloadDto): Promise<UpdateResult> {
     return await this.postRepository.update(postId, updatePostPayload);
+  }
+
+  async deletePost(postId: number): Promise<DeleteResult> {
+    return await this.postRepository.softDelete(postId);
   }
 }

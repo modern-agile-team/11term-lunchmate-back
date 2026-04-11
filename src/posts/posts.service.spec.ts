@@ -80,6 +80,7 @@ const mockPostRepository = {
   findPostById: jest.fn(),
   findPosts: jest.fn(),
   updatePost: jest.fn(),
+  deletePost: jest.fn(),
 };
 
 const mockPostCategoryService = {
@@ -344,6 +345,35 @@ describe('PostService', () => {
       expect(mockPostRepository.updatePost).toHaveBeenCalledWith(3, {
         category: { id: 2 },
       });
+    });
+  });
+
+  describe('deletePost', () => {
+    it('작성자가 게시글을 삭제하면 repository deletePost를 호출한다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostRepository.deletePost.mockResolvedValue({ affected: 1 });
+
+      await expect(postService.deletePost(3, 7)).resolves.toBeUndefined();
+
+      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(3);
+      expect(mockPostRepository.deletePost).toHaveBeenCalledWith(3);
+    });
+
+    it('작성자가 아니면 ForbiddenException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+
+      await expect(postService.deletePost(3, 8)).rejects.toThrow(ForbiddenException);
+
+      expect(mockPostRepository.deletePost).not.toHaveBeenCalled();
+    });
+
+    it('삭제 결과 affected 가 없으면 NotFoundException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostRepository.deletePost.mockResolvedValue({ affected: 0 });
+
+      await expect(postService.deletePost(3, 7)).rejects.toThrow(NotFoundException);
+
+      expect(mockPostRepository.deletePost).toHaveBeenCalledWith(3);
     });
   });
 });
