@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PostRepository } from './posts.repository';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { PostCategoryService } from 'src/post-categories/post-categories.service';
@@ -6,6 +11,8 @@ import { ResponsePostDetailDto, ResponsePostListDto } from './dtos/response-post
 import { PostMapper } from './mappers/post-mapper';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/post.constant';
+import { Post } from './entities/post.entity';
+import { UpdatePostDto, UpdatePostPayloadDto } from './dtos/update-post.dto';
 
 @Injectable()
 export class PostService {
@@ -21,11 +28,11 @@ export class PostService {
 
     const createdPost = await this.postRepository.createPost(createPostDto, userId);
 
-    const newPostDetail = await this.postRepository.findPostById(createdPost.id);
+    const createdPostDetail = await this.postRepository.findPostById(createdPost.id);
 
-    if (!newPostDetail) throw new NotFoundException('생성된 게시글을 찾을 수 없습니다.');
+    if (!createdPostDetail) throw new NotFoundException('생성된 게시글을 찾을 수 없습니다.');
 
-    return PostMapper.toDetailDto(newPostDetail);
+    return PostMapper.toDetailDto(createdPostDetail);
   }
 
   async findPosts(findPostsQuery: FindPostsQueryDto): Promise<ResponsePostListDto> {
@@ -42,10 +49,57 @@ export class PostService {
   }
 
   async findPostById(postId: number): Promise<ResponsePostDetailDto> {
+    const post = await this.findPostByIdOrThrow(postId);
+    return PostMapper.toDetailDto(post);
+  }
+
+  async updatePost(
+    updatePostDto: UpdatePostDto,
+    postId: number,
+    userId: number,
+  ): Promise<ResponsePostDetailDto> {
+    const existingPost = await this.findPostByIdOrThrow(postId);
+
+    await this.validatePost(updatePostDto, userId, existingPost.user.id);
+
+    const updatePostPayload = this.buildUpdatePostPayload(updatePostDto);
+
+    await this.postRepository.updatePost(postId, updatePostPayload);
+
+    return await this.findPostById(postId);
+  }
+
+  private buildUpdatePostPayload(updatePostDto: UpdatePostDto): UpdatePostPayloadDto {
+    const { categoryId, ...updatePostData } = updatePostDto;
+
+    const updatePostPayload: UpdatePostPayloadDto = {
+      ...updatePostData,
+    };
+    if (categoryId !== undefined) updatePostPayload.category = { id: categoryId };
+
+    return updatePostPayload;
+  }
+
+  private async validatePost(
+    updatePostDto: UpdatePostDto,
+    currentUserId: number,
+    authorId: number,
+  ): Promise<void> {
+    if (Object.keys(updatePostDto).length < 1)
+      throw new BadRequestException('수정할 값이 없습니다.');
+
+    if (authorId !== currentUserId)
+      throw new ForbiddenException('게시글을 수정할 권한이 없습니다.');
+
+    if (updatePostDto.categoryId !== undefined)
+      await this.postCategoryService.findPostCategoryById(updatePostDto.categoryId);
+  }
+
+  private async findPostByIdOrThrow(postId: number): Promise<Post> {
     const post = await this.postRepository.findPostById(postId);
 
     if (!post) throw new NotFoundException('존재하지 않는 게시글입니다.');
 
-    return PostMapper.toDetailDto(post);
+    return post;
   }
 }

@@ -2,15 +2,17 @@ import { Repository } from 'typeorm';
 import { PostRepository } from './posts.repository';
 import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dtos/create-post.dto';
+import { UpdatePostPayloadDto } from './dtos/update-post.dto';
 
 describe('PostRepository', () => {
   let postRepository: PostRepository;
-  let postOrmRepository: Pick<Repository<Post>, 'save' | 'findOne'>;
+  let postOrmRepository: Pick<Repository<Post>, 'save' | 'findOne' | 'update'>;
 
   beforeEach(() => {
     postOrmRepository = {
       save: jest.fn(),
       findOne: jest.fn(),
+      update: jest.fn(),
     };
 
     postRepository = new PostRepository(postOrmRepository as Repository<Post>);
@@ -65,6 +67,26 @@ describe('PostRepository', () => {
           user: true,
         },
       });
+    });
+  });
+
+  describe('updatePost', () => {
+    it('postId와 수정 payload로 update를 호출', async () => {
+      const updatePostPayload: UpdatePostPayloadDto = {
+        title: '수정된 제목',
+        category: { id: 2 },
+        isAnonymous: true,
+      };
+      const updateResult = {
+        affected: 1,
+      };
+
+      (postOrmRepository.update as jest.Mock).mockResolvedValue(updateResult);
+
+      const result = await postRepository.updatePost(1, updatePostPayload);
+
+      expect(result).toEqual(updateResult);
+      expect(postOrmRepository.update).toHaveBeenCalledWith(1, updatePostPayload);
     });
   });
 });

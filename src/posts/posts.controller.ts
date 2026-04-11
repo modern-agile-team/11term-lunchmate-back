@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiCreatedResponse,
   ApiExtraModels,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -22,6 +24,7 @@ import {
   ResponsePostListItemDto,
 } from './dtos/response-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
+import { UpdatePostDto } from './dtos/update-post.dto';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -62,5 +65,25 @@ export class PostController {
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 조회하려는 경우' })
   async findPostById(@Param('id', ParseIntPipe) postId: number): Promise<ResponsePostDetailDto> {
     return await this.postService.findPostById(postId);
+  }
+
+  @Patch(':id')
+  @Authenticated()
+  @ApiOperation({ summary: '게시글 수정' })
+  @ApiParam({ name: 'id', description: '수정할 게시글 ID', type: Number })
+  @ApiBody({ type: UpdatePostDto })
+  @ApiOkResponse({ type: ResponsePostDetailDto })
+  @ApiBadRequestResponse({ description: '수정 요청 값이 올바르지 않거나 수정할 값이 없는 경우' })
+  @ApiForbiddenResponse({ description: '작성자가 아닌 사용자가 수정을 시도한 경우' })
+  @ApiNotFoundResponse({
+    description: '존재하지 않는 게시글 또는 카테고리로 수정을 시도한 경우',
+  })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async updatePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @Body() updatePostDto: UpdatePostDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ResponsePostDetailDto> {
+    return await this.postService.updatePost(updatePostDto, postId, user.userId);
   }
 }
