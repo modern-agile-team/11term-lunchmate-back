@@ -121,7 +121,7 @@ describe('Posts Delete (e2e)', () => {
       .delete(`/posts/${post.id}`)
       .set('Authorization', `Bearer ${otherSignup.body.accessToken}`);
 
-    expectExceptionFilterErrorResponse(response, 403, '게시글에 권한이 없습니다.');
+    expectExceptionFilterErrorResponse(response, 403, '게시글에 대한 권한이 없습니다.');
   });
 
   it('DELETE /posts/:id 존재하지 않는 게시글이면 실패한다', async () => {

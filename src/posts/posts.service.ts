@@ -13,12 +13,18 @@ import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/post.constant';
 import { Post } from './entities/post.entity';
 import { UpdatePostDto, UpdatePostPayloadDto } from './dtos/update-post.dto';
+import { DataSource, EntityManager } from 'typeorm';
+import { PostLikeService } from './post-like.service';
+import { PostLikeMapper } from './mappers/post-like.mapper';
+import { ResponsePostLikeDto } from './dtos/response-post-like.dto';
 
 @Injectable()
 export class PostService {
   constructor(
     private readonly postRepository: PostRepository,
     private readonly postCategoryService: PostCategoryService,
+    private readonly postLikeService: PostLikeService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createPost(createPostDto: CreatePostDto, userId: number): Promise<ResponsePostDetailDto> {
@@ -77,6 +83,53 @@ export class PostService {
     if (!deleteResult.affected) throw new NotFoundException('존재하지 않는 게시글입니다.');
   }
 
+  async createPostLike(postId: number, userId: number): Promise<ResponsePostLikeDto> {
+    const existingPost = await this.findPostByIdOrThrow(postId);
+
+    if (existingPost.user.id === userId)
+      throw new BadRequestException('자신의 게시글에는 좋아요할 수 없습니다.');
+
+    const existingPostLike = await this.postLikeService.findPostLikeById(postId, userId);
+    if (existingPostLike) throw new BadRequestException('이미 좋아요한 게시글입니다.');
+
+    return await this.likePostTransaction(postId, userId);
+  }
+
+  async deletePostLike(postId: number, userId: number): Promise<ResponsePostLikeDto> {
+    await this.findPostByIdOrThrow(postId);
+
+    const existingPostLike = await this.postLikeService.findPostLikeById(postId, userId);
+    if (!existingPostLike) throw new NotFoundException('좋아요하지 않은 게시글입니다.');
+
+    return await this.unlikePostTransaction(postId, userId);
+  }
+
+  async likePostTransaction(postId: number, userId: number): Promise<ResponsePostLikeDto> {
+    const post = await this.dataSource.transaction(async (manager) => {
+      await this.postLikeService.saveLike(postId, userId, manager);
+
+      await this.postRepository.incresePostLikeCount(postId, manager);
+
+      return await this.findPostByIdOrThrow(postId, manager);
+    });
+
+    return PostLikeMapper.toPostLikeDto(post, true);
+  }
+
+  async unlikePostTransaction(postId: number, userId: number): Promise<ResponsePostLikeDto> {
+    const post = await this.dataSource.transaction(async (manager) => {
+      const deleteResult = await this.postLikeService.deleteLike(postId, userId, manager);
+
+      if (!deleteResult.affected) throw new NotFoundException('좋아요하지 않은 게시글입니다.');
+
+      await this.postRepository.decresePostLikeCount(postId, manager);
+
+      return await this.findPostByIdOrThrow(postId, manager);
+    });
+
+    return PostLikeMapper.toPostLikeDto(post, false);
+  }
+
   private buildUpdatePostPayload(updatePostDto: UpdatePostDto): UpdatePostPayloadDto {
     const { categoryId, ...updatePostData } = updatePostDto;
 
@@ -109,11 +162,11 @@ export class PostService {
   }
 
   validatePostAuthor(currentUserId: number, authorId: number): void {
-    if (authorId !== currentUserId) throw new ForbiddenException('게시글에 권한이 없습니다.');
+    if (authorId !== currentUserId) throw new ForbiddenException('게시글에 대한 권한이 없습니다.');
   }
 
-  private async findPostByIdOrThrow(postId: number): Promise<Post> {
-    const post = await this.postRepository.findPostById(postId);
+  private async findPostByIdOrThrow(postId: number, manager?: EntityManager): Promise<Post> {
+    const post = await this.postRepository.findPostById(postId, manager);
 
     if (!post) throw new NotFoundException('존재하지 않는 게시글입니다.');
 

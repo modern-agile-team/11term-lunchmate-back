@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
-import { DeleteResult, FindOptionsWhere, LessThan, Repository, UpdateResult } from 'typeorm';
+import {
+  DeleteResult,
+  EntityManager,
+  FindOptionsWhere,
+  LessThan,
+  Repository,
+  UpdateResult,
+} from 'typeorm';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { UpdatePostPayloadDto } from './dtos/update-post.dto';
@@ -23,8 +30,8 @@ export class PostRepository {
     });
   }
 
-  async findPostById(postId: number): Promise<Post | null> {
-    return await this.postRepository.findOne({
+  async findPostById(postId: number, manager?: EntityManager): Promise<Post | null> {
+    const findQuery = {
       where: {
         id: postId,
       },
@@ -32,7 +39,10 @@ export class PostRepository {
         category: true,
         user: true,
       },
-    });
+    };
+
+    if (manager) return await manager.findOne(Post, findQuery);
+    else return await this.postRepository.findOne(findQuery);
   }
 
   async findPosts(query: FindPostsQueryDto, limit: number): Promise<Post[]> {
@@ -60,5 +70,13 @@ export class PostRepository {
 
   async deletePost(postId: number): Promise<DeleteResult> {
     return await this.postRepository.softDelete(postId);
+  }
+
+  async incresePostLikeCount(postId: number, manager: EntityManager) {
+    return await manager.increment(Post, { id: postId }, 'likeCount', 1);
+  }
+
+  async decresePostLikeCount(postId: number, manager: EntityManager) {
+    return await manager.decrement(Post, { id: postId }, 'likeCount', 1);
   }
 }

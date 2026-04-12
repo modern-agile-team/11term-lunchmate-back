@@ -6,10 +6,12 @@ import { PostController } from './posts.controller';
 import { PostService } from './posts.service';
 import { PostRepository } from './posts.repository';
 import { PostCategoryModule } from 'src/post-categories/post-categories.module';
+import { PostLikeService } from './post-like.service';
+import { PostLikeRepository } from './post-like.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Post, PostLike]), PostCategoryModule],
   controllers: [PostController],
-  providers: [PostService, PostRepository],
+  providers: [PostService, PostRepository, PostLikeService, PostLikeRepository],
 })
 export class PostModule {}

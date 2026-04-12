@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { DataSource, EntityManager } from 'typeorm';
 import { PostService } from './posts.service';
 import { PostRepository } from './posts.repository';
 import { PostCategoryService } from 'src/post-categories/post-categories.service';
@@ -7,6 +8,7 @@ import { CreatePostDto } from './dtos/create-post.dto';
 import { PostMapper } from './mappers/post-mapper';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
+import { PostLikeService } from './post-like.service';
 
 const createPostDto: CreatePostDto = {
   title: '학생식당 돈까스 맛있어요',
@@ -81,10 +83,24 @@ const mockPostRepository = {
   findPosts: jest.fn(),
   updatePost: jest.fn(),
   deletePost: jest.fn(),
+  incresePostLikeCount: jest.fn(),
+  decresePostLikeCount: jest.fn(),
 };
 
 const mockPostCategoryService = {
   findPostCategoryById: jest.fn(),
+};
+
+const mockPostLikeService = {
+  saveLike: jest.fn(),
+  deleteLike: jest.fn(),
+  findPostLikeById: jest.fn(),
+};
+
+const mockManager = {} as EntityManager;
+
+const mockDataSource = {
+  transaction: jest.fn(),
 };
 
 describe('PostService', () => {
@@ -97,10 +113,19 @@ describe('PostService', () => {
     jest.resetAllMocks();
     toDetailDtoSpy = jest.spyOn(PostMapper, 'toDetailDto');
     toListDtoSpy = jest.spyOn(PostMapper, 'toListDto');
+    mockDataSource.transaction.mockImplementation(
+      async <T>(callback: (manager: EntityManager) => Promise<T>): Promise<T> => {
+        return callback(mockManager);
+      },
+    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostService,
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
+        },
         {
           provide: PostRepository,
           useValue: mockPostRepository,
@@ -108,6 +133,10 @@ describe('PostService', () => {
         {
           provide: PostCategoryService,
           useValue: mockPostCategoryService,
+        },
+        {
+          provide: PostLikeService,
+          useValue: mockPostLikeService,
         },
       ],
     }).compile();
@@ -202,7 +231,7 @@ describe('PostService', () => {
       const result = await postService.findPostById(3);
 
       expect(result).toEqual(mockPostDetailDto);
-      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(3);
+      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(3, undefined);
       expect(toDetailDtoSpy).toHaveBeenCalledWith(mockPostEntity);
     });
 
@@ -211,7 +240,7 @@ describe('PostService', () => {
 
       await expect(postService.findPostById(999)).rejects.toThrow(NotFoundException);
 
-      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(999);
+      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(999, undefined);
     });
   });
 
@@ -262,8 +291,8 @@ describe('PostService', () => {
         isAnonymous: true,
         category: { id: 2 },
       });
-      expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(1, 3);
-      expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(2, 3);
+      expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(1, 3, undefined);
+      expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(2, 3, undefined);
       expect(toDetailDtoSpy).toHaveBeenCalledWith(updatedPostEntity);
     });
 
@@ -355,7 +384,7 @@ describe('PostService', () => {
 
       await expect(postService.deletePost(3, 7)).resolves.toBeUndefined();
 
-      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(3);
+      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(3, undefined);
       expect(mockPostRepository.deletePost).toHaveBeenCalledWith(3);
     });
 
@@ -374,6 +403,106 @@ describe('PostService', () => {
       await expect(postService.deletePost(3, 7)).rejects.toThrow(NotFoundException);
 
       expect(mockPostRepository.deletePost).toHaveBeenCalledWith(3);
+    });
+  });
+
+  describe('createPostLike', () => {
+    it('게시글 좋아요를 저장하고 좋아요 수를 증가시킨다', async () => {
+      const likedPost = {
+        ...mockPostEntity,
+        likeCount: 1,
+      };
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostLikeService.findPostLikeById.mockResolvedValue(null);
+      mockPostLikeService.saveLike.mockResolvedValue(undefined);
+      mockPostRepository.incresePostLikeCount.mockResolvedValue({ affected: 1 });
+      mockPostRepository.findPostById
+        .mockResolvedValueOnce(mockPostEntity)
+        .mockResolvedValueOnce(likedPost);
+
+      await expect(postService.createPostLike(3, 8)).resolves.toEqual({
+        postId: 3,
+        liked: true,
+        likeCount: 1,
+      });
+
+      expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(1, 3, undefined);
+      expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(2, 3, mockManager);
+      expect(mockPostLikeService.findPostLikeById).toHaveBeenCalledWith(3, 8);
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+      expect(mockPostLikeService.saveLike).toHaveBeenCalledWith(3, 8, mockManager);
+      expect(mockPostRepository.incresePostLikeCount).toHaveBeenCalledWith(3, mockManager);
+    });
+
+    it('자신의 게시글에는 좋아요할 수 없다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+
+      await expect(postService.createPostLike(3, 7)).rejects.toThrow(BadRequestException);
+
+      expect(mockPostLikeService.findPostLikeById).not.toHaveBeenCalled();
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('이미 좋아요한 게시글이면 실패한다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostLikeService.findPostLikeById.mockResolvedValue({
+        id: 1,
+      });
+
+      await expect(postService.createPostLike(3, 8)).rejects.toThrow(BadRequestException);
+
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deletePostLike', () => {
+    it('좋아요를 취소하고 좋아요 수를 감소시킨다', async () => {
+      const likedPost = {
+        ...mockPostEntity,
+        likeCount: 1,
+      };
+      mockPostRepository.findPostById
+        .mockResolvedValueOnce(likedPost)
+        .mockResolvedValueOnce(mockPostEntity);
+      mockPostLikeService.findPostLikeById.mockResolvedValue({
+        id: 1,
+      });
+      mockPostLikeService.deleteLike.mockResolvedValue({ affected: 1 });
+      mockPostRepository.decresePostLikeCount.mockResolvedValue({ affected: 1 });
+
+      await expect(postService.deletePostLike(3, 8)).resolves.toEqual({
+        postId: 3,
+        liked: false,
+        likeCount: 0,
+      });
+
+      expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(1, 3, undefined);
+      expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(2, 3, mockManager);
+      expect(mockPostLikeService.findPostLikeById).toHaveBeenCalledWith(3, 8);
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+      expect(mockPostLikeService.deleteLike).toHaveBeenCalledWith(3, 8, mockManager);
+      expect(mockPostRepository.decresePostLikeCount).toHaveBeenCalledWith(3, mockManager);
+    });
+
+    it('좋아요하지 않은 게시글이면 취소에 실패한다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostLikeService.findPostLikeById.mockResolvedValue(null);
+
+      await expect(postService.deletePostLike(3, 8)).rejects.toThrow(NotFoundException);
+
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('트랜잭션에서 삭제 결과가 없으면 NotFoundException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostLikeService.findPostLikeById.mockResolvedValue({
+        id: 1,
+      });
+      mockPostLikeService.deleteLike.mockResolvedValue({ affected: 0 });
+
+      await expect(postService.deletePostLike(3, 8)).rejects.toThrow(NotFoundException);
+
+      expect(mockPostRepository.decresePostLikeCount).not.toHaveBeenCalled();
     });
   });
 });

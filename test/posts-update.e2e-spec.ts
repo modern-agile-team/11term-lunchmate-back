@@ -185,7 +185,7 @@ describe('Posts Update (e2e)', () => {
         title: '권한 없는 수정',
       });
 
-    expectExceptionFilterErrorResponse(response, 403, '게시글을 수정할 권한이 없습니다.');
+    expectExceptionFilterErrorResponse(response, 403, '게시글에 대한 권한이 없습니다.');
   });
 
   it('PATCH /posts/:id 잘못된 수정값이면 실패한다', async () => {
@@ -239,7 +239,10 @@ describe('Posts Update (e2e)', () => {
   });
 
   it('PATCH /posts/:id 존재하지 않는 카테고리로 수정하면 실패한다', async () => {
-    const signupResponse = await signupUser('post-missing-category@example.com', 'missing-category');
+    const signupResponse = await signupUser(
+      'post-missing-category@example.com',
+      'missing-category',
+    );
     const writer = await dataSource.getRepository(User).findOneByOrFail({
       id: signupResponse.body.user.id,
     });
