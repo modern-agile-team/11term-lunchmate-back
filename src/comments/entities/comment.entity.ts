@@ -20,6 +20,12 @@ export class Comment extends BaseTableEntity {
   })
   likeCount: number;
 
+  @Column({
+    default: false,
+    name: 'is_anonymous',
+  })
+  isAnonymous: boolean;
+
   @OneToMany(() => CommentLike, (commentLike) => commentLike.comment)
   commentLikes: CommentLike[];
 
