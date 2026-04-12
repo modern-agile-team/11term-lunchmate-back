@@ -54,9 +54,12 @@ export class PostService {
     return PostMapper.toListDto(paginatedPosts, nextCursor, hasNext);
   }
 
-  async findPostById(postId: number): Promise<ResponsePostDetailDto> {
-    const post = await this.findPostByIdOrThrow(postId);
-    return PostMapper.toDetailDto(post);
+  async findPostDetailAndIncreaseViewCount(postId: number): Promise<ResponsePostDetailDto> {
+    await this.increasePostViewCount(postId);
+
+    const increasedPost = await this.findPostByIdOrThrow(postId);
+
+    return PostMapper.toDetailDto(increasedPost);
   }
 
   async updatePost(
@@ -72,7 +75,9 @@ export class PostService {
 
     await this.postRepository.updatePost(postId, updatePostPayload);
 
-    return await this.findPostById(postId);
+    const updatedPost = await this.findPostByIdOrThrow(postId);
+
+    return PostMapper.toDetailDto(updatedPost);
   }
 
   async deletePost(postId: number, userId: number): Promise<void> {
@@ -108,7 +113,7 @@ export class PostService {
     const post = await this.dataSource.transaction(async (manager) => {
       await this.postLikeService.saveLike(postId, userId, manager);
 
-      await this.postRepository.incresePostLikeCount(postId, manager);
+      await this.postRepository.increasePostLikeCount(postId, manager);
 
       return await this.findPostByIdOrThrow(postId, manager);
     });
@@ -122,7 +127,7 @@ export class PostService {
 
       if (!deleteResult.affected) throw new NotFoundException('좋아요하지 않은 게시글입니다.');
 
-      await this.postRepository.decresePostLikeCount(postId, manager);
+      await this.postRepository.decreasePostLikeCount(postId, manager);
 
       return await this.findPostByIdOrThrow(postId, manager);
     });
@@ -171,5 +176,11 @@ export class PostService {
     if (!post) throw new NotFoundException('존재하지 않는 게시글입니다.');
 
     return post;
+  }
+
+  private async increasePostViewCount(postId: number): Promise<void> {
+    await this.findPostByIdOrThrow(postId);
+
+    await this.postRepository.increaseViewCount(postId);
   }
 }

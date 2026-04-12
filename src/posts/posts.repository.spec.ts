@@ -111,7 +111,7 @@ describe('PostRepository', () => {
     });
   });
 
-  describe('incresePostLikeCount', () => {
+  describe('increasePostLikeCount', () => {
     it('manager.increment 로 좋아요 수를 1 증가시킨다', async () => {
       const updateResult = {
         affected: 1,
@@ -119,14 +119,14 @@ describe('PostRepository', () => {
 
       (manager.increment as jest.Mock).mockResolvedValue(updateResult);
 
-      const result = await postRepository.incresePostLikeCount(1, manager as never);
+      const result = await postRepository.increasePostLikeCount(1, manager as never);
 
       expect(result).toEqual(updateResult);
       expect(manager.increment).toHaveBeenCalledWith(Post, { id: 1 }, 'likeCount', 1);
     });
   });
 
-  describe('decresePostLikeCount', () => {
+  describe('decreasePostLikeCount', () => {
     it('manager.decrement 로 좋아요 수를 1 감소시킨다', async () => {
       const updateResult = {
         affected: 1,
@@ -134,7 +134,7 @@ describe('PostRepository', () => {
 
       (manager.decrement as jest.Mock).mockResolvedValue(updateResult);
 
-      const result = await postRepository.decresePostLikeCount(1, manager as never);
+      const result = await postRepository.decreasePostLikeCount(1, manager as never);
 
       expect(result).toEqual(updateResult);
       expect(manager.decrement).toHaveBeenCalledWith(Post, { id: 1 }, 'likeCount', 1);

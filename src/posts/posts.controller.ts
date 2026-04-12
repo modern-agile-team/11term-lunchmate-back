@@ -76,8 +76,10 @@ export class PostController {
   @ApiParam({ name: 'id', description: '조회할 게시글 ID', type: Number })
   @ApiOkResponse({ type: ResponsePostDetailDto })
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 조회하려는 경우' })
-  async findPostById(@Param('id', ParseIntPipe) postId: number): Promise<ResponsePostDetailDto> {
-    return await this.postService.findPostById(postId);
+  async findPostDetailAndIncreaseViewCount(
+    @Param('id', ParseIntPipe) postId: number,
+  ): Promise<ResponsePostDetailDto> {
+    return await this.postService.findPostDetailAndIncreaseViewCount(postId);
   }
 
   @Patch(':id')

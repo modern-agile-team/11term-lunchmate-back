@@ -242,13 +242,16 @@ describe('Posts Read (e2e)', () => {
     });
 
     const response = await request(httpApp()).get(`/posts/${post.id}`);
+    const viewedPost = await dataSource.getRepository(Post).findOneByOrFail({
+      id: post.id,
+    });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       id: post.id,
       title: '상세 글',
       content: '상세 내용',
-      viewCount: 0,
+      viewCount: 1,
       likeCount: 0,
       commentCount: 0,
       createdAt: expect.any(String),
@@ -262,6 +265,7 @@ describe('Posts Read (e2e)', () => {
       },
       isAnonymous: false,
     });
+    expect(viewedPost.viewCount).toBe(1);
   });
 
   it('GET /posts/:id 익명 게시글 상세 조회 시 작성자 정보를 숨긴다', async () => {
