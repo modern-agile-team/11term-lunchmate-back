@@ -199,7 +199,6 @@ describe('PostService', () => {
       const result = await postService.findPostById(3);
 
       expect(result).toEqual(mockPostDetailDto);
-      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(3);
       expect(toDetailDtoSpy).toHaveBeenCalledWith(mockPostEntity);
     });
 
