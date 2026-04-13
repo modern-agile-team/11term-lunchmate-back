@@ -53,7 +53,6 @@ export class PostController {
 
   @Get(':id')
   @ApiOperation({ summary: '게시글 상세 조회' })
-  @ApiParam({ name: 'id', description: '조회할 게시글 ID', type: Number })
   @ApiOkResponse({ type: ResponsePostDetailDto })
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 조회하려는 경우' })
   async findPostById(@Param('id', ParseIntPipe) postId: number): Promise<ResponsePostDetailDto> {
