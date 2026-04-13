@@ -1,3 +1,4 @@
+import { CommentService } from './../comments/comments.service';
 import {
   Body,
   Controller,
@@ -38,12 +39,16 @@ import {
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { ResponsePostLikeDto } from './dtos/response-post-like.dto';
+import { CreateCommentDto } from 'src/comments/dtos/create-comment.dto';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
 @Controller('posts')
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(
+    private readonly postService: PostService,
+    private readonly commentService: CommentService,
+  ) {}
 
   @Authenticated()
   @Post()
@@ -152,5 +157,16 @@ export class PostController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostLikeDto> {
     return await this.postService.deletePostLike(postId, user.userId);
+  }
+
+  // 댓글 엔드포인트
+  @Post(':id/comments')
+  @Authenticated()
+  async createComment(
+    @Body() createCommentDto: CreateCommentDto,
+    @Param('id', ParseIntPipe) postId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.commentService.createComment(createCommentDto, postId, user.userId);
   }
 }
