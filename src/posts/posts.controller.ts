@@ -7,7 +7,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -45,9 +44,6 @@ export class PostController {
 
   @Get()
   @ApiOperation({ summary: '게시글 목록 조회' })
-  @ApiQuery({ name: 'cursor', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'categoryId', required: false, type: Number })
   @ApiOkResponse({ type: ResponsePostListDto })
   @ApiBadRequestResponse({ description: '조회 조건이 올바르지 않은 경우' })
   @ApiNotFoundResponse({ description: '존재하지 않는 카테고리로 조회하려는 경우' })
