@@ -6,7 +6,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -21,6 +20,7 @@ import {
   ResponsePostListItemDto,
 } from './dtos/response-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
+import { PostMapper } from './mappers/post-mapper';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -39,7 +39,9 @@ export class PostController {
     @Body() createPostDto: CreatePostDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostDetailDto> {
-    return await this.postService.createPost(createPostDto, user.userId);
+    const createdPost = await this.postService.createPost(createPostDto, user.userId);
+
+    return PostMapper.toDetailDto(createdPost);
   }
 
   @Get()
@@ -48,7 +50,9 @@ export class PostController {
   @ApiBadRequestResponse({ description: '조회 조건이 올바르지 않은 경우' })
   @ApiNotFoundResponse({ description: '존재하지 않는 카테고리로 조회하려는 경우' })
   async findPosts(@Query() query: FindPostsQueryDto): Promise<ResponsePostListDto> {
-    return await this.postService.findPosts(query);
+    const { items, nextCursor, hasNext } = await this.postService.findPosts(query);
+
+    return PostMapper.toListDto(items, nextCursor, hasNext);
   }
 
   @Get(':id')
@@ -56,6 +60,8 @@ export class PostController {
   @ApiOkResponse({ type: ResponsePostDetailDto })
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 조회하려는 경우' })
   async findPostById(@Param('id', ParseIntPipe) postId: number): Promise<ResponsePostDetailDto> {
-    return await this.postService.findPostById(postId);
+    const post = await this.postService.findPostById(postId);
+
+    return PostMapper.toDetailDto(post);
   }
 }

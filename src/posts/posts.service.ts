@@ -2,10 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PostRepository } from './posts.repository';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { PostCategoryService } from 'src/post-categories/post-categories.service';
-import { ResponsePostDetailDto, ResponsePostListDto } from './dtos/response-post.dto';
-import { PostMapper } from './mappers/post-mapper';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/post.constant';
+import { Post } from './entities/post.entity';
+import { FindPostsResult } from './types/post.type';
 
 @Injectable()
 export class PostService {
@@ -14,7 +14,7 @@ export class PostService {
     private readonly postCategoryService: PostCategoryService,
   ) {}
 
-  async createPost(createPostDto: CreatePostDto, userId: number): Promise<ResponsePostDetailDto> {
+  async createPost(createPostDto: CreatePostDto, userId: number): Promise<Post> {
     const categoryId = createPostDto.categoryId;
 
     await this.postCategoryService.findPostCategoryById(categoryId);
@@ -25,10 +25,10 @@ export class PostService {
 
     if (!newPostDetail) throw new NotFoundException('생성된 게시글을 찾을 수 없습니다.');
 
-    return PostMapper.toDetailDto(newPostDetail);
+    return newPostDetail;
   }
 
-  async findPosts(findPostsQuery: FindPostsQueryDto): Promise<ResponsePostListDto> {
+  async findPosts(findPostsQuery: FindPostsQueryDto): Promise<FindPostsResult> {
     if (findPostsQuery.categoryId !== undefined)
       await this.postCategoryService.findPostCategoryById(findPostsQuery.categoryId);
 
@@ -38,14 +38,18 @@ export class PostService {
     const paginatedPosts = hasNext ? posts.slice(0, limit) : posts;
     const nextCursor = hasNext ? paginatedPosts[paginatedPosts.length - 1].id : null;
 
-    return PostMapper.toListDto(paginatedPosts, nextCursor, hasNext);
+    return {
+      items: paginatedPosts,
+      nextCursor,
+      hasNext,
+    };
   }
 
-  async findPostById(postId: number): Promise<ResponsePostDetailDto> {
+  async findPostById(postId: number): Promise<Post> {
     const post = await this.postRepository.findPostById(postId);
 
     if (!post) throw new NotFoundException('존재하지 않는 게시글입니다.');
 
-    return PostMapper.toDetailDto(post);
+    return post;
   }
 }

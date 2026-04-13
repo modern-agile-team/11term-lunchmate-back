@@ -63,19 +63,6 @@ describe('Posts Read (e2e)', () => {
     });
   }
 
-  function expectExceptionFilterErrorResponse(
-    response: Response,
-    statusCode: number,
-    message: string | string[],
-  ): void {
-    expect(response.status).toBe(statusCode);
-    expect(response.body.success).toBe(false);
-    expect(response.body.error).toEqual({
-      statusCode,
-      message,
-    });
-  }
-
   it('GET /posts 전체 게시글 목록 조회 성공', async () => {
     const writerSignup = await signupUser('posts-list@example.com', 'list-writer');
     const writer = await dataSource.getRepository(User).findOneByOrFail({
@@ -225,7 +212,12 @@ describe('Posts Read (e2e)', () => {
       categoryId: 999,
     });
 
-    expectExceptionFilterErrorResponse(response, 404, '존재하지 않은 카테고리입니다.');
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 404,
+      message: '존재하지 않은 카테고리입니다.',
+    });
   });
 
   it('GET /posts/:id 게시글 상세 조회 성공', async () => {
@@ -288,7 +280,12 @@ describe('Posts Read (e2e)', () => {
   it('GET /posts/:id 존재하지 않는 게시글이면 실패', async () => {
     const response = await request(httpApp()).get('/posts/999');
 
-    expectExceptionFilterErrorResponse(response, 404, '존재하지 않는 게시글입니다.');
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 404,
+      message: '존재하지 않는 게시글입니다.',
+    });
   });
 
   it('GET /posts/:id 잘못된 게시글 ID 면 실패', async () => {
