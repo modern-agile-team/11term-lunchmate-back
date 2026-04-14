@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PostRepository } from './posts.repository';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { PostCategoryService } from 'src/post-categories/post-categories.service';
@@ -85,14 +80,16 @@ export class PostService {
     currentUserId: number,
     authorId: number,
   ): Promise<void> {
-    if (Object.keys(updatePostDto).length < 1)
-      throw new BadRequestException('수정할 값이 없습니다.');
-
     if (authorId !== currentUserId)
       throw new ForbiddenException('게시글을 수정할 권한이 없습니다.');
 
-    if (updatePostDto.categoryId !== undefined)
-      await this.postCategoryService.findPostCategoryById(updatePostDto.categoryId);
+    if (updatePostDto.categoryId !== undefined) {
+      const existingCategory = await this.postCategoryService.findPostCategoryById(
+        updatePostDto.categoryId,
+      );
+
+      if (!existingCategory) throw new NotFoundException('존재하지 않는 카테고리입니다.');
+    }
   }
 
   private async findPostByIdOrThrow(postId: number): Promise<Post> {

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -70,7 +80,6 @@ export class PostController {
   @Patch(':id')
   @Authenticated()
   @ApiOperation({ summary: '게시글 수정' })
-  @ApiParam({ name: 'id', description: '수정할 게시글 ID', type: Number })
   @ApiBody({ type: UpdatePostDto })
   @ApiOkResponse({ type: ResponsePostDetailDto })
   @ApiBadRequestResponse({ description: '수정 요청 값이 올바르지 않거나 수정할 값이 없는 경우' })
@@ -84,6 +93,9 @@ export class PostController {
     @Body() updatePostDto: UpdatePostDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostDetailDto> {
+    if (Object.keys(updatePostDto).length < 1)
+      throw new BadRequestException('수정할 값이 없습니다.');
+
     return await this.postService.updatePost(updatePostDto, postId, user.userId);
   }
 }
