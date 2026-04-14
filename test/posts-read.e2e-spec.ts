@@ -212,11 +212,11 @@ describe('Posts Read (e2e)', () => {
       categoryId: 999,
     });
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
     expect(response.body.error).toEqual({
-      statusCode: 404,
-      message: '존재하지 않은 카테고리입니다.',
+      statusCode: 400,
+      message: '존재하지 않는 카테고리입니다.',
     });
   });
 

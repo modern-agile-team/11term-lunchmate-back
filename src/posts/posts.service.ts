@@ -23,8 +23,7 @@ export class PostService {
   async createPost(createPostDto: CreatePostDto, userId: number): Promise<Post> {
     const categoryId = createPostDto.categoryId;
 
-    const existingCategory = await this.postCategoryService.findPostCategoryById(categoryId);
-    if (!existingCategory) throw new BadRequestException('존재하지 않는 카테고리입니다.');
+    await this.validateCategoryExists(categoryId);
 
     const createdPost = await this.postRepository.createPost(createPostDto, userId);
 
@@ -37,7 +36,7 @@ export class PostService {
 
   async findPosts(findPostsQuery: FindPostsQueryDto): Promise<FindPostsResult> {
     if (findPostsQuery.categoryId !== undefined)
-      await this.postCategoryService.findPostCategoryById(findPostsQuery.categoryId);
+      await this.validateCategoryExists(findPostsQuery.categoryId);
 
     const limit = findPostsQuery.limit ?? PAGINATION_CONSTANTS.DEFAULT_LIMIT;
     const posts = await this.postRepository.findPosts(findPostsQuery, limit);
@@ -52,17 +51,16 @@ export class PostService {
     };
   }
 
-  async findPostById(postId: number): Promise<ResponsePostDetailDto> {
-    const post = await this.findPostByIdOrThrow(postId);
-    return PostMapper.toDetailDto(post);
+  async findPostById(postId: number): Promise<Post> {
+    const post = await this.postRepository.findPostById(postId);
+
+    if (!post) throw new NotFoundException('존재하지 않는 게시글입니다.');
+
+    return post;
   }
 
-  async updatePost(
-    updatePostDto: UpdatePostDto,
-    postId: number,
-    userId: number,
-  ): Promise<ResponsePostDetailDto> {
-    const existingPost = await this.findPostByIdOrThrow(postId);
+  async updatePost(updatePostDto: UpdatePostDto, postId: number, userId: number): Promise<Post> {
+    const existingPost = await this.findPostById(postId);
 
     await this.validatePost(updatePostDto, userId, existingPost.user.id);
 
@@ -93,19 +91,13 @@ export class PostService {
       throw new ForbiddenException('게시글을 수정할 권한이 없습니다.');
 
     if (updatePostDto.categoryId !== undefined) {
-      const existingCategory = await this.postCategoryService.findPostCategoryById(
-        updatePostDto.categoryId,
-      );
-
-      if (!existingCategory) throw new NotFoundException('존재하지 않는 카테고리입니다.');
+      await this.validateCategoryExists(updatePostDto.categoryId);
     }
   }
 
-  private async findPostByIdOrThrow(postId: number): Promise<Post> {
-    const post = await this.postRepository.findPostById(postId);
+  private async validateCategoryExists(categoryId: number): Promise<void> {
+    const existingCategory = await this.postCategoryService.findPostCategoryById(categoryId);
 
-    if (!post) throw new NotFoundException('존재하지 않는 게시글입니다.');
-
-    return post;
+    if (!existingCategory) throw new BadRequestException('존재하지 않는 카테고리입니다.');
   }
 }

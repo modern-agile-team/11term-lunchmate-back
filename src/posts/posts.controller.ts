@@ -97,6 +97,8 @@ export class PostController {
     if (Object.keys(updatePostDto).length < 1)
       throw new BadRequestException('수정할 값이 없습니다.');
 
-    return await this.postService.updatePost(updatePostDto, postId, user.userId);
+    const updatedPost = await this.postService.updatePost(updatePostDto, postId, user.userId);
+
+    return PostMapper.toDetailDto(updatedPost);
   }
 }
