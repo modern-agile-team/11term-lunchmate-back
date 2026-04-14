@@ -77,7 +77,11 @@ export class MealMenuRepository {
     });
   }
 
-  async applyLike(userId: number, mealMenuId: number): Promise<MealMenu> {
+  async applyReaction(
+    userId: number,
+    mealMenuId: number,
+    actionType: ActionType,
+  ): Promise<MealMenu> {
     return this.dataSource.transaction(async (manager) => {
       const mealMenuRepository = manager.getRepository(MealMenu);
       const mealMenuReactionRepository = manager.getRepository(MealMenuReaction);
@@ -89,72 +93,81 @@ export class MealMenuRepository {
           mealMenu: { id: mealMenuId },
         },
       });
+      const previousActionType = existingReaction?.actionType;
 
-      if (!existingReaction) {
-        await mealMenuReactionRepository.save(
-          mealMenuReactionRepository.create({
-            actionType: ActionType.LIKE,
-            user: { id: userId } as User,
-            mealMenu: { id: mealMenuId } as MealMenu,
-          }),
-        );
+      await this.persistReaction(
+        mealMenuReactionRepository,
+        existingReaction,
+        userId,
+        mealMenuId,
+        actionType,
+      );
 
-        mealMenu.likeCount += 1;
-      } else if (existingReaction.actionType === ActionType.DISLIKE) {
-        existingReaction.actionType = ActionType.LIKE;
-        await mealMenuReactionRepository.save(existingReaction);
+      const didChangeCounts = this.applyReactionCounts(
+        mealMenu,
+        previousActionType,
+        actionType,
+      );
 
-        mealMenu.likeCount += 1;
-        mealMenu.dislikeCount = Math.max(0, mealMenu.dislikeCount - 1);
+      if (didChangeCounts) {
+        await mealMenuRepository.update(mealMenuId, {
+          likeCount: mealMenu.likeCount,
+          dislikeCount: mealMenu.dislikeCount,
+        });
       }
-
-      await mealMenuRepository.update(mealMenuId, {
-        likeCount: mealMenu.likeCount,
-        dislikeCount: mealMenu.dislikeCount,
-      });
 
       return mealMenu;
     });
   }
 
-  async applyDislike(userId: number, mealMenuId: number): Promise<MealMenu> {
-    return this.dataSource.transaction(async (manager) => {
-      const mealMenuRepository = manager.getRepository(MealMenu);
-      const mealMenuReactionRepository = manager.getRepository(MealMenuReaction);
+  private async persistReaction(
+    repository: Repository<MealMenuReaction>,
+    existingReaction: MealMenuReaction | null,
+    userId: number,
+    mealMenuId: number,
+    actionType: ActionType,
+  ): Promise<void> {
+    if (!existingReaction) {
+      await repository.save(
+        repository.create({
+          actionType,
+          user: { id: userId } as User,
+          mealMenu: { id: mealMenuId } as MealMenu,
+        }),
+      );
+      return;
+    }
 
-      const mealMenu = await mealMenuRepository.findOneByOrFail({ id: mealMenuId });
-      const existingReaction = await mealMenuReactionRepository.findOne({
-        where: {
-          user: { id: userId },
-          mealMenu: { id: mealMenuId },
-        },
-      });
+    if (existingReaction.actionType === actionType) {
+      return;
+    }
 
-      if (!existingReaction) {
-        await mealMenuReactionRepository.save(
-          mealMenuReactionRepository.create({
-            actionType: ActionType.DISLIKE,
-            user: { id: userId } as User,
-            mealMenu: { id: mealMenuId } as MealMenu,
-          }),
-        );
+    existingReaction.actionType = actionType;
+    await repository.save(existingReaction);
+  }
 
-        mealMenu.dislikeCount += 1;
-      } else if (existingReaction.actionType === ActionType.LIKE) {
-        existingReaction.actionType = ActionType.DISLIKE;
-        await mealMenuReactionRepository.save(existingReaction);
+  private applyReactionCounts(
+    mealMenu: MealMenu,
+    previousActionType: ActionType | undefined,
+    nextActionType: ActionType,
+  ): boolean {
+    if (previousActionType === nextActionType) {
+      return false;
+    }
 
-        mealMenu.likeCount = Math.max(0, mealMenu.likeCount - 1);
-        mealMenu.dislikeCount += 1;
-      }
+    if (previousActionType === ActionType.LIKE) {
+      mealMenu.likeCount = Math.max(0, mealMenu.likeCount - 1);
+    } else if (previousActionType === ActionType.DISLIKE) {
+      mealMenu.dislikeCount = Math.max(0, mealMenu.dislikeCount - 1);
+    }
 
-      await mealMenuRepository.update(mealMenuId, {
-        likeCount: mealMenu.likeCount,
-        dislikeCount: mealMenu.dislikeCount,
-      });
+    if (nextActionType === ActionType.LIKE) {
+      mealMenu.likeCount += 1;
+    } else {
+      mealMenu.dislikeCount += 1;
+    }
 
-      return mealMenu;
-    });
+    return true;
   }
 
   private applyReadFilters(

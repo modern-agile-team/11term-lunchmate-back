@@ -39,65 +39,93 @@ export class FriendRepository {
   }
 
   async findById(friendId: number): Promise<Friend | null> {
-    return this.friendRepository.findOne({
-      where: { id: friendId },
-      relations: {
-        requester: true,
-        receiver: true,
-      },
-    });
+    return this.findByIdWithRepository(this.friendRepository, friendId);
   }
 
   async createOrRestoreRequest(requesterId: number, receiverId: number): Promise<Friend> {
-    const restorableRequest = await this.findRestorableRequest(requesterId, receiverId);
+    return this.friendRepository.manager.transaction(async (manager) => {
+      const scopedRepository = manager.getRepository(Friend);
+      const restorableRequest = await this.findRestorableRequestWithRepository(
+        scopedRepository,
+        requesterId,
+        receiverId,
+      );
 
-    if (restorableRequest) {
-      return this.restoreRequest(restorableRequest);
-    }
+      if (restorableRequest) {
+        await scopedRepository.restore(restorableRequest.id);
+        await scopedRepository.update(restorableRequest.id, {
+          status: FriendStatus.PENDING,
+        });
 
-    return this.createNewRequest(requesterId, receiverId);
-  }
+        return this.reloadByIdOrFail(scopedRepository, restorableRequest.id);
+      }
 
-  private async restoreRequest(friendRequest: Friend): Promise<Friend> {
-    await this.friendRepository.restore(friendRequest.id);
-    friendRequest.status = FriendStatus.PENDING;
-    return this.persistAndReload(friendRequest);
-  }
-
-  private async createNewRequest(requesterId: number, receiverId: number): Promise<Friend> {
-    const friendRequest = this.friendRepository.create({
-      requester: { id: requesterId } as User,
-      receiver: { id: receiverId } as User,
-      status: FriendStatus.PENDING,
+      return this.createRequestAndReload(scopedRepository, requesterId, receiverId);
     });
-
-    return this.persistAndReload(friendRequest);
   }
 
-  async updateStatus(friendRequest: Friend, status: FriendStatus): Promise<Friend> {
-    friendRequest.status = status;
-    return this.persistAndReload(friendRequest);
+  async updateStatus(friendId: number, status: FriendStatus): Promise<Friend> {
+    await this.friendRepository.update(friendId, { status });
+    return this.reloadByIdOrFail(this.friendRepository, friendId);
   }
 
   async softDelete(friendId: number): Promise<void> {
     await this.friendRepository.softDelete(friendId);
   }
 
-  private createRelationQuery(options?: { withDeleted?: boolean }): SelectQueryBuilder<Friend> {
-    const query = this.friendRepository
-      .createQueryBuilder('friend')
-      .leftJoinAndSelect('friend.requester', 'requester')
-      .leftJoinAndSelect('friend.receiver', 'receiver');
+  private async createRequestAndReload(
+    repository: Repository<Friend>,
+    requesterId: number,
+    receiverId: number,
+  ): Promise<Friend> {
+    const friendRequest = repository.create({
+      requester: { id: requesterId } as User,
+      receiver: { id: receiverId } as User,
+      status: FriendStatus.PENDING,
+    });
+    const savedRequest = await repository.save(friendRequest);
 
-    if (options?.withDeleted) {
-      query.withDeleted();
-    }
-
-    return query;
+    return this.reloadByIdOrFail(repository, savedRequest.id);
   }
 
-  private async persistAndReload(friendRequest: Friend): Promise<Friend> {
-    const savedRequest = await this.friendRepository.save(friendRequest);
-    return (await this.findById(savedRequest.id)) ?? savedRequest;
+  private async findRestorableRequestWithRepository(
+    repository: Repository<Friend>,
+    requesterId: number,
+    receiverId: number,
+  ): Promise<Friend | null> {
+    return repository
+      .createQueryBuilder('friend')
+      .withDeleted()
+      .leftJoinAndSelect('friend.requester', 'requester')
+      .leftJoinAndSelect('friend.receiver', 'receiver')
+      .where('requester.id = :requesterId', { requesterId })
+      .andWhere('receiver.id = :receiverId', { receiverId })
+      .andWhere('friend.deleted_at IS NOT NULL')
+      .getOne();
+  }
+
+  private async findByIdWithRepository(
+    repository: Repository<Friend>,
+    friendId: number,
+  ): Promise<Friend | null> {
+    return repository
+      .createQueryBuilder('friend')
+      .leftJoinAndSelect('friend.requester', 'requester')
+      .leftJoinAndSelect('friend.receiver', 'receiver')
+      .where('friend.id = :friendId', { friendId })
+      .getOne();
+  }
+
+  private async reloadByIdOrFail(
+    repository: Repository<Friend>,
+    friendId: number,
+  ): Promise<Friend> {
+    const friend = await this.findByIdWithRepository(repository, friendId);
+
+    if (!friend) {
+      throw new Error(`Friend ${friendId} was written but could not be reloaded.`);
+    }
+
+    return friend;
   }
 }

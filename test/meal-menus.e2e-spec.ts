@@ -9,6 +9,20 @@ import { createMealMenuAuthTestApp } from './test-app';
 
 jest.setTimeout(30000);
 
+// Assert the error response shape produced by AllExceptionFilter.
+function expectExceptionFilterErrorResponse(
+  response: request.Response,
+  statusCode: number,
+  message: string | string[],
+): void {
+  expect(response.status).toBe(statusCode);
+  expect(response.body.success).toBe(false);
+  expect(response.body.error).toEqual({
+    statusCode,
+    message,
+  });
+}
+
 describe('Meal Menus (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
@@ -210,7 +224,9 @@ describe('Meal Menus (e2e)', () => {
         .get('/meal-menus')
         .query({ mealType: 'INVALID' });
 
-      expect(response.status).toBe(400);
+      expectExceptionFilterErrorResponse(response, 400, [
+        'mealType must be one of the following values: BREAKFAST, LUNCH, DINNER, ALL',
+      ]);
     });
   });
 
@@ -244,7 +260,7 @@ describe('Meal Menus (e2e)', () => {
     it('존재하지 않는 학식 조회 시 404', async () => {
       const response = await request(app.getHttpServer()).get('/meal-menus/999999');
 
-      expect(response.status).toBe(404);
+      expectExceptionFilterErrorResponse(response, 404, 'Meal menu not found.');
     });
 
     it('soft delete 된 학식 조회 시 404', async () => {
@@ -258,7 +274,7 @@ describe('Meal Menus (e2e)', () => {
 
       const response = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
 
-      expect(response.status).toBe(404);
+      expectExceptionFilterErrorResponse(response, 404, 'Meal menu not found.');
     });
 
     it('인증 없이도 조회 가능', async () => {
@@ -308,7 +324,7 @@ describe('Meal Menus (e2e)', () => {
 
       const response = await request(app.getHttpServer()).post(`/meal-menus/${mealMenu.id}/like`);
 
-      expect(response.status).toBe(401);
+      expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
     });
 
     it('존재하지 않는 학식 좋아요 시 404', async () => {
@@ -318,7 +334,7 @@ describe('Meal Menus (e2e)', () => {
         .post('/meal-menus/999999/like')
         .set('Authorization', `Bearer ${accessToken}`);
 
-      expect(response.status).toBe(404);
+      expectExceptionFilterErrorResponse(response, 404, 'Meal menu not found.');
     });
 
     it('기존 DISLIKE에서 좋아요 호출 시 LIKE로 전환되고 카운트가 교정됨', async () => {
@@ -441,7 +457,7 @@ describe('Meal Menus (e2e)', () => {
         `/meal-menus/${mealMenu.id}/dislike`,
       );
 
-      expect(response.status).toBe(401);
+      expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
     });
 
     it('존재하지 않는 학식 싫어요 시 404', async () => {
@@ -454,7 +470,7 @@ describe('Meal Menus (e2e)', () => {
         .post('/meal-menus/999999/dislike')
         .set('Authorization', `Bearer ${accessToken}`);
 
-      expect(response.status).toBe(404);
+      expectExceptionFilterErrorResponse(response, 404, 'Meal menu not found.');
     });
 
     it('기존 LIKE에서 싫어요 호출 시 DISLIKE로 전환되고 카운트가 교정됨', async () => {
@@ -678,7 +694,9 @@ describe('Meal Menus (e2e)', () => {
     it('actionType 누락 시 400', async () => {
       const response = await request(app.getHttpServer()).get('/meal-menus/rankings');
 
-      expect(response.status).toBe(400);
+      expectExceptionFilterErrorResponse(response, 400, [
+        'actionType must be one of the following values: LIKE, DISLIKE',
+      ]);
     });
 
     it('잘못된 actionType 값 시 400', async () => {
@@ -686,7 +704,9 @@ describe('Meal Menus (e2e)', () => {
         .get('/meal-menus/rankings')
         .query({ actionType: 'INVALID' });
 
-      expect(response.status).toBe(400);
+      expectExceptionFilterErrorResponse(response, 400, [
+        'actionType must be one of the following values: LIKE, DISLIKE',
+      ]);
     });
   });
 });
