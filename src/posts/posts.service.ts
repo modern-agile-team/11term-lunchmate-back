@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PostRepository } from './posts.repository';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { PostCategoryService } from 'src/post-categories/post-categories.service';
@@ -17,7 +17,8 @@ export class PostService {
   async createPost(createPostDto: CreatePostDto, userId: number): Promise<Post> {
     const categoryId = createPostDto.categoryId;
 
-    await this.postCategoryService.findPostCategoryById(categoryId);
+    const existingCategory = await this.postCategoryService.findPostCategoryById(categoryId);
+    if (!existingCategory) throw new BadRequestException('존재하지 않는 카테고리입니다.');
 
     const createdPost = await this.postRepository.createPost(createPostDto, userId);
 
