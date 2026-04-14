@@ -204,12 +204,14 @@ describe('Friend Request Cancel (e2e)', () => {
       });
 
     expect(response.status).toBe(201);
+    expect(response.body.id).toBe(friendRequest.body.id);
     expect(response.body.status).toBe(FriendStatus.PENDING);
 
     const relations = await dataSource
       .getRepository(Friend)
       .createQueryBuilder('friend')
       .withDeleted()
+      .addSelect('friend.deletedAt')
       .where('friend.requester_id = :requesterId', {
         requesterId: requester.body.user.id,
       })
@@ -219,5 +221,8 @@ describe('Friend Request Cancel (e2e)', () => {
       .getMany();
 
     expect(relations).toHaveLength(1);
+    expect(relations[0].id).toBe(friendRequest.body.id);
+    expect(relations[0].status).toBe(FriendStatus.PENDING);
+    expect(relations[0].deletedAt).toBeNull();
   });
 });

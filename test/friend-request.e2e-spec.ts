@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { FRIEND_ERROR_MESSAGES } from '../src/friends/friend.constants';
 import { Friend, FriendStatus } from '../src/friends/entities/friend.entity';
+import { USER_ERROR_MESSAGES } from '../src/users/user.constants';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
 
@@ -129,7 +130,7 @@ describe('Friend Request (e2e)', () => {
         receiverId: 999999,
       });
 
-    expectExceptionFilterErrorResponse(response, 404, 'User not found.');
+    expectExceptionFilterErrorResponse(response, 404, USER_ERROR_MESSAGES.userNotFound);
   });
 
   it('동일 방향 중복 신청 시 409', async () => {

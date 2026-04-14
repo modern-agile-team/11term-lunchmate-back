@@ -18,8 +18,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiParam,
-  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -35,6 +33,7 @@ import {
 } from './dtos/response-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
+import { PostMapper } from './mappers/post-mapper';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -47,34 +46,36 @@ export class PostController {
   @ApiOperation({ summary: '게시글 작성' })
   @ApiCreatedResponse({ type: ResponsePostDetailDto })
   @ApiBadRequestResponse({ description: '게시글 작성 요청 값이 올바르지 않은 경우' })
-  @ApiNotFoundResponse({ description: '존재하지 않는 카테고리로 게시글을 작성하려는 경우' })
+  @ApiBadRequestResponse({ description: '존재하지 않는 카테고리로 게시글을 작성하려는 경우' })
   @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async createPost(
     @Body() createPostDto: CreatePostDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostDetailDto> {
-    return await this.postService.createPost(createPostDto, user.userId);
+    const createdPost = await this.postService.createPost(createPostDto, user.userId);
+
+    return PostMapper.toDetailDto(createdPost);
   }
 
   @Get()
   @ApiOperation({ summary: '게시글 목록 조회' })
-  @ApiQuery({ name: 'cursor', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'categoryId', required: false, type: Number })
   @ApiOkResponse({ type: ResponsePostListDto })
   @ApiBadRequestResponse({ description: '조회 조건이 올바르지 않은 경우' })
   @ApiNotFoundResponse({ description: '존재하지 않는 카테고리로 조회하려는 경우' })
   async findPosts(@Query() query: FindPostsQueryDto): Promise<ResponsePostListDto> {
-    return await this.postService.findPosts(query);
+    const { items, nextCursor, hasNext } = await this.postService.findPosts(query);
+
+    return PostMapper.toListDto(items, nextCursor, hasNext);
   }
 
   @Get(':id')
   @ApiOperation({ summary: '게시글 상세 조회' })
-  @ApiParam({ name: 'id', description: '조회할 게시글 ID', type: Number })
   @ApiOkResponse({ type: ResponsePostDetailDto })
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 조회하려는 경우' })
   async findPostById(@Param('id', ParseIntPipe) postId: number): Promise<ResponsePostDetailDto> {
-    return await this.postService.findPostById(postId);
+    const post = await this.postService.findPostById(postId);
+
+    return PostMapper.toDetailDto(post);
   }
 
   @Patch(':id')
