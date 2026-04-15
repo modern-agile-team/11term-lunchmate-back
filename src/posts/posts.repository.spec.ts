@@ -7,6 +7,10 @@ import { UpdatePostPayloadDto } from './dtos/update-post.dto';
 describe('PostRepository', () => {
   let postRepository: PostRepository;
   let postOrmRepository: Pick<Repository<Post>, 'save' | 'findOne' | 'update' | 'softDelete'>;
+  const manager = {
+    increment: jest.fn(),
+    decrement: jest.fn(),
+  };
 
   beforeEach(() => {
     postOrmRepository = {
@@ -104,6 +108,36 @@ describe('PostRepository', () => {
 
       expect(result).toEqual(deleteResult);
       expect(postOrmRepository.softDelete).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('incresePostLikeCount', () => {
+    it('manager.increment 로 좋아요 수를 1 증가시킨다', async () => {
+      const updateResult = {
+        affected: 1,
+      };
+
+      (manager.increment as jest.Mock).mockResolvedValue(updateResult);
+
+      const result = await postRepository.incresePostLikeCount(1, manager as never);
+
+      expect(result).toEqual(updateResult);
+      expect(manager.increment).toHaveBeenCalledWith(Post, { id: 1 }, 'likeCount', 1);
+    });
+  });
+
+  describe('decresePostLikeCount', () => {
+    it('manager.decrement 로 좋아요 수를 1 감소시킨다', async () => {
+      const updateResult = {
+        affected: 1,
+      };
+
+      (manager.decrement as jest.Mock).mockResolvedValue(updateResult);
+
+      const result = await postRepository.decresePostLikeCount(1, manager as never);
+
+      expect(result).toEqual(updateResult);
+      expect(manager.decrement).toHaveBeenCalledWith(Post, { id: 1 }, 'likeCount', 1);
     });
   });
 });

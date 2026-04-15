@@ -11,6 +11,8 @@ import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/post.constant';
 import { Post } from './entities/post.entity';
 import { UpdatePostDto, UpdatePostPayloadDto } from './dtos/update-post.dto';
+import { DataSource, EntityManager } from 'typeorm';
+import { PostLikeService } from './post-like.service';
 import { FindPostsResult } from './types/post.type';
 
 @Injectable()
@@ -18,6 +20,8 @@ export class PostService {
   constructor(
     private readonly postRepository: PostRepository,
     private readonly postCategoryService: PostCategoryService,
+    private readonly postLikeService: PostLikeService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createPost(createPostDto: CreatePostDto, userId: number): Promise<Post> {
@@ -51,8 +55,8 @@ export class PostService {
     };
   }
 
-  async findPostById(postId: number): Promise<Post> {
-    const post = await this.postRepository.findPostById(postId);
+  async findPostById(postId: number, manager?: EntityManager): Promise<Post> {
+    const post = await this.postRepository.findPostById(postId, manager);
 
     if (!post) throw new NotFoundException('존재하지 않는 게시글입니다.');
 
@@ -62,7 +66,11 @@ export class PostService {
   async updatePost(updatePostDto: UpdatePostDto, postId: number, userId: number): Promise<Post> {
     const existingPost = await this.findPostById(postId);
 
-    await this.validateUpdatePost(updatePostDto, userId, existingPost.user.id);
+    if (userId !== existingPost.user.id)
+      throw new ForbiddenException('게시글에 대한 권한이 없습니다.');
+
+    if (updatePostDto.categoryId !== undefined)
+      await this.validateCategoryExists(updatePostDto.categoryId);
 
     const updatePostPayload = this.buildUpdatePostPayload(updatePostDto);
 
@@ -82,6 +90,38 @@ export class PostService {
     if (!deleteResult.affected) throw new NotFoundException('존재하지 않는 게시글입니다.');
   }
 
+  async createPostLike(postId: number, userId: number): Promise<Post> {
+    await this.findPostById(postId);
+
+    const existingPostLike = await this.postLikeService.findPostLikeById(postId, userId);
+    if (existingPostLike) throw new BadRequestException('이미 좋아요한 게시글입니다.');
+
+    return await this.dataSource.transaction(async (manager) => {
+      await this.postLikeService.saveLike(postId, userId, manager);
+
+      await this.postRepository.incresePostLikeCount(postId, manager);
+
+      return await this.findPostById(postId, manager);
+    });
+  }
+
+  async deletePostLike(postId: number, userId: number): Promise<Post> {
+    await this.findPostById(postId);
+
+    const existingPostLike = await this.postLikeService.findPostLikeById(postId, userId);
+    if (!existingPostLike) throw new NotFoundException('좋아요하지 않은 게시글입니다.');
+
+    return await this.dataSource.transaction(async (manager) => {
+      const deleteResult = await this.postLikeService.deleteLike(postId, userId, manager);
+
+      if (!deleteResult.affected) throw new NotFoundException('좋아요하지 않은 게시글입니다.');
+
+      await this.postRepository.decresePostLikeCount(postId, manager);
+
+      return await this.findPostById(postId, manager);
+    });
+  }
+
   private buildUpdatePostPayload(updatePostDto: UpdatePostDto): UpdatePostPayloadDto {
     const { categoryId, ...updatePostData } = updatePostDto;
 
@@ -91,17 +131,6 @@ export class PostService {
     if (categoryId !== undefined) updatePostPayload.category = { id: categoryId };
 
     return updatePostPayload;
-  }
-
-  private async validateUpdatePost(
-    updatePostDto: UpdatePostDto,
-    currentUserId: number,
-    authorId: number,
-  ): Promise<void> {
-    if (authorId !== currentUserId) throw new ForbiddenException('게시글에 대한 권한이 없습니다.');
-
-    if (updatePostDto.categoryId !== undefined)
-      await this.validateCategoryExists(updatePostDto.categoryId);
   }
 
   private async validateCategoryExists(categoryId: number): Promise<void> {

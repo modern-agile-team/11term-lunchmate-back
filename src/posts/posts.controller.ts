@@ -36,7 +36,9 @@ import {
 } from './dtos/response-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
+import { ResponsePostLikeDto } from './dtos/response-post-like.dto';
 import { PostMapper } from './mappers/post-mapper';
+import { PostLikeMapper } from './mappers/post-like.mapper';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -120,5 +122,41 @@ export class PostController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     return await this.postService.deletePost(postId, user.userId);
+  }
+
+  @Post(':id/like')
+  @Authenticated()
+  @ApiOperation({ summary: '게시글 좋아요' })
+  @ApiCreatedResponse({ type: ResponsePostLikeDto, description: '게시글 좋아요 성공' })
+  @ApiBadRequestResponse({
+    description: '자신의 게시글에 좋아요하거나 이미 좋아요한 게시글인 경우',
+  })
+  @ApiNotFoundResponse({ description: '존재하지 않는 게시글에 좋아요하려는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async likePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ResponsePostLikeDto> {
+    const likedPost = await this.postService.createPostLike(postId, user.userId);
+
+    return PostLikeMapper.toPostLikeDto(likedPost, true);
+  }
+
+  @Delete(':id/like')
+  @Authenticated()
+  @HttpCode(200)
+  @ApiOperation({ summary: '게시글 좋아요 취소' })
+  @ApiOkResponse({ type: ResponsePostLikeDto, description: '게시글 좋아요 취소 성공' })
+  @ApiNotFoundResponse({
+    description: '존재하지 않는 게시글이거나 좋아요하지 않은 게시글의 좋아요를 취소하려는 경우',
+  })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async unlikePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ResponsePostLikeDto> {
+    const unlikedPost = await this.postService.deletePostLike(postId, user.userId);
+
+    return PostLikeMapper.toPostLikeDto(unlikedPost, false);
   }
 }
