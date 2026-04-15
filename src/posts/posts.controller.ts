@@ -1,8 +1,10 @@
 import {
+  HttpCode,
   BadRequestException,
   Body,
   Controller,
   Get,
+  Delete,
   Param,
   ParseIntPipe,
   Patch,
@@ -15,6 +17,7 @@ import {
   ApiCreatedResponse,
   ApiExtraModels,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -100,5 +103,22 @@ export class PostController {
     const updatedPost = await this.postService.updatePost(updatePostDto, postId, user.userId);
 
     return PostMapper.toDetailDto(updatedPost);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @Authenticated()
+  @ApiOperation({
+    summary: '게시글 삭제',
+  })
+  @ApiNoContentResponse({ description: '게시글 삭제 성공, 응답 본문은 반환되지 않음' })
+  @ApiForbiddenResponse({ description: '작성자가 아닌 사용자가 삭제를 시도한 경우' })
+  @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 삭제하려는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async deletePost(
+    @Param('id', ParseIntPipe) postId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    return await this.postService.deletePost(postId, user.userId);
   }
 }

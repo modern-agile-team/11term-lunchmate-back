@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { PostRepository } from './posts.repository';
 import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dtos/create-post.dto';
@@ -6,13 +6,14 @@ import { UpdatePostPayloadDto } from './dtos/update-post.dto';
 
 describe('PostRepository', () => {
   let postRepository: PostRepository;
-  let postOrmRepository: Pick<Repository<Post>, 'save' | 'findOne' | 'update'>;
+  let postOrmRepository: Pick<Repository<Post>, 'save' | 'findOne' | 'update' | 'softDelete'>;
 
   beforeEach(() => {
     postOrmRepository = {
       save: jest.fn(),
       findOne: jest.fn(),
       update: jest.fn(),
+      softDelete: jest.fn(),
     };
 
     postRepository = new PostRepository(postOrmRepository as Repository<Post>);
@@ -87,6 +88,22 @@ describe('PostRepository', () => {
 
       expect(result).toEqual(updateResult);
       expect(postOrmRepository.update).toHaveBeenCalledWith(1, updatePostPayload);
+    });
+  });
+
+  describe('deletePost', () => {
+    it('postId로 softDelete를 호출', async () => {
+      const deleteResult: DeleteResult = {
+        raw: [],
+        affected: 1,
+      };
+
+      (postOrmRepository.softDelete as jest.Mock).mockResolvedValue(deleteResult);
+
+      const result = await postRepository.deletePost(1);
+
+      expect(result).toEqual(deleteResult);
+      expect(postOrmRepository.softDelete).toHaveBeenCalledWith(1);
     });
   });
 });
