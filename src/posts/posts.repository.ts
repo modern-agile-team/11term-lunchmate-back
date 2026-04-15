@@ -72,11 +72,15 @@ export class PostRepository {
     return await this.postRepository.softDelete(postId);
   }
 
-  async incresePostLikeCount(postId: number, manager: EntityManager) {
+  async increasePostLikeCount(postId: number, manager: EntityManager): Promise<UpdateResult> {
     return await manager.increment(Post, { id: postId }, 'likeCount', 1);
   }
 
-  async decresePostLikeCount(postId: number, manager: EntityManager) {
+  async decreasePostLikeCount(postId: number, manager: EntityManager): Promise<UpdateResult> {
     return await manager.decrement(Post, { id: postId }, 'likeCount', 1);
+  }
+
+  async increaseViewCount(postId: number): Promise<UpdateResult> {
+    return await this.postRepository.increment({ id: postId }, 'viewCount', 1);
   }
 }

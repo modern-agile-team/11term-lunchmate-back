@@ -33,6 +33,7 @@ import {
   ResponsePostDetailDto,
   ResponsePostListDto,
   ResponsePostListItemDto,
+  ResponsePostViewCountDto,
 } from './dtos/response-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
@@ -158,5 +159,21 @@ export class PostController {
     const unlikedPost = await this.postService.deletePostLike(postId, user.userId);
 
     return PostLikeMapper.toPostLikeDto(unlikedPost, false);
+  }
+
+  @Patch(':id/views')
+  @ApiOperation({ summary: '게시글 조회수 증가' })
+  @ApiOkResponse({ type: ResponsePostLikeDto, description: '게시글 조회수 증가 성공' })
+  @ApiNotFoundResponse({
+    description: '존재하지 않는 게시글의 조회수를 증가시키려는 경우',
+  })
+  async increaseViewCount(
+    @Param('id', ParseIntPipe) postId: number,
+  ): Promise<ResponsePostViewCountDto> {
+    const increasedCount = await this.postService.increaseViewCount(postId);
+
+    return {
+      viewCount: increasedCount,
+    };
   }
 }

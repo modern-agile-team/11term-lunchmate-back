@@ -99,7 +99,7 @@ export class PostService {
     return await this.dataSource.transaction(async (manager) => {
       await this.postLikeService.saveLike(postId, userId, manager);
 
-      await this.postRepository.incresePostLikeCount(postId, manager);
+      await this.postRepository.increasePostLikeCount(postId, manager);
 
       return await this.findPostById(postId, manager);
     });
@@ -116,10 +116,19 @@ export class PostService {
 
       if (!deleteResult.affected) throw new NotFoundException('좋아요하지 않은 게시글입니다.');
 
-      await this.postRepository.decresePostLikeCount(postId, manager);
+      await this.postRepository.decreasePostLikeCount(postId, manager);
 
       return await this.findPostById(postId, manager);
     });
+  }
+
+  async increaseViewCount(postId: number): Promise<number> {
+    const existingPost = await this.findPostById(postId);
+
+    const updateResult = await this.postRepository.increaseViewCount(postId);
+    if (!updateResult.affected) throw new NotFoundException('존재하지 않는 게시글입니다.');
+
+    return existingPost.viewCount + 1;
   }
 
   private buildUpdatePostPayload(updatePostDto: UpdatePostDto): UpdatePostPayloadDto {
