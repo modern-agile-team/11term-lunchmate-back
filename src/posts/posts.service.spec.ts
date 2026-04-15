@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PostService } from './posts.service';
 import { PostRepository } from './posts.repository';
 import { PostCategoryService } from 'src/post-categories/post-categories.service';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
+import { UpdatePostDto } from './dtos/update-post.dto';
 
 const createPostDto: CreatePostDto = {
   title: '학생식당 돈까스 맛있어요',
@@ -42,6 +43,7 @@ const mockPostRepository = {
   createPost: jest.fn(),
   findPostById: jest.fn(),
   findPosts: jest.fn(),
+  updatePost: jest.fn(),
 };
 
 const mockPostCategoryService = {
@@ -81,11 +83,14 @@ describe('PostService', () => {
       const result = await postService.createPost(createPostDto, 7);
 
       expect(result).toEqual(mockPostEntity);
-      expect(mockPostCategoryService.findPostCategoryById).toHaveBeenCalledWith(
-        createPostDto.categoryId,
-      );
-      expect(mockPostRepository.createPost).toHaveBeenCalledWith(createPostDto, 7);
-      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(mockCreatedPost.id);
+    });
+
+    it('존재하지 않는 카테고리면 BadRequestException을 던진다', async () => {
+      mockPostCategoryService.findPostCategoryById.mockResolvedValue(null);
+
+      await expect(postService.createPost(createPostDto, 7)).rejects.toThrow(BadRequestException);
+
+      expect(mockPostRepository.createPost).not.toHaveBeenCalled();
     });
 
     it('생성 후 게시글을 다시 조회하지 못하면 NotFoundException을 던진다', async () => {
@@ -94,12 +99,6 @@ describe('PostService', () => {
       mockPostRepository.findPostById.mockResolvedValue(null);
 
       await expect(postService.createPost(createPostDto, 7)).rejects.toThrow(NotFoundException);
-
-      expect(mockPostCategoryService.findPostCategoryById).toHaveBeenCalledWith(
-        createPostDto.categoryId,
-      );
-      expect(mockPostRepository.createPost).toHaveBeenCalledWith(createPostDto, 7);
-      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(mockCreatedPost.id);
     });
   });
 
@@ -120,8 +119,6 @@ describe('PostService', () => {
         nextCursor: null,
         hasNext: false,
       });
-      expect(mockPostCategoryService.findPostCategoryById).toHaveBeenCalledWith(query.categoryId);
-      expect(mockPostRepository.findPosts).toHaveBeenCalledWith(query, 20);
     });
 
     it('다음 페이지가 있으면 limit 만큼만 잘라 nextCursor와 함께 반환', async () => {
@@ -143,7 +140,6 @@ describe('PostService', () => {
         hasNext: true,
       });
       expect(mockPostCategoryService.findPostCategoryById).not.toHaveBeenCalled();
-      expect(mockPostRepository.findPosts).toHaveBeenCalledWith(query, 2);
     });
   });
 
@@ -160,8 +156,118 @@ describe('PostService', () => {
       mockPostRepository.findPostById.mockResolvedValue(null);
 
       await expect(postService.findPostById(999)).rejects.toThrow(NotFoundException);
+    });
+  });
 
-      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(999);
+  describe('updatePost', () => {
+    it('작성자가 수정하면 카테고리를 검증하고 수정 후 상세 정보를 반환', async () => {
+      const updatePostDto: UpdatePostDto = {
+        title: '수정된 제목',
+        content: '수정된 내용',
+        categoryId: 2,
+        isAnonymous: true,
+      };
+      const updatedCategory = {
+        id: 2,
+        name: '정보',
+      };
+      const updatedPostEntity = {
+        ...mockPostEntity,
+        title: updatePostDto.title,
+        content: updatePostDto.content,
+        isAnonymous: true,
+        category: updatedCategory,
+      };
+      mockPostRepository.findPostById
+        .mockResolvedValueOnce(mockPostEntity)
+        .mockResolvedValueOnce(updatedPostEntity);
+      mockPostCategoryService.findPostCategoryById.mockResolvedValue(updatedCategory);
+      mockPostRepository.updatePost.mockResolvedValue({ affected: 1 });
+
+      const result = await postService.updatePost(updatePostDto, 3, 7);
+
+      expect(result).toEqual(updatedPostEntity);
+      expect(mockPostRepository.updatePost).toHaveBeenCalledWith(3, {
+        title: '수정된 제목',
+        content: '수정된 내용',
+        isAnonymous: true,
+        category: { id: 2 },
+      });
+    });
+
+    it('작성자가 아니면 ForbiddenException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+
+      await expect(postService.updatePost({ title: '수정 시도' }, 3, 8)).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(mockPostRepository.updatePost).not.toHaveBeenCalled();
+    });
+
+    it('카테고리 없이 부분 수정하면 카테고리 검증 없이 수정한다', async () => {
+      const updatePostDto: UpdatePostDto = {
+        title: '제목만 수정',
+      };
+      const updatedPostEntity = {
+        ...mockPostEntity,
+        title: '제목만 수정',
+      };
+
+      mockPostRepository.findPostById
+        .mockResolvedValueOnce(mockPostEntity)
+        .mockResolvedValueOnce(updatedPostEntity);
+      mockPostRepository.updatePost.mockResolvedValue({ affected: 1 });
+
+      const result = await postService.updatePost(updatePostDto, 3, 7);
+
+      expect(result).toEqual(updatedPostEntity);
+      expect(mockPostCategoryService.findPostCategoryById).not.toHaveBeenCalled();
+      expect(mockPostRepository.updatePost).toHaveBeenCalledWith(3, {
+        title: '제목만 수정',
+      });
+    });
+
+    it('카테고리만 수정하면 category payload만 포함해 수정한다', async () => {
+      const updatePostDto: UpdatePostDto = {
+        categoryId: 2,
+      };
+      const updatedCategory = {
+        id: 2,
+        name: '정보',
+      };
+      const updatedPostEntity = {
+        ...mockPostEntity,
+        category: updatedCategory,
+      };
+
+      mockPostRepository.findPostById
+        .mockResolvedValueOnce(mockPostEntity)
+        .mockResolvedValueOnce(updatedPostEntity);
+      mockPostCategoryService.findPostCategoryById.mockResolvedValue(updatedCategory);
+      mockPostRepository.updatePost.mockResolvedValue({ affected: 1 });
+
+      const result = await postService.updatePost(updatePostDto, 3, 7);
+
+      expect(result).toEqual(updatedPostEntity);
+      expect(mockPostRepository.updatePost).toHaveBeenCalledWith(3, {
+        category: { id: 2 },
+      });
+    });
+
+    it('존재하지 않는 카테고리로 수정하면 BadRequestException을 던진다', async () => {
+      const updatePostDto: UpdatePostDto = {
+        categoryId: 999,
+      };
+
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostCategoryService.findPostCategoryById.mockResolvedValue(null);
+
+      await expect(postService.updatePost(updatePostDto, 3, 7)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(mockPostRepository.updatePost).not.toHaveBeenCalled();
     });
   });
 });

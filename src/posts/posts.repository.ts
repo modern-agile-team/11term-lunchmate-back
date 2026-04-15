@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
-import { FindOptionsWhere, LessThan, Repository } from 'typeorm';
+import { FindOptionsWhere, LessThan, Repository, UpdateResult } from 'typeorm';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
+import { UpdatePostPayloadDto } from './dtos/update-post.dto';
 
 @Injectable()
 export class PostRepository {
@@ -51,5 +52,9 @@ export class PostRepository {
       },
       take: limit + 1,
     });
+  }
+
+  async updatePost(postId: number, updatePostPayload: UpdatePostPayloadDto): Promise<UpdateResult> {
+    return await this.postRepository.update(postId, updatePostPayload);
   }
 }
