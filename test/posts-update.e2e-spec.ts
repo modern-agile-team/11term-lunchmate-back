@@ -176,7 +176,7 @@ describe('Posts Update (e2e)', () => {
     expect(response.body.success).toBe(false);
     expect(response.body.error).toEqual({
       statusCode: 403,
-      message: '게시글을 수정할 권한이 없습니다.',
+      message: '게시글에 대한 권한이 없습니다.',
     });
   });
 

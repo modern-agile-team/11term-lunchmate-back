@@ -72,7 +72,10 @@ export class PostService {
   }
 
   async deletePost(postId: number, userId: number): Promise<void> {
-    await this.validateDeletePost(postId, userId);
+    const existingPost = await this.findPostById(postId);
+
+    if (userId !== existingPost.user.id)
+      throw new ForbiddenException('게시글에 대한 권한이 없습니다.');
 
     const deleteResult = await this.postRepository.deletePost(postId);
 
@@ -90,25 +93,15 @@ export class PostService {
     return updatePostPayload;
   }
 
-  private async validateDeletePost(postId: number, currentUserId: number): Promise<void> {
-    const existingPost = await this.findPostById(postId);
-
-    this.validatePostAuthor(currentUserId, existingPost.user.id);
-  }
-
   private async validateUpdatePost(
     updatePostDto: UpdatePostDto,
     currentUserId: number,
     authorId: number,
   ): Promise<void> {
-    this.validatePostAuthor(currentUserId, authorId);
+    if (authorId !== currentUserId) throw new ForbiddenException('게시글에 대한 권한이 없습니다.');
 
     if (updatePostDto.categoryId !== undefined)
       await this.validateCategoryExists(updatePostDto.categoryId);
-  }
-
-  validatePostAuthor(currentUserId: number, authorId: number): void {
-    if (authorId !== currentUserId) throw new ForbiddenException('게시글에 권한이 없습니다.');
   }
 
   private async validateCategoryExists(categoryId: number): Promise<void> {
