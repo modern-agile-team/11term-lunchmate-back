@@ -9,4 +9,8 @@ export class PostCategoryService {
   async findPostCategories(): Promise<PostCategory[]> {
     return await this.postCategoryRepository.findPostCategories();
   }
+
+  async findPostCategoryById(categoryId: number): Promise<PostCategory | null> {
+    return await this.postCategoryRepository.findPostCategoryById(categoryId);
+  }
 }

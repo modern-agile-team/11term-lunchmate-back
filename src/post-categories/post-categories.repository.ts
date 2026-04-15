@@ -17,4 +17,12 @@ export class PostCategoryRepository {
       },
     });
   }
+
+  async findPostCategoryById(categoryId: number): Promise<PostCategory | null> {
+    return await this.postCategoryRepository.findOne({
+      where: {
+        id: categoryId,
+      },
+    });
+  }
 }

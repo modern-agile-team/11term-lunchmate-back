@@ -21,6 +21,7 @@ import { FriendModule } from '../src/friends/friends.module';
 import { MealMenuReaction } from '../src/meal-menus/entities/meal-menu-reaction.entity';
 import { MealMenu } from '../src/meal-menus/entities/meal-menu.entity';
 import { PostCategory } from '../src/post-categories/entities/post-category.entity';
+import { PostModule } from '../src/posts/posts.module';
 import { PostLike } from '../src/posts/entities/post-like.entity';
 import { Post } from '../src/posts/entities/post.entity';
 import { RoomMember } from '../src/rooms/entities/room-member.entity';
@@ -104,6 +105,7 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
       }),
       UserModule,
       AuthModule,
+      PostModule,
       RoomModule,
       FriendModule,
     ],

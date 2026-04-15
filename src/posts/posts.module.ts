@@ -5,9 +5,10 @@ import { PostLike } from './entities/post-like.entity';
 import { PostController } from './posts.controller';
 import { PostService } from './posts.service';
 import { PostRepository } from './posts.repository';
+import { PostCategoryModule } from 'src/post-categories/post-categories.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, PostLike])],
+  imports: [TypeOrmModule.forFeature([Post, PostLike]), PostCategoryModule],
   controllers: [PostController],
   providers: [PostService, PostRepository],
 })

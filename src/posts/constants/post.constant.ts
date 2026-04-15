@@ -1,0 +1,4 @@
+export const POST_CONSTANTS = {
+  MAX_TITLE: 50,
+  MAX_CONTENTS: 1000,
+};
