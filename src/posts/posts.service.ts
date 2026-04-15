@@ -122,6 +122,15 @@ export class PostService {
     });
   }
 
+  async increaseViewCount(postId: number): Promise<number> {
+    const existingPost = await this.findPostById(postId);
+
+    const updateResult = await this.postRepository.increaseViewCount(postId);
+    if (!updateResult.affected) throw new NotFoundException('존재하지 않는 게시글입니다.');
+
+    return existingPost.viewCount + 1;
+  }
+
   private buildUpdatePostPayload(updatePostDto: UpdatePostDto): UpdatePostPayloadDto {
     const { categoryId, ...updatePostData } = updatePostDto;
 

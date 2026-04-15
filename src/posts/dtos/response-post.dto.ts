@@ -62,3 +62,8 @@ export class ResponsePostListDto {
   @ApiProperty()
   hasNext: boolean;
 }
+
+export class ResponsePostViewCountDto {
+  @ApiProperty()
+  viewCount: number;
+}

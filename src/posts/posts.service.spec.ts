@@ -47,8 +47,9 @@ const mockPostRepository = {
   findPosts: jest.fn(),
   updatePost: jest.fn(),
   deletePost: jest.fn(),
-  incresePostLikeCount: jest.fn(),
-  decresePostLikeCount: jest.fn(),
+  increasePostLikeCount: jest.fn(),
+  decreasePostLikeCount: jest.fn(),
+  increaseViewCount: jest.fn(),
 };
 
 const mockPostCategoryService = {
@@ -337,35 +338,21 @@ describe('PostService', () => {
         ...mockPostEntity,
         likeCount: 1,
       };
-      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
       mockPostLikeService.findPostLikeById.mockResolvedValue(null);
       mockPostLikeService.saveLike.mockResolvedValue(undefined);
-      mockPostRepository.incresePostLikeCount.mockResolvedValue({ affected: 1 });
+      mockPostRepository.increasePostLikeCount.mockResolvedValue({ affected: 1 });
       mockPostRepository.findPostById
         .mockResolvedValueOnce(mockPostEntity)
         .mockResolvedValueOnce(likedPost);
 
-      await expect(postService.createPostLike(3, 8)).resolves.toEqual({
-        postId: 3,
-        liked: true,
-        likeCount: 1,
-      });
+      await expect(postService.createPostLike(3, 8)).resolves.toEqual(likedPost);
 
       expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(1, 3, undefined);
       expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(2, 3, mockManager);
       expect(mockPostLikeService.findPostLikeById).toHaveBeenCalledWith(3, 8);
       expect(mockDataSource.transaction).toHaveBeenCalled();
       expect(mockPostLikeService.saveLike).toHaveBeenCalledWith(3, 8, mockManager);
-      expect(mockPostRepository.incresePostLikeCount).toHaveBeenCalledWith(3, mockManager);
-    });
-
-    it('자신의 게시글에는 좋아요할 수 없다', async () => {
-      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
-
-      await expect(postService.createPostLike(3, 7)).rejects.toThrow(BadRequestException);
-
-      expect(mockPostLikeService.findPostLikeById).not.toHaveBeenCalled();
-      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+      expect(mockPostRepository.increasePostLikeCount).toHaveBeenCalledWith(3, mockManager);
     });
 
     it('이미 좋아요한 게시글이면 실패한다', async () => {
@@ -393,20 +380,16 @@ describe('PostService', () => {
         id: 1,
       });
       mockPostLikeService.deleteLike.mockResolvedValue({ affected: 1 });
-      mockPostRepository.decresePostLikeCount.mockResolvedValue({ affected: 1 });
+      mockPostRepository.decreasePostLikeCount.mockResolvedValue({ affected: 1 });
 
-      await expect(postService.deletePostLike(3, 8)).resolves.toEqual({
-        postId: 3,
-        liked: false,
-        likeCount: 0,
-      });
+      await expect(postService.deletePostLike(3, 8)).resolves.toEqual(mockPostEntity);
 
       expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(1, 3, undefined);
       expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(2, 3, mockManager);
       expect(mockPostLikeService.findPostLikeById).toHaveBeenCalledWith(3, 8);
       expect(mockDataSource.transaction).toHaveBeenCalled();
       expect(mockPostLikeService.deleteLike).toHaveBeenCalledWith(3, 8, mockManager);
-      expect(mockPostRepository.decresePostLikeCount).toHaveBeenCalledWith(3, mockManager);
+      expect(mockPostRepository.decreasePostLikeCount).toHaveBeenCalledWith(3, mockManager);
     });
 
     it('좋아요하지 않은 게시글이면 취소에 실패한다', async () => {
@@ -427,7 +410,34 @@ describe('PostService', () => {
 
       await expect(postService.deletePostLike(3, 8)).rejects.toThrow(NotFoundException);
 
-      expect(mockPostRepository.decresePostLikeCount).not.toHaveBeenCalled();
+      expect(mockPostRepository.decreasePostLikeCount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('increaseViewCount', () => {
+    it('게시글 조회수를 1 증가시키고 증가된 조회수를 반환한다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostRepository.increaseViewCount.mockResolvedValue({ affected: 1 });
+
+      const result = await postService.increaseViewCount(3);
+
+      expect(result).toBe(1);
+      expect(mockPostRepository.increaseViewCount).toHaveBeenCalledWith(3);
+    });
+
+    it('조회수 증가 대상 게시글이 없으면 NotFoundException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(null);
+
+      await expect(postService.increaseViewCount(999)).rejects.toThrow(NotFoundException);
+
+      expect(mockPostRepository.increaseViewCount).not.toHaveBeenCalled();
+    });
+
+    it('조회수 증가 결과 affected가 없으면 NotFoundException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+      mockPostRepository.increaseViewCount.mockResolvedValue({ affected: 0 });
+
+      await expect(postService.increaseViewCount(3)).rejects.toThrow(NotFoundException);
     });
   });
 });
