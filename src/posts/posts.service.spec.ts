@@ -4,7 +4,7 @@ import { PostService } from './posts.service';
 import { PostRepository } from './posts.repository';
 import { PostCategoryService } from 'src/post-categories/post-categories.service';
 import { CreatePostDto } from './dtos/create-post.dto';
-import { PostMapper } from './mappers/post-mapper';
+import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 
 const createPostDto: CreatePostDto = {
   title: '학생식당 돈까스 맛있어요',
@@ -38,25 +38,10 @@ const mockPostEntity = {
   },
 };
 
-const mockPostDetailDto = {
-  id: 3,
-  title: createPostDto.title,
-  content: createPostDto.content,
-  viewCount: 0,
-  commentCount: 0,
-  likeCount: 0,
-  isAnonymous: false,
-  createdAt: '2026-04-09T00:00:00.000Z',
-  category: mockCategory,
-  user: {
-    id: 7,
-    nickname: 'writer',
-  },
-};
-
 const mockPostRepository = {
   createPost: jest.fn(),
   findPostById: jest.fn(),
+  findPosts: jest.fn(),
 };
 
 const mockPostCategoryService = {
@@ -65,12 +50,10 @@ const mockPostCategoryService = {
 
 describe('PostService', () => {
   let postService: PostService;
-  let toDetailDtoSpy: jest.SpiedFunction<typeof PostMapper.toDetailDto>;
 
   beforeEach(async () => {
     jest.restoreAllMocks();
     jest.resetAllMocks();
-    toDetailDtoSpy = jest.spyOn(PostMapper, 'toDetailDto');
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -94,17 +77,15 @@ describe('PostService', () => {
       mockPostCategoryService.findPostCategoryById.mockResolvedValue(mockCategory);
       mockPostRepository.createPost.mockResolvedValue(mockCreatedPost);
       mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
-      toDetailDtoSpy.mockReturnValue(mockPostDetailDto);
 
       const result = await postService.createPost(createPostDto, 7);
 
-      expect(result).toEqual(mockPostDetailDto);
+      expect(result).toEqual(mockPostEntity);
       expect(mockPostCategoryService.findPostCategoryById).toHaveBeenCalledWith(
         createPostDto.categoryId,
       );
       expect(mockPostRepository.createPost).toHaveBeenCalledWith(createPostDto, 7);
       expect(mockPostRepository.findPostById).toHaveBeenCalledWith(mockCreatedPost.id);
-      expect(toDetailDtoSpy).toHaveBeenCalledWith(mockPostEntity);
     });
 
     it('생성 후 게시글을 다시 조회하지 못하면 NotFoundException을 던진다', async () => {
@@ -119,6 +100,68 @@ describe('PostService', () => {
       );
       expect(mockPostRepository.createPost).toHaveBeenCalledWith(createPostDto, 7);
       expect(mockPostRepository.findPostById).toHaveBeenCalledWith(mockCreatedPost.id);
+    });
+  });
+
+  describe('findPosts', () => {
+    it('카테고리 조건이 있으면 검증 후 게시글 목록 반환', async () => {
+      const query: FindPostsQueryDto = {
+        categoryId: 1,
+        limit: 20,
+      };
+
+      mockPostCategoryService.findPostCategoryById.mockResolvedValue(mockCategory);
+      mockPostRepository.findPosts.mockResolvedValue([mockPostEntity]);
+
+      const result = await postService.findPosts(query);
+
+      expect(result).toEqual({
+        items: [mockPostEntity],
+        nextCursor: null,
+        hasNext: false,
+      });
+      expect(mockPostCategoryService.findPostCategoryById).toHaveBeenCalledWith(query.categoryId);
+      expect(mockPostRepository.findPosts).toHaveBeenCalledWith(query, 20);
+    });
+
+    it('다음 페이지가 있으면 limit 만큼만 잘라 nextCursor와 함께 반환', async () => {
+      const query: FindPostsQueryDto = {
+        limit: 2,
+      };
+      const thirdPost = {
+        ...mockPostEntity,
+        id: 1,
+      };
+      const foundPosts = [mockPostEntity, { ...mockPostEntity, id: 2 }, thirdPost];
+      mockPostRepository.findPosts.mockResolvedValue(foundPosts);
+
+      const result = await postService.findPosts(query);
+
+      expect(result).toEqual({
+        items: foundPosts.slice(0, 2),
+        nextCursor: 2,
+        hasNext: true,
+      });
+      expect(mockPostCategoryService.findPostCategoryById).not.toHaveBeenCalled();
+      expect(mockPostRepository.findPosts).toHaveBeenCalledWith(query, 2);
+    });
+  });
+
+  describe('findPostById', () => {
+    it('게시글 상세 정보를 반환', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPostEntity);
+
+      const result = await postService.findPostById(3);
+
+      expect(result).toEqual(mockPostEntity);
+    });
+
+    it('존재하지 않는 게시글이면 NotFoundException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(null);
+
+      await expect(postService.findPostById(999)).rejects.toThrow(NotFoundException);
+
+      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(999);
     });
   });
 });

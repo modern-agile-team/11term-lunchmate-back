@@ -1,8 +1,12 @@
+import { PickType } from '@nestjs/mapped-types';
 import { ApiProperty } from '@nestjs/swagger';
 import { PostCategory } from 'src/post-categories/entities/post-category.entity';
 
-export class UserNameDto {
+export class PostAuthorDto {
+  @ApiProperty()
   id: number;
+
+  @ApiProperty()
   nickname: string;
 }
 
@@ -22,10 +26,10 @@ export class ResponsePostDetailDto {
   @ApiProperty()
   commentCount: number;
 
-  @ApiProperty()
-  user: UserNameDto | null;
+  @ApiProperty({ type: () => PostAuthorDto, nullable: true })
+  user: PostAuthorDto | null;
 
-  @ApiProperty()
+  @ApiProperty({ type: () => PostCategory })
   category: PostCategory;
 
   @ApiProperty()
@@ -36,4 +40,25 @@ export class ResponsePostDetailDto {
 
   @ApiProperty()
   createdAt: string;
+}
+
+export class ResponsePostListItemDto extends PickType(ResponsePostDetailDto, [
+  'id',
+  'title',
+  'createdAt',
+  'likeCount',
+  'viewCount',
+  'commentCount',
+  'user',
+]) {}
+
+export class ResponsePostListDto {
+  @ApiProperty({ type: () => [ResponsePostListItemDto] })
+  items: ResponsePostListItemDto[];
+
+  @ApiProperty({ nullable: true })
+  nextCursor: number | null;
+
+  @ApiProperty()
+  hasNext: boolean;
 }

@@ -1,24 +1,47 @@
 import { User } from 'src/users/entities/user.entity';
-import { ResponsePostDetailDto, UserNameDto } from '../dtos/response-post.dto';
+import {
+  PostAuthorDto,
+  ResponsePostDetailDto,
+  ResponsePostListDto,
+  ResponsePostListItemDto,
+} from '../dtos/response-post.dto';
 import { Post } from '../entities/post.entity';
 
 export class PostMapper {
-  static toDetailDto(post: Post): ResponsePostDetailDto {
+  static toListDto(
+    posts: Post[],
+    nextCursor: number | null,
+    hasNext: boolean,
+  ): ResponsePostListDto {
     return {
-      id: post.id,
-      title: post.title,
-      content: post.content,
-      viewCount: post.viewCount,
-      commentCount: post.commentCount,
-      user: post.isAnonymous ? null : this.toUserDto(post.user),
-      category: post.category,
-      likeCount: post.likeCount,
-      isAnonymous: post.isAnonymous,
-      createdAt: post.createdAt,
+      items: posts.map((post) => this.toListItemDto(post)),
+      nextCursor,
+      hasNext,
     };
   }
 
-  static toUserDto(user: User): UserNameDto {
+  static toListItemDto(post: Post): ResponsePostListItemDto {
+    return {
+      id: post.id,
+      title: post.title,
+      viewCount: post.viewCount,
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      createdAt: post.createdAt,
+      user: post.isAnonymous ? null : this.toPostAuthorDto(post.user),
+    };
+  }
+
+  static toDetailDto(post: Post): ResponsePostDetailDto {
+    return {
+      ...this.toListItemDto(post),
+      content: post.content,
+      category: post.category,
+      isAnonymous: post.isAnonymous,
+    };
+  }
+
+  static toPostAuthorDto(user: User): PostAuthorDto {
     return {
       id: user.id,
       nickname: user.nickname,
