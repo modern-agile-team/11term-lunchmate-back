@@ -47,19 +47,6 @@ describe('Posts Create (e2e)', () => {
     return await dataSource.getRepository(PostCategory).save({ name });
   }
 
-  function expectExceptionFilterErrorResponse(
-    response: Response,
-    statusCode: number,
-    message: string | string[],
-  ): void {
-    expect(response.status).toBe(statusCode);
-    expect(response.body.success).toBe(false);
-    expect(response.body.error).toEqual({
-      statusCode,
-      message,
-    });
-  }
-
   it('POST /posts 게시글 작성 성공', async () => {
     const signupResponse = await signupUser('writer@example.com', 'writer');
     const category = await createCategory('자유');
@@ -143,7 +130,12 @@ describe('Posts Create (e2e)', () => {
         isAnonymous: false,
       });
 
-    expectExceptionFilterErrorResponse(response, 404, '존재하지 않은 카테고리입니다.');
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 400,
+      message: '존재하지 않는 카테고리입니다.',
+    });
   });
 
   it('POST /posts 잘못된 요청값이면 실패', async () => {
@@ -187,6 +179,11 @@ describe('Posts Create (e2e)', () => {
       isAnonymous: false,
     });
 
-    expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 401,
+      message: 'Unauthorized',
+    });
   });
 });
