@@ -63,19 +63,6 @@ describe('Posts Update (e2e)', () => {
     });
   }
 
-  function expectExceptionFilterErrorResponse(
-    response: Response,
-    statusCode: number,
-    message: string | string[],
-  ): void {
-    expect(response.status).toBe(statusCode);
-    expect(response.body.success).toBe(false);
-    expect(response.body.error).toEqual({
-      statusCode,
-      message,
-    });
-  }
-
   it('PATCH /posts/:id 작성자가 게시글을 수정한다', async () => {
     const signupResponse = await signupUser('post-update@example.com', 'post-writer');
     const writer = await dataSource.getRepository(User).findOneByOrFail({
@@ -185,7 +172,12 @@ describe('Posts Update (e2e)', () => {
         title: '권한 없는 수정',
       });
 
-    expectExceptionFilterErrorResponse(response, 403, '게시글에 대한 권한이 없습니다.');
+    expect(response.status).toBe(403);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 403,
+      message: '게시글에 대한 권한이 없습니다.',
+    });
   });
 
   it('PATCH /posts/:id 잘못된 수정값이면 실패한다', async () => {
@@ -235,7 +227,12 @@ describe('Posts Update (e2e)', () => {
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({});
 
-    expectExceptionFilterErrorResponse(response, 400, '수정할 값이 없습니다.');
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 400,
+      message: '수정할 값이 없습니다.',
+    });
   });
 
   it('PATCH /posts/:id 존재하지 않는 카테고리로 수정하면 실패한다', async () => {
@@ -261,7 +258,12 @@ describe('Posts Update (e2e)', () => {
         categoryId: 999,
       });
 
-    expectExceptionFilterErrorResponse(response, 404, '존재하지 않은 카테고리입니다.');
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 400,
+      message: '존재하지 않는 카테고리입니다.',
+    });
   });
 
   it('PATCH /posts/:id 존재하지 않는 게시글을 수정하면 실패한다', async () => {
@@ -274,7 +276,12 @@ describe('Posts Update (e2e)', () => {
         title: '없는 게시글 수정',
       });
 
-    expectExceptionFilterErrorResponse(response, 404, '존재하지 않는 게시글입니다.');
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 404,
+      message: '존재하지 않는 게시글입니다.',
+    });
   });
 
   it('PATCH /posts/:id 인증 없이 수정하면 실패한다', async () => {
@@ -294,6 +301,11 @@ describe('Posts Update (e2e)', () => {
       title: '로그인 없이 수정',
     });
 
-    expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 401,
+      message: 'Unauthorized',
+    });
   });
 });

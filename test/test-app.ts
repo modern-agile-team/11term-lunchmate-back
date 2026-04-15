@@ -132,6 +132,9 @@ export async function createMealMenuTestApp(): Promise<INestApplication> {
         isGlobal: true,
         ignoreEnvFile: true,
       }),
+      WinstonModule.forRoot({
+        transports: winstonOptions,
+      }),
       TypeOrmModule.forRootAsync({
         useFactory: () => ({
           type: 'postgres',
@@ -164,6 +167,12 @@ export async function createMealMenuTestApp(): Promise<INestApplication> {
       }),
       MealMenuModule,
     ],
+    providers: [
+      {
+        provide: APP_FILTER,
+        useClass: AllExceptionFilter,
+      },
+    ],
   }).compile();
 
   const app = moduleFixture.createNestApplication();
@@ -184,6 +193,9 @@ export async function createMealMenuAuthTestApp(): Promise<INestApplication> {
       ConfigModule.forRoot({
         isGlobal: true,
         ignoreEnvFile: true,
+      }),
+      WinstonModule.forRoot({
+        transports: winstonOptions,
       }),
       TypeOrmModule.forRootAsync({
         useFactory: () => ({
@@ -218,6 +230,12 @@ export async function createMealMenuAuthTestApp(): Promise<INestApplication> {
       UserModule,
       AuthModule,
       MealMenuModule,
+    ],
+    providers: [
+      {
+        provide: APP_FILTER,
+        useClass: AllExceptionFilter,
+      },
     ],
   }).compile();
 

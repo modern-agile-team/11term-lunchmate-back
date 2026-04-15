@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import request, { Response } from 'supertest';
+import request from 'supertest';
 import { App } from 'supertest/types';
 import { Post } from '../src/posts/entities/post.entity';
 import { PostCategory } from '../src/post-categories/entities/post-category.entity';
@@ -63,19 +63,6 @@ describe('Posts Delete (e2e)', () => {
     });
   }
 
-  function expectExceptionFilterErrorResponse(
-    response: Response,
-    statusCode: number,
-    message: string | string[],
-  ): void {
-    expect(response.status).toBe(statusCode);
-    expect(response.body.success).toBe(false);
-    expect(response.body.error).toEqual({
-      statusCode,
-      message,
-    });
-  }
-
   it('DELETE /posts/:id 작성자가 게시글을 삭제한다', async () => {
     const signupResponse = await signupUser('post-delete@example.com', 'post-writer');
     const writer = await dataSource.getRepository(User).findOneByOrFail({
@@ -121,7 +108,12 @@ describe('Posts Delete (e2e)', () => {
       .delete(`/posts/${post.id}`)
       .set('Authorization', `Bearer ${otherSignup.body.accessToken}`);
 
-    expectExceptionFilterErrorResponse(response, 403, '게시글에 대한 권한이 없습니다.');
+    expect(response.status).toBe(403);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 403,
+      message: '게시글에 대한 권한이 없습니다.',
+    });
   });
 
   it('DELETE /posts/:id 존재하지 않는 게시글이면 실패한다', async () => {
@@ -131,7 +123,12 @@ describe('Posts Delete (e2e)', () => {
       .delete('/posts/999')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
-    expectExceptionFilterErrorResponse(response, 404, '존재하지 않는 게시글입니다.');
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 404,
+      message: '존재하지 않는 게시글입니다.',
+    });
   });
 
   it('DELETE /posts/:id 인증 없이 삭제하면 실패한다', async () => {
@@ -149,6 +146,11 @@ describe('Posts Delete (e2e)', () => {
 
     const response = await request(httpApp()).delete(`/posts/${post.id}`);
 
-    expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 401,
+      message: 'Unauthorized',
+    });
   });
 });
