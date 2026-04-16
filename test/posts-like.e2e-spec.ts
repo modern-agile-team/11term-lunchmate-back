@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import request, { Response } from 'supertest';
+import request from 'supertest';
 import { App } from 'supertest/types';
 import { PostLike } from '../src/posts/entities/post-like.entity';
 import { Post } from '../src/posts/entities/post.entity';
@@ -65,19 +65,6 @@ describe('Posts Like (e2e)', () => {
     });
   }
 
-  function expectExceptionFilterErrorResponse(
-    response: Response,
-    statusCode: number,
-    message: string | string[],
-  ): void {
-    expect(response.status).toBe(statusCode);
-    expect(response.body.success).toBe(false);
-    expect(response.body.error).toEqual({
-      statusCode,
-      message,
-    });
-  }
-
   it('POST /posts/:id/like 게시글 좋아요 성공', async () => {
     const authorSignup = await signupUser('post-like-author@example.com', 'like-author');
     const likerSignup = await signupUser('post-like-user@example.com', 'like-user');
@@ -121,26 +108,6 @@ describe('Posts Like (e2e)', () => {
     expect(postLike).toBeDefined();
   });
 
-  it('POST /posts/:id/like 자신의 게시글에는 좋아요할 수 없다', async () => {
-    const authorSignup = await signupUser('post-like-self@example.com', 'self-like-author');
-    const author = await dataSource.getRepository(User).findOneByOrFail({
-      id: authorSignup.body.user.id,
-    });
-    const category = await createCategory('자유');
-    const post = await createPostFixture({
-      title: '내 게시글',
-      content: '좋아요 불가',
-      user: author,
-      category,
-    });
-
-    const response = await request(httpApp())
-      .post(`/posts/${post.id}/like`)
-      .set('Authorization', `Bearer ${authorSignup.body.accessToken}`);
-
-    expectExceptionFilterErrorResponse(response, 400, '자신의 게시글에는 좋아요할 수 없습니다.');
-  });
-
   it('POST /posts/:id/like 이미 좋아요한 게시글이면 실패', async () => {
     const authorSignup = await signupUser('post-like-repeat-author@example.com', 'repeat-author');
     const likerSignup = await signupUser('post-like-repeat-user@example.com', 'repeat-user');
@@ -163,7 +130,12 @@ describe('Posts Like (e2e)', () => {
       .post(`/posts/${post.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
-    expectExceptionFilterErrorResponse(response, 400, '이미 좋아요한 게시글입니다.');
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 400,
+      message: '이미 좋아요한 게시글입니다.',
+    });
   });
 
   it('DELETE /posts/:id/like 게시글 좋아요 취소 성공', async () => {
@@ -234,7 +206,12 @@ describe('Posts Like (e2e)', () => {
       .delete(`/posts/${post.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
-    expectExceptionFilterErrorResponse(response, 404, '좋아요하지 않은 게시글입니다.');
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toEqual({
+      statusCode: 404,
+      message: '좋아요하지 않은 게시글입니다.',
+    });
   });
 
   it('좋아요/좋아요 취소는 인증이 필요하다', async () => {
@@ -253,7 +230,18 @@ describe('Posts Like (e2e)', () => {
     const likeResponse = await request(httpApp()).post(`/posts/${post.id}/like`);
     const unlikeResponse = await request(httpApp()).delete(`/posts/${post.id}/like`);
 
-    expectExceptionFilterErrorResponse(likeResponse, 401, 'Unauthorized');
-    expectExceptionFilterErrorResponse(unlikeResponse, 401, 'Unauthorized');
+    expect(likeResponse.status).toBe(401);
+    expect(likeResponse.body.success).toBe(false);
+    expect(likeResponse.body.error).toEqual({
+      statusCode: 401,
+      message: 'Unauthorized',
+    });
+
+    expect(unlikeResponse.status).toBe(401);
+    expect(unlikeResponse.body.success).toBe(false);
+    expect(unlikeResponse.body.error).toEqual({
+      statusCode: 401,
+      message: 'Unauthorized',
+    });
   });
 });

@@ -1,10 +1,11 @@
 import { CommentService } from './../comments/comments.service';
 import {
+  HttpCode,
+  BadRequestException,
   Body,
   Controller,
-  Delete,
   Get,
-  HttpCode,
+  Delete,
   Param,
   ParseIntPipe,
   Patch,
@@ -21,8 +22,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiParam,
-  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -35,11 +34,14 @@ import {
   ResponsePostDetailDto,
   ResponsePostListDto,
   ResponsePostListItemDto,
+  ResponsePostViewCountDto,
 } from './dtos/response-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { ResponsePostLikeDto } from './dtos/response-post-like.dto';
 import { CreateCommentDto } from 'src/comments/dtos/create-comment.dto';
+import { PostMapper } from './mappers/post-mapper';
+import { PostLikeMapper } from './mappers/post-like.mapper';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -55,42 +57,41 @@ export class PostController {
   @ApiOperation({ summary: '게시글 작성' })
   @ApiCreatedResponse({ type: ResponsePostDetailDto })
   @ApiBadRequestResponse({ description: '게시글 작성 요청 값이 올바르지 않은 경우' })
-  @ApiNotFoundResponse({ description: '존재하지 않는 카테고리로 게시글을 작성하려는 경우' })
+  @ApiBadRequestResponse({ description: '존재하지 않는 카테고리로 게시글을 작성하려는 경우' })
   @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async createPost(
     @Body() createPostDto: CreatePostDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostDetailDto> {
-    return await this.postService.createPost(createPostDto, user.userId);
+    const createdPost = await this.postService.createPost(createPostDto, user.userId);
+
+    return PostMapper.toDetailDto(createdPost);
   }
 
   @Get()
   @ApiOperation({ summary: '게시글 목록 조회' })
-  @ApiQuery({ name: 'cursor', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'categoryId', required: false, type: Number })
   @ApiOkResponse({ type: ResponsePostListDto })
   @ApiBadRequestResponse({ description: '조회 조건이 올바르지 않은 경우' })
   @ApiNotFoundResponse({ description: '존재하지 않는 카테고리로 조회하려는 경우' })
   async findPosts(@Query() query: FindPostsQueryDto): Promise<ResponsePostListDto> {
-    return await this.postService.findPosts(query);
+    const { items, nextCursor, hasNext } = await this.postService.findPosts(query);
+
+    return PostMapper.toListDto(items, nextCursor, hasNext);
   }
 
   @Get(':id')
   @ApiOperation({ summary: '게시글 상세 조회' })
-  @ApiParam({ name: 'id', description: '조회할 게시글 ID', type: Number })
   @ApiOkResponse({ type: ResponsePostDetailDto })
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 조회하려는 경우' })
-  async findPostDetailAndIncreaseViewCount(
-    @Param('id', ParseIntPipe) postId: number,
-  ): Promise<ResponsePostDetailDto> {
-    return await this.postService.findPostDetailAndIncreaseViewCount(postId);
+  async findPostById(@Param('id', ParseIntPipe) postId: number): Promise<ResponsePostDetailDto> {
+    const post = await this.postService.findPostById(postId);
+
+    return PostMapper.toDetailDto(post);
   }
 
   @Patch(':id')
   @Authenticated()
   @ApiOperation({ summary: '게시글 수정' })
-  @ApiParam({ name: 'id', description: '수정할 게시글 ID', type: Number })
   @ApiBody({ type: UpdatePostDto })
   @ApiOkResponse({ type: ResponsePostDetailDto })
   @ApiBadRequestResponse({ description: '수정 요청 값이 올바르지 않거나 수정할 값이 없는 경우' })
@@ -104,7 +105,12 @@ export class PostController {
     @Body() updatePostDto: UpdatePostDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostDetailDto> {
-    return await this.postService.updatePost(updatePostDto, postId, user.userId);
+    if (Object.keys(updatePostDto).length < 1)
+      throw new BadRequestException('수정할 값이 없습니다.');
+
+    const updatedPost = await this.postService.updatePost(updatePostDto, postId, user.userId);
+
+    return PostMapper.toDetailDto(updatedPost);
   }
 
   @Delete(':id')
@@ -113,7 +119,6 @@ export class PostController {
   @ApiOperation({
     summary: '게시글 삭제',
   })
-  @ApiParam({ name: 'id', description: '삭제할 게시글 ID', type: Number })
   @ApiNoContentResponse({ description: '게시글 삭제 성공, 응답 본문은 반환되지 않음' })
   @ApiForbiddenResponse({ description: '작성자가 아닌 사용자가 삭제를 시도한 경우' })
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 삭제하려는 경우' })
@@ -128,7 +133,6 @@ export class PostController {
   @Post(':id/like')
   @Authenticated()
   @ApiOperation({ summary: '게시글 좋아요' })
-  @ApiParam({ name: 'id', description: '좋아요할 게시글 ID', type: Number })
   @ApiCreatedResponse({ type: ResponsePostLikeDto, description: '게시글 좋아요 성공' })
   @ApiBadRequestResponse({
     description: '자신의 게시글에 좋아요하거나 이미 좋아요한 게시글인 경우',
@@ -139,14 +143,15 @@ export class PostController {
     @Param('id', ParseIntPipe) postId: number,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostLikeDto> {
-    return await this.postService.createPostLike(postId, user.userId);
+    const likedPost = await this.postService.createPostLike(postId, user.userId);
+
+    return PostLikeMapper.toPostLikeDto(likedPost, true);
   }
 
   @Delete(':id/like')
   @Authenticated()
   @HttpCode(200)
   @ApiOperation({ summary: '게시글 좋아요 취소' })
-  @ApiParam({ name: 'id', description: '좋아요 취소할 게시글 ID', type: Number })
   @ApiOkResponse({ type: ResponsePostLikeDto, description: '게시글 좋아요 취소 성공' })
   @ApiNotFoundResponse({
     description: '존재하지 않는 게시글이거나 좋아요하지 않은 게시글의 좋아요를 취소하려는 경우',
@@ -156,7 +161,25 @@ export class PostController {
     @Param('id', ParseIntPipe) postId: number,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostLikeDto> {
-    return await this.postService.deletePostLike(postId, user.userId);
+    const unlikedPost = await this.postService.deletePostLike(postId, user.userId);
+
+    return PostLikeMapper.toPostLikeDto(unlikedPost, false);
+  }
+
+  @Patch(':id/views')
+  @ApiOperation({ summary: '게시글 조회수 증가' })
+  @ApiOkResponse({ type: ResponsePostLikeDto, description: '게시글 조회수 증가 성공' })
+  @ApiNotFoundResponse({
+    description: '존재하지 않는 게시글의 조회수를 증가시키려는 경우',
+  })
+  async increaseViewCount(
+    @Param('id', ParseIntPipe) postId: number,
+  ): Promise<ResponsePostViewCountDto> {
+    const increasedCount = await this.postService.increaseViewCount(postId);
+
+    return {
+      viewCount: increasedCount,
+    };
   }
 
   // 댓글 엔드포인트
