@@ -44,6 +44,7 @@ import { PostMapper } from './mappers/post-mapper';
 import { PostLikeMapper } from './mappers/post-like.mapper';
 import { CommentMapper } from 'src/comments/mappers/comment.mapper';
 import { ResponseCommentDto } from 'src/comments/dtos/response-comment.dto';
+import { UpdateCommentDto } from 'src/comments/dtos/update-comment.dto';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -204,5 +205,34 @@ export class PostController {
     );
 
     return CommentMapper.toCommentDetailDto(createdComment);
+  }
+
+  @Patch(':postId/comments/:commentId')
+  @Authenticated()
+  @ApiOperation({ summary: '게시글 댓글 수정' })
+  @ApiOkResponse({ type: ResponseCommentDto, description: '댓글 수정 성공' })
+  @ApiNotFoundResponse({
+    description: '삭제된 게시글의 댓글을 수정하거나 존재하지 않는 댓글을 수정하려는 경우',
+  })
+  @ApiForbiddenResponse({
+    description: '다른 작성자의 댓글을 수정하려는 경우',
+  })
+  async editComment(
+    @Body() updateCommentDto: UpdateCommentDto,
+    @Param('postId', ParseIntPipe) postId: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    if (Object.keys(updateCommentDto).length < 1)
+      throw new BadRequestException('수정할 값이 없습니다.');
+
+    const updatedComment = await this.commentService.editComment(
+      updateCommentDto,
+      postId,
+      commentId,
+      user.userId,
+    );
+
+    return CommentMapper.toCommentDetailDto(updatedComment);
   }
 }

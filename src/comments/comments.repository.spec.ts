@@ -2,10 +2,11 @@ import { Repository } from 'typeorm';
 import { CommentRepository } from './comments.repository';
 import { Comment } from './entities/comment.entity';
 import { CreateCommentDto } from './dtos/create-comment.dto';
+import { UpdateCommentDto } from './dtos/update-comment.dto';
 
 describe('CommentRepository', () => {
   let commentRepository: CommentRepository;
-  let commentOrmRepository: Pick<Repository<Comment>, 'findOne'>;
+  let commentOrmRepository: Pick<Repository<Comment>, 'findOne' | 'update'>;
   const manager = {
     save: jest.fn(),
   };
@@ -13,6 +14,7 @@ describe('CommentRepository', () => {
   beforeEach(() => {
     commentOrmRepository = {
       findOne: jest.fn(),
+      update: jest.fn(),
     };
 
     commentRepository = new CommentRepository(commentOrmRepository as Repository<Comment>);
@@ -48,8 +50,8 @@ describe('CommentRepository', () => {
     });
   });
 
-  describe('findCommentById', () => {
-    it('commentId로 findOne을 호출', async () => {
+  describe('findByCommentIdAndPostId', () => {
+    it('commentId와 postId로 findOne을 호출', async () => {
       const comment = {
         id: 11,
         content: '댓글',
@@ -57,17 +59,37 @@ describe('CommentRepository', () => {
 
       (commentOrmRepository.findOne as jest.Mock).mockResolvedValue(comment);
 
-      const result = await commentRepository.findCommentById(11);
+      const result = await commentRepository.findByCommentIdAndPostId(11, 3);
 
       expect(result).toEqual(comment);
       expect(commentOrmRepository.findOne).toHaveBeenCalledWith({
         where: {
           id: 11,
+          post: { id: 3 },
         },
         relations: {
           user: true,
+          post: true,
         },
       });
+    });
+  });
+
+  describe('updateComment', () => {
+    it('commentId와 수정 DTO로 update를 호출한다', async () => {
+      const updateCommentDto: UpdateCommentDto = {
+        content: '수정된 댓글',
+      };
+      const updateResult = {
+        affected: 1,
+      };
+
+      (commentOrmRepository.update as jest.Mock).mockResolvedValue(updateResult);
+
+      const result = await commentRepository.updateComment(updateCommentDto, 11);
+
+      expect(result).toEqual(updateResult);
+      expect(commentOrmRepository.update).toHaveBeenCalledWith(11, updateCommentDto);
     });
   });
 });
