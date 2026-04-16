@@ -7,13 +7,16 @@ export class FindPostsQueryDto {
   @ApiPropertyOptional({ minimum: 1 })
   @IsOptional()
   @Type(() => Number)
-  @Min(1)
+  @Min(PAGINATION_CONSTANTS.MIN_CURSOR_ID)
   cursor?: number;
 
-  @ApiPropertyOptional({ minimum: 1, maximum: PAGINATION_CONSTANTS.MAX_LIMIT })
+  @ApiPropertyOptional({
+    minimum: PAGINATION_CONSTANTS.MIN_LIMIT,
+    maximum: PAGINATION_CONSTANTS.MAX_LIMIT,
+  })
   @IsOptional()
   @Type(() => Number)
-  @Min(1)
+  @Min(PAGINATION_CONSTANTS.MIN_LIMIT)
   @Max(PAGINATION_CONSTANTS.MAX_LIMIT)
   limit?: number;
 
