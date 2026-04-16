@@ -97,7 +97,7 @@ export class PostService {
     if (existingPostLike) throw new BadRequestException('이미 좋아요한 게시글입니다.');
 
     return await this.dataSource.transaction(async (manager) => {
-      await this.postLikeService.saveLike(postId, userId, manager);
+      await this.postLikeService.likePost(postId, userId, manager);
 
       await this.postRepository.increasePostLikeCount(postId, manager);
 
@@ -112,7 +112,7 @@ export class PostService {
     if (!existingPostLike) throw new NotFoundException('좋아요하지 않은 게시글입니다.');
 
     return await this.dataSource.transaction(async (manager) => {
-      const deleteResult = await this.postLikeService.deleteLike(postId, userId, manager);
+      const deleteResult = await this.postLikeService.unlikePost(postId, userId, manager);
 
       if (!deleteResult.affected) throw new NotFoundException('좋아요하지 않은 게시글입니다.');
 

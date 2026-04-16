@@ -6,11 +6,11 @@ import { EntityManager } from 'typeorm';
 export class PostLikeService {
   constructor(private readonly postLikeRepository: PostLikeRepository) {}
 
-  async saveLike(postId: number, userId: number, manager: EntityManager) {
+  async likePost(postId: number, userId: number, manager: EntityManager) {
     return await this.postLikeRepository.saveLike(postId, userId, manager);
   }
 
-  async deleteLike(postId: number, userId: number, manager: EntityManager) {
+  async unlikePost(postId: number, userId: number, manager: EntityManager) {
     return await this.postLikeRepository.deleteLike(postId, userId, manager);
   }
 

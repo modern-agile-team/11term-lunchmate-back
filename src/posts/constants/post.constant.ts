@@ -5,5 +5,7 @@ export const POST_CONSTANTS = {
 
 export const PAGINATION_CONSTANTS = {
   MAX_LIMIT: 200,
+  MIN_LIMIT: 1,
   DEFAULT_LIMIT: 20,
+  MIN_CURSOR_ID: 1,
 };
