@@ -73,6 +73,19 @@ export class FriendRepository {
     await this.friendRepository.softDelete(friendId);
   }
 
+  private createRelationQuery(options?: { withDeleted?: boolean }): SelectQueryBuilder<Friend> {
+    const queryBuilder = this.friendRepository
+      .createQueryBuilder('friend')
+      .leftJoinAndSelect('friend.requester', 'requester')
+      .leftJoinAndSelect('friend.receiver', 'receiver');
+
+    if (options?.withDeleted) {
+      queryBuilder.withDeleted();
+    }
+
+    return queryBuilder;
+  }
+
   private async createRequestAndReload(
     repository: Repository<Friend>,
     requesterId: number,
