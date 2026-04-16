@@ -131,24 +131,6 @@ export class PostService {
     return existingPost.viewCount + 1;
   }
 
-  private validatePostAuthor(currentUserId: number, authorId: number): void {
-    if (authorId !== currentUserId) throw new ForbiddenException('게시글에 대한 권한이 없습니다.');
-  }
-
-  async findPostByIdOrThrow(postId: number, manager?: EntityManager): Promise<Post> {
-    const post = await this.postRepository.findPostById(postId, manager);
-
-    if (!post) throw new NotFoundException('존재하지 않는 게시글입니다.');
-
-    return post;
-  }
-
-  private async increasePostViewCount(postId: number): Promise<void> {
-    await this.findPostByIdOrThrow(postId);
-
-    await this.postRepository.increaseViewCount(postId);
-  }
-
   private buildUpdatePostPayload(updatePostDto: UpdatePostDto): UpdatePostPayloadDto {
     const { categoryId, ...updatePostData } = updatePostDto;
 

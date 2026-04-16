@@ -42,6 +42,8 @@ import { ResponsePostLikeDto } from './dtos/response-post-like.dto';
 import { CreateCommentDto } from 'src/comments/dtos/create-comment.dto';
 import { PostMapper } from './mappers/post-mapper';
 import { PostLikeMapper } from './mappers/post-like.mapper';
+import { CommentMapper } from 'src/comments/mappers/comment.mapper';
+import { ResponseCommentDto } from 'src/comments/dtos/response-comment.dto';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -185,11 +187,22 @@ export class PostController {
   // 댓글 엔드포인트
   @Post(':id/comments')
   @Authenticated()
+  @ApiOperation({ summary: '게시글 댓글 작성' })
+  @ApiCreatedResponse({ type: ResponseCommentDto, description: '댓글 작성 성공' })
+  @ApiNotFoundResponse({
+    description: '존재하지 않는 게시글에 댓글을 작성하려는 경우',
+  })
   async createComment(
     @Body() createCommentDto: CreateCommentDto,
     @Param('id', ParseIntPipe) postId: number,
     @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return await this.commentService.createComment(createCommentDto, postId, user.userId);
+  ): Promise<ResponseCommentDto> {
+    const createdComment = await this.commentService.createComment(
+      createCommentDto,
+      postId,
+      user.userId,
+    );
+
+    return CommentMapper.toCommentDetailDto(createdComment);
   }
 }
