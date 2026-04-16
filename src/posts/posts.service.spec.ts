@@ -57,8 +57,8 @@ const mockPostCategoryService = {
 };
 
 const mockPostLikeService = {
-  saveLike: jest.fn(),
-  deleteLike: jest.fn(),
+  likePost: jest.fn(),
+  unlikePost: jest.fn(),
   findPostLikeById: jest.fn(),
 };
 
@@ -339,7 +339,7 @@ describe('PostService', () => {
         likeCount: 1,
       };
       mockPostLikeService.findPostLikeById.mockResolvedValue(null);
-      mockPostLikeService.saveLike.mockResolvedValue(undefined);
+      mockPostLikeService.likePost.mockResolvedValue(undefined);
       mockPostRepository.increasePostLikeCount.mockResolvedValue({ affected: 1 });
       mockPostRepository.findPostById
         .mockResolvedValueOnce(mockPostEntity)
@@ -351,7 +351,7 @@ describe('PostService', () => {
       expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(2, 3, mockManager);
       expect(mockPostLikeService.findPostLikeById).toHaveBeenCalledWith(3, 8);
       expect(mockDataSource.transaction).toHaveBeenCalled();
-      expect(mockPostLikeService.saveLike).toHaveBeenCalledWith(3, 8, mockManager);
+      expect(mockPostLikeService.likePost).toHaveBeenCalledWith(3, 8, mockManager);
       expect(mockPostRepository.increasePostLikeCount).toHaveBeenCalledWith(3, mockManager);
     });
 
@@ -379,7 +379,7 @@ describe('PostService', () => {
       mockPostLikeService.findPostLikeById.mockResolvedValue({
         id: 1,
       });
-      mockPostLikeService.deleteLike.mockResolvedValue({ affected: 1 });
+      mockPostLikeService.unlikePost.mockResolvedValue({ affected: 1 });
       mockPostRepository.decreasePostLikeCount.mockResolvedValue({ affected: 1 });
 
       await expect(postService.deletePostLike(3, 8)).resolves.toEqual(mockPostEntity);
@@ -388,7 +388,7 @@ describe('PostService', () => {
       expect(mockPostRepository.findPostById).toHaveBeenNthCalledWith(2, 3, mockManager);
       expect(mockPostLikeService.findPostLikeById).toHaveBeenCalledWith(3, 8);
       expect(mockDataSource.transaction).toHaveBeenCalled();
-      expect(mockPostLikeService.deleteLike).toHaveBeenCalledWith(3, 8, mockManager);
+      expect(mockPostLikeService.unlikePost).toHaveBeenCalledWith(3, 8, mockManager);
       expect(mockPostRepository.decreasePostLikeCount).toHaveBeenCalledWith(3, mockManager);
     });
 
@@ -406,7 +406,7 @@ describe('PostService', () => {
       mockPostLikeService.findPostLikeById.mockResolvedValue({
         id: 1,
       });
-      mockPostLikeService.deleteLike.mockResolvedValue({ affected: 0 });
+      mockPostLikeService.unlikePost.mockResolvedValue({ affected: 0 });
 
       await expect(postService.deletePostLike(3, 8)).rejects.toThrow(NotFoundException);
 
