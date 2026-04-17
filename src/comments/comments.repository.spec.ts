@@ -6,7 +6,7 @@ import { UpdateCommentDto } from './dtos/update-comment.dto';
 
 describe('CommentRepository', () => {
   let commentRepository: CommentRepository;
-  let commentOrmRepository: Pick<Repository<Comment>, 'findOne' | 'update'>;
+  let commentOrmRepository: Pick<Repository<Comment>, 'findOne' | 'find' | 'update'>;
   const manager = {
     save: jest.fn(),
     softDelete: jest.fn(),
@@ -15,6 +15,7 @@ describe('CommentRepository', () => {
   beforeEach(() => {
     commentOrmRepository = {
       findOne: jest.fn(),
+      find: jest.fn(),
       update: jest.fn(),
     };
 
@@ -91,6 +92,56 @@ describe('CommentRepository', () => {
 
       expect(result).toEqual(updateResult);
       expect(commentOrmRepository.update).toHaveBeenCalledWith(11, updateCommentDto);
+    });
+  });
+
+  describe('findCommentsByPostId', () => {
+    it('postId와 cursor, limit 조건으로 find를 호출한다', async () => {
+      const comments = [
+        { id: 2, content: '두 번째 댓글' },
+        { id: 3, content: '세 번째 댓글' },
+      ];
+
+      (commentOrmRepository.find as jest.Mock).mockResolvedValue(comments);
+
+      const result = await commentRepository.findCommentsByPostId(3, 1, 2);
+
+      expect(result).toEqual(comments);
+      expect(commentOrmRepository.find).toHaveBeenCalledWith({
+        where: {
+          post: { id: 3 },
+          id: expect.any(Object),
+        },
+        relations: {
+          user: true,
+        },
+        order: {
+          id: 'ASC',
+        },
+        take: 3,
+      });
+    });
+
+    it('cursor가 없으면 postId 조건만으로 find를 호출한다', async () => {
+      const comments = [{ id: 1, content: '첫 번째 댓글' }];
+
+      (commentOrmRepository.find as jest.Mock).mockResolvedValue(comments);
+
+      const result = await commentRepository.findCommentsByPostId(3, null, 20);
+
+      expect(result).toEqual(comments);
+      expect(commentOrmRepository.find).toHaveBeenCalledWith({
+        where: {
+          post: { id: 3 },
+        },
+        relations: {
+          user: true,
+        },
+        order: {
+          id: 'ASC',
+        },
+        take: 21,
+      });
     });
   });
 

@@ -1,3 +1,10 @@
 export const COMMENT_CONSTANTS = {
   MAX_CONTENTS: 500,
 };
+
+export const PAGINATION_CONSTANTS = {
+  MAX_LIMIT: 50,
+  MIN_LIMIT: 1,
+  DEFAULT_LIMIT: 20,
+  MIN_CURSOR_ID: 1,
+};

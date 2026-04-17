@@ -1,5 +1,9 @@
 import { User } from 'src/users/entities/user.entity';
-import { CommentAuthorDto, ResponseCommentDto } from '../dtos/response-comment.dto';
+import {
+  CommentAuthorDto,
+  ResponseCommentDto,
+  ResponseCommentListDto,
+} from '../dtos/response-comment.dto';
 import { Comment } from '../entities/comment.entity';
 
 export class CommentMapper {
@@ -17,6 +21,18 @@ export class CommentMapper {
     return {
       id: user.id,
       nickname: user.nickname,
+    };
+  }
+
+  static toCommentListDto(
+    comments: Comment[],
+    nextCursor: number | null,
+    hasNext: boolean,
+  ): ResponseCommentListDto {
+    return {
+      items: comments.map((comment) => this.toCommentDetailDto(comment)),
+      nextCursor,
+      hasNext,
     };
   }
 }

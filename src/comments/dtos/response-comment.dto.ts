@@ -24,3 +24,14 @@ export class CommentAuthorDto {
   @ApiProperty()
   nickname: string;
 }
+
+export class ResponseCommentListDto {
+  @ApiProperty()
+  items: ResponseCommentDto[];
+
+  @ApiProperty()
+  nextCursor: number | null;
+
+  @ApiProperty()
+  hasNext: boolean;
+}

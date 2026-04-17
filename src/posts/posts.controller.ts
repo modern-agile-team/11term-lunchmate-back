@@ -43,8 +43,9 @@ import { CreateCommentDto } from 'src/comments/dtos/create-comment.dto';
 import { PostMapper } from './mappers/post-mapper';
 import { PostLikeMapper } from './mappers/post-like.mapper';
 import { CommentMapper } from 'src/comments/mappers/comment.mapper';
-import { ResponseCommentDto } from 'src/comments/dtos/response-comment.dto';
+import { ResponseCommentDto, ResponseCommentListDto } from 'src/comments/dtos/response-comment.dto';
 import { UpdateCommentDto } from 'src/comments/dtos/update-comment.dto';
+import { FindCommentsQueryDto } from 'src/comments/dtos/find-comments-query.dto';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -256,5 +257,22 @@ export class PostController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     return await this.commentService.deleteComment(postId, commentId, user.userId);
+  }
+
+  @Get(':id/comments')
+  @ApiOperation({ summary: '게시글 댓글 목록 조회' })
+  @ApiOkResponse({ type: ResponseCommentListDto })
+  @ApiNotFoundResponse({ description: '존재하지 않는 게시글의 댓글을 조회하려는 경우' })
+  @ApiBadRequestResponse({ description: '조회 조건이 올바르지 않은 경우' })
+  async findCommentsByPostId(
+    @Param('id', ParseIntPipe) postId: number,
+    @Query() findCommentsQueryDto: FindCommentsQueryDto,
+  ): Promise<ResponseCommentListDto> {
+    const { items, nextCursor, hasNext } = await this.commentService.findCommentsByPostId(
+      postId,
+      findCommentsQueryDto,
+    );
+
+    return CommentMapper.toCommentListDto(items, nextCursor, hasNext);
   }
 }

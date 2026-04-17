@@ -1,7 +1,7 @@
 import { UpdateCommentDto } from './dtos/update-comment.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, FindOptionsWhere, MoreThan, Repository } from 'typeorm';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { Comment } from './entities/comment.entity';
 import { UpdateResult } from 'typeorm';
@@ -30,6 +30,26 @@ export class CommentRepository {
     return await this.commentRepository.findOne({
       where: { id: commentId, post: { id: postId } },
       relations: { user: true, post: true },
+    });
+  }
+
+  async findCommentsByPostId(
+    postId: number,
+    cursor: number | null,
+    limit: number,
+  ): Promise<Comment[]> {
+    const where: FindOptionsWhere<Comment> = {};
+
+    where.post = { id: postId };
+    if (cursor) where.id = MoreThan(cursor);
+
+    return await this.commentRepository.find({
+      where,
+      relations: { user: true },
+      order: {
+        id: 'ASC',
+      },
+      take: limit + 1,
     });
   }
 
