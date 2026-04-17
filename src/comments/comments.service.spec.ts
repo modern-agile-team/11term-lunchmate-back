@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { CommentService } from './comments.service';
 import { CommentRepository } from './comments.repository';
@@ -115,14 +115,14 @@ describe('CommentService', () => {
       expect(mockCommentRepository.createComment).not.toHaveBeenCalled();
     });
 
-    it('생성 후 댓글을 다시 조회하지 못하면 NotFoundException을 던진다', async () => {
+    it('생성 후 댓글을 다시 조회하지 못하면 InternalServerErrorException을 던진다', async () => {
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
       mockCommentRepository.createComment.mockResolvedValue(mockCreatedComment);
       mockPostRepository.increaseCommentCount.mockResolvedValue({ affected: 1 });
       mockCommentRepository.findCommentById.mockResolvedValue(null);
 
       await expect(commentService.createComment(createCommentDto, 3, 7)).rejects.toThrow(
-        NotFoundException,
+        InternalServerErrorException,
       );
     });
   });
@@ -136,10 +136,10 @@ describe('CommentService', () => {
       expect(result).toEqual(mockCommentEntity);
     });
 
-    it('존재하지 않는 댓글이면 NotFoundException을 던진다', async () => {
+    it('존재하지 않는 댓글이면 null을 반환한다', async () => {
       mockCommentRepository.findCommentById.mockResolvedValue(null);
 
-      await expect(commentService.findCommentById(999)).rejects.toThrow(NotFoundException);
+      await expect(commentService.findCommentById(999)).resolves.toBeNull();
     });
   });
 });

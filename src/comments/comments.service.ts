@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CommentRepository } from './comments.repository';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { Comment } from './entities/comment.entity';
@@ -34,13 +34,13 @@ export class CommentService {
       return createdComment.id;
     });
 
-    return this.findCommentById(createdCommentId);
+    const foundComment = await this.findCommentById(createdCommentId);
+    if (!foundComment) throw new InternalServerErrorException('생성된 댓글 조회에 실패했습니다.');
+
+    return foundComment;
   }
 
-  async findCommentById(commentId: number): Promise<Comment> {
-    const comment = await this.commentRepository.findCommentById(commentId);
-    if (!comment) throw new NotFoundException('존재하지 않는 댓글입니다.');
-
-    return comment;
+  async findCommentById(commentId: number): Promise<Comment | null> {
+    return await this.commentRepository.findCommentById(commentId);
   }
 }
