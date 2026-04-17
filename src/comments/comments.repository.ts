@@ -39,4 +39,8 @@ export class CommentRepository {
   ): Promise<UpdateResult> {
     return await this.commentRepository.update(commentId, updateCommentDto);
   }
+
+  async deleteComment(commentId: number, manager: EntityManager): Promise<UpdateResult> {
+    return await manager.softDelete(Comment, commentId);
+  }
 }

@@ -193,6 +193,7 @@ export class PostController {
   @ApiNotFoundResponse({
     description: '존재하지 않는 게시글에 댓글을 작성하려는 경우',
   })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async createComment(
     @Body() createCommentDto: CreateCommentDto,
     @Param('id', ParseIntPipe) postId: number,
@@ -217,6 +218,7 @@ export class PostController {
   @ApiForbiddenResponse({
     description: '다른 작성자의 댓글을 수정하려는 경우',
   })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async editComment(
     @Body() updateCommentDto: UpdateCommentDto,
     @Param('postId', ParseIntPipe) postId: number,
@@ -234,5 +236,25 @@ export class PostController {
     );
 
     return CommentMapper.toCommentDetailDto(updatedComment);
+  }
+
+  @Delete(':postId/comments/:commentId')
+  @HttpCode(204)
+  @Authenticated()
+  @ApiOperation({ summary: '게시글 댓글 삭제' })
+  @ApiNoContentResponse({ description: '댓글 삭제 성공' })
+  @ApiNotFoundResponse({
+    description: '삭제된 게시글의 댓글을 삭제하거나 존재하지 않는 댓글을 삭제하려는 경우',
+  })
+  @ApiForbiddenResponse({
+    description: '다른 작성자의 댓글을 삭제하려는 경우',
+  })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async deleteComment(
+    @Param('postId', ParseIntPipe) postId: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    return await this.commentService.deleteComment(postId, commentId, user.userId);
   }
 }

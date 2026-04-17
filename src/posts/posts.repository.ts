@@ -87,4 +87,8 @@ export class PostRepository {
   async increaseCommentCount(postId: number, manager: EntityManager): Promise<UpdateResult> {
     return await manager.increment(Post, { id: postId }, 'commentCount', 1);
   }
+
+  async decreaseCommentCount(postId: number, manager: EntityManager): Promise<UpdateResult> {
+    return await manager.decrement(Post, { id: postId }, 'commentCount', 1);
+  }
 }
