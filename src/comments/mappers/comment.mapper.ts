@@ -1,13 +1,14 @@
 import { User } from 'src/users/entities/user.entity';
 import {
   CommentAuthorDto,
-  ResponseCommentDto,
+  ResponseCommentDetailDto,
   ResponseCommentListDto,
+  ResponseCommentListItemDto,
 } from '../dtos/response-comment.dto';
 import { Comment } from '../entities/comment.entity';
 
 export class CommentMapper {
-  static toCommentDetailDto(comment: Comment): ResponseCommentDto {
+  static toCommentDetailDto(comment: Comment): ResponseCommentDetailDto {
     return {
       id: comment.id,
       content: comment.content,
@@ -30,9 +31,19 @@ export class CommentMapper {
     hasNext: boolean,
   ): ResponseCommentListDto {
     return {
-      items: comments.map((comment) => this.toCommentDetailDto(comment)),
+      items: comments.map((comment) => this.toCommentListItemDto(comment)),
       nextCursor,
       hasNext,
+    };
+  }
+
+  static toCommentListItemDto(comment: Comment): ResponseCommentListItemDto {
+    return {
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      likeCount: comment.likeCount,
+      user: comment.isAnonymous ? null : this.toAuthorDto(comment.user),
     };
   }
 }

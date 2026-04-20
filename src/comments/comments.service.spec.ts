@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { CommentService } from './comments.service';
 import { CommentRepository } from './comments.repository';
@@ -142,23 +146,23 @@ describe('CommentService', () => {
       expect(mockCommentRepository.createComment).not.toHaveBeenCalled();
     });
 
-    it('생성 후 댓글을 다시 조회하지 못하면 NotFoundException을 던진다', async () => {
+    it('생성 후 댓글을 다시 조회하지 못하면 InternalServerErrorException을 던진다', async () => {
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
       mockCommentRepository.createComment.mockResolvedValue(mockCreatedComment);
       mockPostRepository.increaseCommentCount.mockResolvedValue({ affected: 1 });
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(null);
 
       await expect(commentService.createComment(createCommentDto, 3, 7)).rejects.toThrow(
-        NotFoundException,
+        InternalServerErrorException,
       );
     });
   });
 
-  describe('findByCommentIdAndPostId', () => {
+  describe('findCommentOrThrow', () => {
     it('댓글 상세 정보를 반환한다', async () => {
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
 
-      const result = await commentService.findByCommentIdAndPostId(11, 3);
+      const result = await commentService.findCommentOrThrow(11, 3);
 
       expect(result).toEqual(mockCommentEntity);
     });
@@ -166,9 +170,7 @@ describe('CommentService', () => {
     it('존재하지 않는 댓글이면 NotFoundException을 던진다', async () => {
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(null);
 
-      await expect(commentService.findByCommentIdAndPostId(999, 3)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(commentService.findCommentOrThrow(999, 3)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -232,17 +234,16 @@ describe('CommentService', () => {
       };
 
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
-      mockCommentRepository.findByCommentIdAndPostId
-        .mockResolvedValueOnce(mockCommentEntity)
-        .mockResolvedValueOnce(updatedCommentEntity);
-      mockCommentRepository.updateComment.mockResolvedValue({ affected: 1 });
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+      mockCommentRepository.updateComment.mockResolvedValue(updatedCommentEntity);
 
       const result = await commentService.editComment(updateCommentDto, 3, 11, 7);
 
       expect(result).toEqual(updatedCommentEntity);
-      expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenNthCalledWith(1, 11, 3);
-      expect(mockCommentRepository.updateComment).toHaveBeenCalledWith(updateCommentDto, 11);
-      expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenNthCalledWith(2, 11, 3);
+      expect(mockCommentRepository.updateComment).toHaveBeenCalledWith({
+        ...mockCommentEntity,
+        content: '수정된 댓글입니다.',
+      });
     });
 
     it('작성자가 아니면 ForbiddenException을 던진다', async () => {
@@ -309,12 +310,14 @@ describe('CommentService', () => {
       expect(mockCommentRepository.findByCommentIdAndPostId).not.toHaveBeenCalled();
     });
 
-    it('트랜잭션에서 삭제 결과가 없으면 NotFoundException을 던진다', async () => {
+    it('트랜잭션에서 삭제 결과가 없으면 InternalServerErrorException을 던진다', async () => {
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
       mockCommentRepository.deleteComment.mockResolvedValue({ affected: 0 });
 
-      await expect(commentService.deleteComment(3, 11, 7)).rejects.toThrow(NotFoundException);
+      await expect(commentService.deleteComment(3, 11, 7)).rejects.toThrow(
+        InternalServerErrorException,
+      );
 
       expect(mockPostRepository.decreaseCommentCount).not.toHaveBeenCalled();
     });

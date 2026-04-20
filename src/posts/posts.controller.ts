@@ -18,6 +18,7 @@ import {
   ApiCreatedResponse,
   ApiExtraModels,
   ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -43,7 +44,10 @@ import { CreateCommentDto } from 'src/comments/dtos/create-comment.dto';
 import { PostMapper } from './mappers/post-mapper';
 import { PostLikeMapper } from './mappers/post-like.mapper';
 import { CommentMapper } from 'src/comments/mappers/comment.mapper';
-import { ResponseCommentDto, ResponseCommentListDto } from 'src/comments/dtos/response-comment.dto';
+import {
+  ResponseCommentDetailDto,
+  ResponseCommentListDto,
+} from 'src/comments/dtos/response-comment.dto';
 import { UpdateCommentDto } from 'src/comments/dtos/update-comment.dto';
 import { FindCommentsQueryDto } from 'src/comments/dtos/find-comments-query.dto';
 
@@ -190,16 +194,17 @@ export class PostController {
   @Post(':id/comments')
   @Authenticated()
   @ApiOperation({ summary: '게시글 댓글 작성' })
-  @ApiCreatedResponse({ type: ResponseCommentDto, description: '댓글 작성 성공' })
+  @ApiCreatedResponse({ type: ResponseCommentDetailDto, description: '댓글 작성 성공' })
   @ApiNotFoundResponse({
     description: '존재하지 않는 게시글에 댓글을 작성하려는 경우',
   })
+  @ApiInternalServerErrorResponse({ description: '생성된 댓글 조회에 실패한 경우' })
   @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async createComment(
     @Body() createCommentDto: CreateCommentDto,
     @Param('id', ParseIntPipe) postId: number,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<ResponseCommentDto> {
+  ): Promise<ResponseCommentDetailDto> {
     const createdComment = await this.commentService.createComment(
       createCommentDto,
       postId,
@@ -212,7 +217,7 @@ export class PostController {
   @Patch(':postId/comments/:commentId')
   @Authenticated()
   @ApiOperation({ summary: '게시글 댓글 수정' })
-  @ApiOkResponse({ type: ResponseCommentDto, description: '댓글 수정 성공' })
+  @ApiOkResponse({ type: ResponseCommentDetailDto, description: '댓글 수정 성공' })
   @ApiNotFoundResponse({
     description: '삭제된 게시글의 댓글을 수정하거나 존재하지 않는 댓글을 수정하려는 경우',
   })
@@ -225,7 +230,7 @@ export class PostController {
     @Param('postId', ParseIntPipe) postId: number,
     @Param('commentId', ParseIntPipe) commentId: number,
     @CurrentUser() user: AuthenticatedUser,
-  ) {
+  ): Promise<ResponseCommentDetailDto> {
     if (Object.keys(updateCommentDto).length < 1)
       throw new BadRequestException('수정할 값이 없습니다.');
 
@@ -250,6 +255,7 @@ export class PostController {
   @ApiForbiddenResponse({
     description: '다른 작성자의 댓글을 삭제하려는 경우',
   })
+  @ApiInternalServerErrorResponse({ description: '댓글 삭제 처리에 실패한 경우' })
   @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async deleteComment(
     @Param('postId', ParseIntPipe) postId: number,

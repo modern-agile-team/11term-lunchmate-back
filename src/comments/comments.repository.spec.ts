@@ -2,7 +2,6 @@ import { Repository } from 'typeorm';
 import { CommentRepository } from './comments.repository';
 import { Comment } from './entities/comment.entity';
 import { CreateCommentDto } from './dtos/create-comment.dto';
-import { UpdateCommentDto } from './dtos/update-comment.dto';
 
 describe('CommentRepository', () => {
   let commentRepository: CommentRepository;
@@ -78,20 +77,23 @@ describe('CommentRepository', () => {
   });
 
   describe('updateComment', () => {
-    it('commentId와 수정 DTO로 update를 호출한다', async () => {
-      const updateCommentDto: UpdateCommentDto = {
+    it('수정된 comment entity로 save를 호출한다', async () => {
+      const comment = {
+        id: 11,
         content: '수정된 댓글',
+        isAnonymous: false,
       };
-      const updateResult = {
-        affected: 1,
+      const savedComment = {
+        ...comment,
+        createdAt: '2026-04-20T00:00:00.000Z',
       };
 
-      (commentOrmRepository.update as jest.Mock).mockResolvedValue(updateResult);
+      (commentOrmRepository.save as jest.Mock).mockResolvedValue(savedComment);
 
-      const result = await commentRepository.updateComment(updateCommentDto, 11);
+      const result = await commentRepository.updateComment(comment as Comment);
 
-      expect(result).toEqual(updateResult);
-      expect(commentOrmRepository.update).toHaveBeenCalledWith(11, updateCommentDto);
+      expect(result).toEqual(savedComment);
+      expect(commentOrmRepository.save).toHaveBeenCalledWith(comment);
     });
   });
 
