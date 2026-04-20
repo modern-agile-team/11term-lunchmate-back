@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CommentRepository } from './comments.repository';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { Comment } from './entities/comment.entity';
@@ -35,11 +40,19 @@ export class CommentService {
       return createdComment.id;
     });
 
-    return this.findByCommentIdAndPostId(createdCommentId, postId);
+    const foundComment = await this.commentRepository.findByCommentIdAndPostId(
+      createdCommentId,
+      postId,
+    );
+
+    if (!foundComment) throw new InternalServerErrorException('생성된 댓글 조회에 실패했습니다.');
+
+    return foundComment;
   }
 
-  async findByCommentIdAndPostId(commentId: number, postId: number): Promise<Comment> {
+  async findCommentOrThrow(commentId: number, postId: number): Promise<Comment> {
     const comment = await this.commentRepository.findByCommentIdAndPostId(commentId, postId);
+
     if (!comment) throw new NotFoundException('존재하지 않는 댓글입니다.');
 
     return comment;
@@ -54,13 +67,16 @@ export class CommentService {
     const existingPost = await this.postRepository.findPostById(postId);
     if (!existingPost) throw new NotFoundException('존재하지 않는 게시글입니다.');
 
-    const existingComment = await this.findByCommentIdAndPostId(commentId, postId);
+    const existingComment = await this.findCommentOrThrow(commentId, postId);
 
     if (existingComment.user.id !== userId)
       throw new ForbiddenException('댓글을 수정할 권한이 없습니다.');
 
     await this.commentRepository.updateComment(updateCommentDto, commentId);
 
-    return this.findByCommentIdAndPostId(commentId, postId);
+    const updatedComment = await this.commentRepository.findByCommentIdAndPostId(commentId, postId);
+    if (!updatedComment) throw new InternalServerErrorException('수정된 댓글 조회에 실패했습니다.');
+
+    return updatedComment;
   }
 }

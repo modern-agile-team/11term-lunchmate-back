@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { CommentService } from './comments.service';
 import { CommentRepository } from './comments.repository';
@@ -120,23 +124,23 @@ describe('CommentService', () => {
       expect(mockCommentRepository.createComment).not.toHaveBeenCalled();
     });
 
-    it('생성 후 댓글을 다시 조회하지 못하면 NotFoundException을 던진다', async () => {
+    it('생성 후 댓글을 다시 조회하지 못하면 InternalServerErrorException을 던진다', async () => {
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
       mockCommentRepository.createComment.mockResolvedValue(mockCreatedComment);
       mockPostRepository.increaseCommentCount.mockResolvedValue({ affected: 1 });
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(null);
 
       await expect(commentService.createComment(createCommentDto, 3, 7)).rejects.toThrow(
-        NotFoundException,
+        InternalServerErrorException,
       );
     });
   });
 
-  describe('findByCommentIdAndPostId', () => {
+  describe('findCommentOrThrow', () => {
     it('댓글 상세 정보를 반환한다', async () => {
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
 
-      const result = await commentService.findByCommentIdAndPostId(11, 3);
+      const result = await commentService.findCommentOrThrow(11, 3);
 
       expect(result).toEqual(mockCommentEntity);
     });
@@ -144,9 +148,7 @@ describe('CommentService', () => {
     it('존재하지 않는 댓글이면 NotFoundException을 던진다', async () => {
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(null);
 
-      await expect(commentService.findByCommentIdAndPostId(999, 3)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(commentService.findCommentOrThrow(999, 3)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -201,6 +203,22 @@ describe('CommentService', () => {
       );
 
       expect(mockCommentRepository.findByCommentIdAndPostId).not.toHaveBeenCalled();
+    });
+
+    it('수정 후 댓글을 다시 조회하지 못하면 InternalServerErrorException을 던진다', async () => {
+      const updateCommentDto: UpdateCommentDto = {
+        content: '수정 시도',
+      };
+
+      mockPostRepository.findPostById.mockResolvedValue(mockPost);
+      mockCommentRepository.findByCommentIdAndPostId
+        .mockResolvedValueOnce(mockCommentEntity)
+        .mockResolvedValueOnce(null);
+      mockCommentRepository.updateComment.mockResolvedValue({ affected: 1 });
+
+      await expect(commentService.editComment(updateCommentDto, 3, 11, 7)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });
