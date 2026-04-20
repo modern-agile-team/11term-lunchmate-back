@@ -90,7 +90,8 @@ export class CommentService {
 
     await this.dataSource.transaction(async (manager) => {
       const deletedResult = await this.commentRepository.deleteComment(commentId, manager);
-      if (!deletedResult.affected) throw new NotFoundException('존재하지 않는 댓글입니다.');
+      if (!deletedResult.affected)
+        throw new InternalServerErrorException('댓글 삭제에 실패했습니다.');
 
       await this.postRepository.decreaseCommentCount(postId, manager);
     });

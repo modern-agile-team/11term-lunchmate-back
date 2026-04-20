@@ -251,6 +251,7 @@ export class PostController {
   @ApiForbiddenResponse({
     description: '다른 작성자의 댓글을 삭제하려는 경우',
   })
+  @ApiInternalServerErrorResponse({ description: '댓글 삭제 처리에 실패한 경우' })
   @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async deleteComment(
     @Param('postId', ParseIntPipe) postId: number,

@@ -241,12 +241,14 @@ describe('CommentService', () => {
       expect(mockCommentRepository.findByCommentIdAndPostId).not.toHaveBeenCalled();
     });
 
-    it('트랜잭션에서 삭제 결과가 없으면 NotFoundException을 던진다', async () => {
+    it('트랜잭션에서 삭제 결과가 없으면 InternalServerErrorException을 던진다', async () => {
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
       mockCommentRepository.deleteComment.mockResolvedValue({ affected: 0 });
 
-      await expect(commentService.deleteComment(3, 11, 7)).rejects.toThrow(NotFoundException);
+      await expect(commentService.deleteComment(3, 11, 7)).rejects.toThrow(
+        InternalServerErrorException,
+      );
 
       expect(mockPostRepository.decreaseCommentCount).not.toHaveBeenCalled();
     });
