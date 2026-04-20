@@ -1,4 +1,3 @@
-import { UpdateCommentDto } from './dtos/update-comment.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -33,11 +32,8 @@ export class CommentRepository {
     });
   }
 
-  async updateComment(
-    updateCommentDto: UpdateCommentDto,
-    commentId: number,
-  ): Promise<UpdateResult> {
-    return await this.commentRepository.update(commentId, updateCommentDto);
+  async updateComment(comment: Comment): Promise<Comment> {
+    return await this.commentRepository.save(comment);
   }
 
   async deleteComment(commentId: number, manager: EntityManager): Promise<UpdateResult> {

@@ -18,6 +18,7 @@ import {
   ApiCreatedResponse,
   ApiExtraModels,
   ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -193,6 +194,7 @@ export class PostController {
   @ApiNotFoundResponse({
     description: '존재하지 않는 게시글에 댓글을 작성하려는 경우',
   })
+  @ApiInternalServerErrorResponse({ description: '생성된 댓글 조회에 실패한 경우' })
   @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
   async createComment(
     @Body() createCommentDto: CreateCommentDto,

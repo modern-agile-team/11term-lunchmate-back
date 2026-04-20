@@ -245,9 +245,11 @@ describe('Comments Update (e2e)', () => {
     const post = await createPost(signupResponse.body.user.id, category.id);
     const comment = await createComment(post.id, signupResponse.body.user.id);
 
-    const response = await request(httpApp()).patch(`/posts/${post.id}/comments/${comment.id}`).send({
-      content: '로그인 없이 수정',
-    });
+    const response = await request(httpApp())
+      .patch(`/posts/${post.id}/comments/${comment.id}`)
+      .send({
+        content: '로그인 없이 수정',
+      });
 
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
