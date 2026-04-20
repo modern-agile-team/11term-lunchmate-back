@@ -72,11 +72,10 @@ export class CommentService {
     if (existingComment.user.id !== userId)
       throw new ForbiddenException('댓글을 수정할 권한이 없습니다.');
 
-    await this.commentRepository.updateComment(updateCommentDto, commentId);
+    if (updateCommentDto.content !== undefined) existingComment.content = updateCommentDto.content;
+    if (updateCommentDto.isAnonymous !== undefined)
+      existingComment.isAnonymous = updateCommentDto.isAnonymous;
 
-    const updatedComment = await this.commentRepository.findByCommentIdAndPostId(commentId, postId);
-    if (!updatedComment) throw new InternalServerErrorException('수정된 댓글 조회에 실패했습니다.');
-
-    return updatedComment;
+    return await this.commentRepository.updateComment(existingComment);
   }
 }

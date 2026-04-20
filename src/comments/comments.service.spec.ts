@@ -163,17 +163,16 @@ describe('CommentService', () => {
       };
 
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
-      mockCommentRepository.findByCommentIdAndPostId
-        .mockResolvedValueOnce(mockCommentEntity)
-        .mockResolvedValueOnce(updatedCommentEntity);
-      mockCommentRepository.updateComment.mockResolvedValue({ affected: 1 });
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+      mockCommentRepository.updateComment.mockResolvedValue(updatedCommentEntity);
 
       const result = await commentService.editComment(updateCommentDto, 3, 11, 7);
 
       expect(result).toEqual(updatedCommentEntity);
-      expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenNthCalledWith(1, 11, 3);
-      expect(mockCommentRepository.updateComment).toHaveBeenCalledWith(updateCommentDto, 11);
-      expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenNthCalledWith(2, 11, 3);
+      expect(mockCommentRepository.updateComment).toHaveBeenCalledWith({
+        ...mockCommentEntity,
+        content: '수정된 댓글입니다.',
+      });
     });
 
     it('작성자가 아니면 ForbiddenException을 던진다', async () => {
@@ -203,22 +202,6 @@ describe('CommentService', () => {
       );
 
       expect(mockCommentRepository.findByCommentIdAndPostId).not.toHaveBeenCalled();
-    });
-
-    it('수정 후 댓글을 다시 조회하지 못하면 InternalServerErrorException을 던진다', async () => {
-      const updateCommentDto: UpdateCommentDto = {
-        content: '수정 시도',
-      };
-
-      mockPostRepository.findPostById.mockResolvedValue(mockPost);
-      mockCommentRepository.findByCommentIdAndPostId
-        .mockResolvedValueOnce(mockCommentEntity)
-        .mockResolvedValueOnce(null);
-      mockCommentRepository.updateComment.mockResolvedValue({ affected: 1 });
-
-      await expect(commentService.editComment(updateCommentDto, 3, 11, 7)).rejects.toThrow(
-        InternalServerErrorException,
-      );
     });
   });
 });
