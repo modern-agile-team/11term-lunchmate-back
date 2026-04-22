@@ -50,6 +50,8 @@ import {
 } from 'src/comments/dtos/response-comment.dto';
 import { UpdateCommentDto } from 'src/comments/dtos/update-comment.dto';
 import { FindCommentsQueryDto } from 'src/comments/dtos/find-comments-query.dto';
+import { ResponseCommentLikeDto } from 'src/comments/dtos/response-comment-like.dto';
+import { CommentLikeMapper } from 'src/comments/mappers/comment-like.mapper';
 
 @ApiTags('Post')
 @ApiExtraModels(ResponsePostDetailDto, ResponsePostListDto, ResponsePostListItemDto)
@@ -280,5 +282,43 @@ export class PostController {
     );
 
     return CommentMapper.toCommentListDto(items, nextCursor, hasNext);
+  }
+
+  @Post(':postId/comments/:commentId/like')
+  @Authenticated()
+  @ApiOperation({ summary: '댓글 좋아요' })
+  @ApiCreatedResponse({ type: ResponseCommentLikeDto, description: '댓글 좋아요 성공' })
+  @ApiBadRequestResponse({
+    description: '이미 좋아요한 댓글인 경우',
+  })
+  @ApiNotFoundResponse({ description: '존재하지 않는 댓글에 좋아요하려는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async likeComment(
+    @Param('postId', ParseIntPipe) postId: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ResponseCommentLikeDto> {
+    const likedComment = await this.commentService.likeComment(postId, commentId, user.userId);
+
+    return CommentLikeMapper.toCommentLikeDto(likedComment, true);
+  }
+
+  @Delete(':postId/comments/:commentId/like')
+  @Authenticated()
+  @ApiOperation({ summary: '댓글 좋아요 취소' })
+  @ApiOkResponse({ type: ResponseCommentLikeDto, description: '댓글 좋아요 취소 성공' })
+  @ApiBadRequestResponse({
+    description: '좋아요하지 않은 댓글인 경우',
+  })
+  @ApiNotFoundResponse({ description: '존재하지 않는 댓글에 좋아요 취소를 하려는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  async unlikeComment(
+    @Param('postId', ParseIntPipe) postId: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ResponseCommentLikeDto> {
+    const unlikedComment = await this.commentService.unlikeComment(postId, commentId, user.userId);
+
+    return CommentLikeMapper.toCommentLikeDto(unlikedComment, false);
   }
 }

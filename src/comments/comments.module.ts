@@ -6,11 +6,19 @@ import { CommentService } from './comments.service';
 import { CommentRepository } from './comments.repository';
 import { Post } from 'src/posts/entities/post.entity';
 import { PostRepository } from 'src/posts/posts.repository';
+import { CommentLikeService } from './comment-like.service';
+import { CommentLikeRepository } from './comment-like.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Comment, CommentLike, Post])],
   controllers: [],
-  providers: [CommentService, CommentRepository, PostRepository],
+  providers: [
+    CommentService,
+    CommentRepository,
+    PostRepository,
+    CommentLikeService,
+    CommentLikeRepository,
+  ],
   exports: [CommentService],
 })
 export class CommentModule {}

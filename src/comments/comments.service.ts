@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -13,12 +14,14 @@ import { UpdateCommentDto } from './dtos/update-comment.dto';
 import { FindCommentsQueryDto } from './dtos/find-comments-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/comment.constant';
 import { FindCommentsResult } from './types/comment.type';
+import { CommentLikeService } from './comment-like.service';
 
 @Injectable()
 export class CommentService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly postRepository: PostRepository,
+    private readonly commentLikeService: CommentLikeService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -119,6 +122,60 @@ export class CommentService {
         throw new InternalServerErrorException('댓글 삭제에 실패했습니다.');
 
       await this.postRepository.decreaseCommentCount(postId, manager);
+    });
+  }
+
+  async likeComment(postId: number, commentId: number, userId: number): Promise<Comment> {
+    await this.findCommentOrThrow(commentId, postId);
+
+    const existingLike = await this.commentLikeService.findByCommentLikeIdAndUserId(
+      commentId,
+      userId,
+    );
+    if (existingLike) throw new BadRequestException('이미 좋아요한 댓글입니다.');
+
+    return await this.dataSource.transaction(async (manager) => {
+      await this.commentLikeService.likeComment(commentId, userId, manager);
+
+      await this.commentRepository.increaseCommentLikeCount(commentId, manager);
+
+      const likedComment = await this.commentRepository.findByCommentIdAndPostId(
+        commentId,
+        postId,
+        manager,
+      );
+      if (!likedComment)
+        throw new InternalServerErrorException('좋아요한 댓글을 찾을 수 없습니다.');
+
+      return likedComment;
+    });
+  }
+
+  async unlikeComment(postId: number, commentId: number, userId: number): Promise<Comment> {
+    await this.findCommentOrThrow(commentId, postId);
+
+    const existingLike = await this.commentLikeService.findByCommentLikeIdAndUserId(
+      commentId,
+      userId,
+    );
+    if (!existingLike) throw new BadRequestException('좋아요하지 않은 댓글입니다.');
+
+    return await this.dataSource.transaction(async (manager) => {
+      const deleteResult = await this.commentLikeService.unlikeComment(commentId, userId, manager);
+      if (!deleteResult.affected)
+        throw new InternalServerErrorException('댓글 좋아요 취소에 실패했습니다.');
+
+      await this.commentRepository.decreaseCommentLikeCount(commentId, manager);
+
+      const unlikedComment = await this.commentRepository.findByCommentIdAndPostId(
+        commentId,
+        postId,
+        manager,
+      );
+      if (!unlikedComment)
+        throw new InternalServerErrorException('좋아요 취소한 댓글을 찾을 수 없습니다.');
+
+      return unlikedComment;
     });
   }
 }

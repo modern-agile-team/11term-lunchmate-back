@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  BadRequestException,
   ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
@@ -8,6 +9,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { CommentService } from './comments.service';
 import { CommentRepository } from './comments.repository';
 import { PostRepository } from 'src/posts/posts.repository';
+import { CommentLikeService } from './comment-like.service';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { UpdateCommentDto } from './dtos/update-comment.dto';
 import { FindCommentsQueryDto } from './dtos/find-comments-query.dto';
@@ -65,12 +67,20 @@ const mockCommentRepository = {
   findCommentsByPostId: jest.fn(),
   updateComment: jest.fn(),
   deleteComment: jest.fn(),
+  increaseCommentLikeCount: jest.fn(),
+  decreaseCommentLikeCount: jest.fn(),
 };
 
 const mockPostRepository = {
   findPostById: jest.fn(),
   increaseCommentCount: jest.fn(),
   decreaseCommentCount: jest.fn(),
+};
+
+const mockCommentLikeService = {
+  findByCommentLikeIdAndUserId: jest.fn(),
+  likeComment: jest.fn(),
+  unlikeComment: jest.fn(),
 };
 
 const mockManager = {} as EntityManager;
@@ -106,6 +116,10 @@ describe('CommentService', () => {
         {
           provide: PostRepository,
           useValue: mockPostRepository,
+        },
+        {
+          provide: CommentLikeService,
+          useValue: mockCommentLikeService,
         },
       ],
     }).compile();
@@ -215,9 +229,7 @@ describe('CommentService', () => {
     it('존재하지 않는 게시글이면 NotFoundException을 던진다', async () => {
       mockPostRepository.findPostById.mockResolvedValue(null);
 
-      await expect(commentService.findCommentsByPostId(999, {})).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(commentService.findCommentsByPostId(999, {})).rejects.toThrow(NotFoundException);
 
       expect(mockCommentRepository.findCommentsByPostId).not.toHaveBeenCalled();
     });
@@ -320,6 +332,95 @@ describe('CommentService', () => {
       );
 
       expect(mockPostRepository.decreaseCommentCount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('likeComment', () => {
+    it('좋아요하지 않은 댓글이면 좋아요 결과를 반환한다', async () => {
+      const likedComment = {
+        ...mockCommentEntity,
+        likeCount: 1,
+      };
+
+      mockCommentRepository.findByCommentIdAndPostId
+        .mockResolvedValueOnce(mockCommentEntity)
+        .mockResolvedValueOnce(likedComment);
+      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue(null);
+      mockCommentLikeService.likeComment.mockResolvedValue({ id: 1 });
+      mockCommentRepository.increaseCommentLikeCount.mockResolvedValue({ affected: 1 });
+
+      await expect(commentService.likeComment(3, 11, 7)).resolves.toEqual(likedComment);
+      expect(mockCommentLikeService.findByCommentLikeIdAndUserId).toHaveBeenCalledWith(11, 7);
+      expect(mockCommentLikeService.likeComment).toHaveBeenCalledWith(11, 7, mockManager);
+      expect(mockCommentRepository.increaseCommentLikeCount).toHaveBeenCalledWith(11, mockManager);
+      expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenLastCalledWith(
+        11,
+        3,
+        mockManager,
+      );
+    });
+
+    it('이미 좋아요한 댓글이면 BadRequestException을 던진다', async () => {
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue({ id: 1 });
+
+      await expect(commentService.likeComment(3, 11, 7)).rejects.toThrow(BadRequestException);
+    });
+
+    it('좋아요 후 댓글을 다시 조회하지 못하면 InternalServerErrorException을 던진다', async () => {
+      mockCommentRepository.findByCommentIdAndPostId
+        .mockResolvedValueOnce(mockCommentEntity)
+        .mockResolvedValueOnce(null);
+      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue(null);
+      mockCommentLikeService.likeComment.mockResolvedValue({ id: 1 });
+      mockCommentRepository.increaseCommentLikeCount.mockResolvedValue({ affected: 1 });
+
+      await expect(commentService.likeComment(3, 11, 7)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+  });
+
+  describe('unlikeComment', () => {
+    it('좋아요한 댓글이면 좋아요 취소 결과를 반환한다', async () => {
+      const unlikedComment = {
+        ...mockCommentEntity,
+        likeCount: 0,
+      };
+
+      mockCommentRepository.findByCommentIdAndPostId
+        .mockResolvedValueOnce({ ...mockCommentEntity, likeCount: 1 })
+        .mockResolvedValueOnce(unlikedComment);
+      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue({ id: 1 });
+      mockCommentLikeService.unlikeComment.mockResolvedValue({ affected: 1 });
+      mockCommentRepository.decreaseCommentLikeCount.mockResolvedValue({ affected: 1 });
+
+      await expect(commentService.unlikeComment(3, 11, 7)).resolves.toEqual(unlikedComment);
+      expect(mockCommentLikeService.findByCommentLikeIdAndUserId).toHaveBeenCalledWith(11, 7);
+      expect(mockCommentLikeService.unlikeComment).toHaveBeenCalledWith(11, 7, mockManager);
+      expect(mockCommentRepository.decreaseCommentLikeCount).toHaveBeenCalledWith(11, mockManager);
+      expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenLastCalledWith(
+        11,
+        3,
+        mockManager,
+      );
+    });
+
+    it('좋아요하지 않은 댓글이면 BadRequestException을 던진다', async () => {
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue(null);
+
+      await expect(commentService.unlikeComment(3, 11, 7)).rejects.toThrow(BadRequestException);
+    });
+
+    it('좋아요 취소 결과가 없으면 InternalServerErrorException을 던진다', async () => {
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue({ id: 1 });
+      mockCommentLikeService.unlikeComment.mockResolvedValue({ affected: 0 });
+
+      await expect(commentService.unlikeComment(3, 11, 7)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });
