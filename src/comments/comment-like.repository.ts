@@ -10,10 +10,7 @@ export class CommentLikeRepository {
     private readonly commentLikeRepository: Repository<CommentLike>,
   ) {}
 
-  async findByCommentLikeIdAndUserId(
-    commentId: number,
-    userId: number,
-  ): Promise<CommentLike | null> {
+  async findByCommentIdAndUserId(commentId: number, userId: number): Promise<CommentLike | null> {
     return await this.commentLikeRepository.findOne({
       where: {
         comment: { id: commentId },

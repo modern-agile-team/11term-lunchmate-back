@@ -7,11 +7,8 @@ import { CommentLike } from './entities/comment-like.entity';
 export class CommentLikeService {
   constructor(private readonly commentLikeRepository: CommentLikeRepository) {}
 
-  async findByCommentLikeIdAndUserId(
-    commentId: number,
-    userId: number,
-  ): Promise<CommentLike | null> {
-    return await this.commentLikeRepository.findByCommentLikeIdAndUserId(commentId, userId);
+  async findByCommentIdAndUserId(commentId: number, userId: number): Promise<CommentLike | null> {
+    return await this.commentLikeRepository.findByCommentIdAndUserId(commentId, userId);
   }
 
   async likeComment(

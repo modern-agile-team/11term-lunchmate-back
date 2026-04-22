@@ -128,10 +128,7 @@ export class CommentService {
   async likeComment(postId: number, commentId: number, userId: number): Promise<Comment> {
     await this.findCommentOrThrow(commentId, postId);
 
-    const existingLike = await this.commentLikeService.findByCommentLikeIdAndUserId(
-      commentId,
-      userId,
-    );
+    const existingLike = await this.commentLikeService.findByCommentIdAndUserId(commentId, userId);
     if (existingLike) throw new BadRequestException('이미 좋아요한 댓글입니다.');
 
     return await this.dataSource.transaction(async (manager) => {
@@ -154,10 +151,7 @@ export class CommentService {
   async unlikeComment(postId: number, commentId: number, userId: number): Promise<Comment> {
     await this.findCommentOrThrow(commentId, postId);
 
-    const existingLike = await this.commentLikeService.findByCommentLikeIdAndUserId(
-      commentId,
-      userId,
-    );
+    const existingLike = await this.commentLikeService.findByCommentIdAndUserId(commentId, userId);
     if (!existingLike) throw new BadRequestException('좋아요하지 않은 댓글입니다.');
 
     return await this.dataSource.transaction(async (manager) => {
