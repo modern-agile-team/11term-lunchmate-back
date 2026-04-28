@@ -17,7 +17,12 @@ import { UserService } from 'src/users/users.service';
 import { Room, RoomStatus, RoomType } from './entities/room.entity';
 import { calculateAge } from 'src/commons/utils/age.util';
 import { RoomMember } from './entities/room-member.entity';
-import { FindRoomsResult, UserConditionsParam } from './types/room.type';
+import {
+  CreateRoomProps,
+  FindRoomsResult,
+  UpdateRoomProps,
+  UserConditionsParam,
+} from './types/room.type';
 import { RoomGateway } from './rooms.gateway';
 import { CurrentUserResponseDto } from 'src/users/dto/current-user-response.dto';
 
@@ -34,10 +39,12 @@ export class RoomService {
   async createRoom(userId: number, createRoomDto: CreateRoomDto): Promise<Room> {
     await this.validateParticipatingRoom(userId);
 
-    this.validateRoomProperties(createRoomDto);
+    this.validateRoomAgeAndLunchAt(createRoomDto);
 
     const newRoomId = await this.dataSource.transaction(async (manager) => {
-      const newRoom = await this.roomRepository.createRoom(manager, userId, createRoomDto);
+      const createRoomProps = this.buildCreateRoomProps(createRoomDto, userId);
+
+      const newRoom = await this.roomRepository.createRoom(manager, createRoomProps);
 
       const roomId = newRoom.id;
 
@@ -117,14 +124,10 @@ export class RoomService {
 
     if (Object.keys(updateRoomDto).length < 1) return existingRoom;
 
-    const mergeRoomForValidation = {
-      minAge: updateRoomDto.minAge ?? existingRoom.minAge,
-      maxAge: updateRoomDto.maxAge ?? existingRoom.maxAge,
-      lunchAt: updateRoomDto.lunchAt ?? existingRoom.lunchAt,
-    };
-    this.validateRoomProperties(mergeRoomForValidation);
+    const updateRoomProps = this.buildUpdateRoomProps(updateRoomDto, existingRoom);
+    this.validateRoomAgeAndLunchAt(updateRoomProps);
 
-    await this.roomRepository.updateRoom(roomId, updateRoomDto);
+    await this.roomRepository.updateRoom(roomId, updateRoomProps);
 
     return await this.findRoomById(roomId);
   }
@@ -249,7 +252,7 @@ export class RoomService {
     }
   }
 
-  validateRoomProperties(dto: { minAge?: number; maxAge?: number; lunchAt?: string }): void {
+  validateRoomAgeAndLunchAt(dto: { minAge?: number; maxAge?: number; lunchAt?: string }): void {
     if (dto.minAge !== undefined && dto.maxAge !== undefined && dto.minAge > dto.maxAge)
       throw new BadRequestException('최소 나이와 최대 나이 옵션이 올바르지 않습니다.');
 
@@ -317,5 +320,32 @@ export class RoomService {
     if (!existingRoom) throw new NotFoundException('존재하지 않는 방입니다.');
 
     return existingRoom;
+  }
+
+  private buildCreateRoomProps(createRoomDto: CreateRoomDto, userId: number): CreateRoomProps {
+    return {
+      title: createRoomDto.title,
+      description: createRoomDto.description,
+      roomType: createRoomDto.roomType,
+      maxMembersCount: createRoomDto.maxMembersCount,
+      maxAge: createRoomDto.maxAge,
+      minAge: createRoomDto.minAge,
+      place: createRoomDto.place,
+      lunchAt: createRoomDto.lunchAt,
+      hostUser: { id: userId },
+    };
+  }
+
+  private buildUpdateRoomProps(updateRoomDto: UpdateRoomDto, existingRoom: Room): UpdateRoomProps {
+    return {
+      title: updateRoomDto.title ?? existingRoom.title,
+      description: updateRoomDto.description ?? existingRoom.description,
+      roomType: updateRoomDto.roomType ?? existingRoom.roomType,
+      maxMembersCount: updateRoomDto.maxMembersCount ?? existingRoom.maxMembersCount,
+      maxAge: updateRoomDto.maxAge ?? existingRoom.maxAge,
+      minAge: updateRoomDto.minAge ?? existingRoom.minAge,
+      place: updateRoomDto.place ?? existingRoom.place,
+      lunchAt: updateRoomDto.lunchAt ?? existingRoom.lunchAt,
+    };
   }
 }

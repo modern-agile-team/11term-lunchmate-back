@@ -1,5 +1,3 @@
-import { UpdateRoomDto } from './dto/update-room.dto';
-import { CreateRoomDto } from './dto/create-room.dto';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,7 +14,7 @@ import {
   UpdateResult,
 } from 'typeorm';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
-import { UserConditionsParam } from './types/room.type';
+import { CreateRoomProps, UpdateRoomProps, UserConditionsParam } from './types/room.type';
 
 @Injectable()
 export class RoomRepository {
@@ -25,15 +23,8 @@ export class RoomRepository {
     private readonly roomRepository: Repository<Room>,
   ) {}
 
-  async createRoom(
-    manager: EntityManager,
-    userId: number,
-    createRoomDto: CreateRoomDto,
-  ): Promise<Room> {
-    return await manager.save(Room, {
-      ...createRoomDto,
-      hostUser: { id: userId },
-    });
+  async createRoom(manager: EntityManager, createRoomProps: CreateRoomProps): Promise<Room> {
+    return await manager.save(Room, createRoomProps);
   }
 
   async findRoomById(roomId: number, manager?: EntityManager): Promise<Room | null> {
@@ -120,8 +111,8 @@ export class RoomRepository {
       .getMany();
   }
 
-  async updateRoom(roomId: number, updateRoomDto: UpdateRoomDto): Promise<UpdateResult> {
-    return await this.roomRepository.update(roomId, updateRoomDto);
+  async updateRoom(roomId: number, updateRoomProps: UpdateRoomProps): Promise<UpdateResult> {
+    return await this.roomRepository.update(roomId, updateRoomProps);
   }
 
   async deleteRoom(roomId: number, manager?: EntityManager): Promise<DeleteResult> {

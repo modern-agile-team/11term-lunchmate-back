@@ -62,6 +62,18 @@ const createRoomDto: CreateRoomDto = {
   maxAge: mockRoomEntity.maxAge,
 };
 
+const createRoomProps = {
+  title: createRoomDto.title,
+  description: createRoomDto.description,
+  roomType: createRoomDto.roomType,
+  maxMembersCount: createRoomDto.maxMembersCount,
+  maxAge: createRoomDto.maxAge,
+  minAge: createRoomDto.minAge,
+  place: createRoomDto.place,
+  lunchAt: createRoomDto.lunchAt,
+  hostUser: { id: mockUserSummary.id },
+};
+
 const mockDataSource = {
   transaction: jest.fn(),
 };
@@ -255,11 +267,7 @@ describe('RoomService', () => {
         undefined,
       );
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
-      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
-        mockManager,
-        mockUserSummary.id,
-        createRoomDto,
-      );
+      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(mockManager, createRoomProps);
       expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
@@ -290,11 +298,7 @@ describe('RoomService', () => {
         createRoomError,
       );
 
-      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
-        mockManager,
-        mockUserSummary.id,
-        createRoomDto,
-      );
+      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(mockManager, createRoomProps);
       expect(mockRoomMemberService.createRoomMember).not.toHaveBeenCalled();
       expect(mockRoomRepository.findRoomById).not.toHaveBeenCalled();
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(1);
@@ -311,11 +315,7 @@ describe('RoomService', () => {
         createRoomMemberError,
       );
 
-      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
-        mockManager,
-        mockUserSummary.id,
-        createRoomDto,
-      );
+      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(mockManager, createRoomProps);
       expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
@@ -338,11 +338,7 @@ describe('RoomService', () => {
         NotFoundException,
       );
 
-      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
-        mockManager,
-        mockUserSummary.id,
-        createRoomDto,
-      );
+      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(mockManager, createRoomProps);
       expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
@@ -417,7 +413,16 @@ describe('RoomService', () => {
 
       expect(result).toEqual(updatedRoomEntity);
       expect(mockRoomRepository.findRoomById).toHaveBeenNthCalledWith(1, mockRoomEntity.id);
-      expect(mockRoomRepository.updateRoom).toHaveBeenCalledWith(mockRoomEntity.id, updateRoomDto);
+      expect(mockRoomRepository.updateRoom).toHaveBeenCalledWith(mockRoomEntity.id, {
+        title: '수정된 방 제목',
+        description: mockRoomEntity.description,
+        roomType: mockRoomEntity.roomType,
+        maxMembersCount: mockRoomEntity.maxMembersCount,
+        maxAge: 25,
+        minAge: 21,
+        place: mockRoomEntity.place,
+        lunchAt: '2099-03-28T03:30:00.000Z',
+      });
       expect(mockRoomRepository.findRoomById).toHaveBeenNthCalledWith(2, mockRoomEntity.id);
     });
 
