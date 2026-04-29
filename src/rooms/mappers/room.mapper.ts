@@ -1,3 +1,4 @@
+import { formatKoreaDate } from 'src/commons/utils/date-format.util';
 import {
   ResponseRoomDetailDto,
   ResponseRoomListDto,
@@ -19,7 +20,7 @@ export class RoomMapper {
       minAge: room.minAge,
       maxAge: room.maxAge,
       place: room.place,
-      lunchAt: room.lunchAt,
+      lunchAt: formatKoreaDate(room.lunchAt),
       hostUserId: room.hostUserId,
     };
   }
@@ -39,7 +40,7 @@ export class RoomMapper {
   static toDetailDto(room: Room): ResponseRoomDetailDto {
     return {
       ...this.toItemDto(room),
-      createdAt: room.createdAt,
+      createdAt: formatKoreaDate(room.createdAt),
       roomMembers: room.roomMembers.map((member) => RoomMemberMapper.toItemDto(member)),
     };
   }
