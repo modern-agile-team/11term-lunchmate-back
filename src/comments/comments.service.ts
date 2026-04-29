@@ -13,8 +13,8 @@ import { DataSource } from 'typeorm';
 import { UpdateCommentDto } from './dtos/update-comment.dto';
 import { FindCommentsQueryDto } from './dtos/find-comments-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/comment.constant';
-import { FindCommentsResult } from './types/comment.type';
 import { CommentLikeService } from './comment-like.service';
+import { CursorPaginatedResult } from 'src/commons/types/cursor-pagination.type';
 
 @Injectable()
 export class CommentService {
@@ -67,7 +67,7 @@ export class CommentService {
   async findCommentsByPostId(
     postId: number,
     findCommentsQueryDto: FindCommentsQueryDto,
-  ): Promise<FindCommentsResult> {
+  ): Promise<CursorPaginatedResult<Comment>> {
     const existingPost = await this.postRepository.findPostById(postId);
     if (!existingPost) throw new NotFoundException('존재하지 않는 게시글입니다.');
 
