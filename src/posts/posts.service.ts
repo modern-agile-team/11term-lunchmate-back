@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PostRepository } from './posts.repository';
@@ -10,10 +11,10 @@ import { PostCategoryService } from 'src/post-categories/post-categories.service
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/post.constant';
 import { Post } from './entities/post.entity';
-import { UpdatePostDto, UpdatePostPayloadDto } from './dtos/update-post.dto';
+import { UpdatePostDto } from './dtos/update-post.dto';
 import { DataSource, EntityManager } from 'typeorm';
 import { PostLikeService } from './post-like.service';
-import { FindPostsResult } from './types/post.type';
+import { CreatePostProps, FindPostsResult, UpdatePostProps } from './types/post.type';
 
 @Injectable()
 export class PostService {
@@ -29,11 +30,13 @@ export class PostService {
 
     await this.validateCategoryExists(categoryId);
 
-    const createdPost = await this.postRepository.createPost(createPostDto, userId);
+    const createPostProps = this.buildCreatePostProps(createPostDto, userId);
+    const createdPost = await this.postRepository.createPost(createPostProps);
 
     const createdPostDetail = await this.postRepository.findPostById(createdPost.id);
 
-    if (!createdPostDetail) throw new NotFoundException('생성된 게시글을 찾을 수 없습니다.');
+    if (!createdPostDetail)
+      throw new InternalServerErrorException('생성된 게시글을 찾을 수 없습니다.');
 
     return createdPostDetail;
   }
@@ -72,9 +75,9 @@ export class PostService {
     if (updatePostDto.categoryId !== undefined)
       await this.validateCategoryExists(updatePostDto.categoryId);
 
-    const updatePostPayload = this.buildUpdatePostPayload(updatePostDto);
+    const updatePostProps = this.buildUpdatePostProps(existingPost, updatePostDto);
 
-    await this.postRepository.updatePost(postId, updatePostPayload);
+    await this.postRepository.updatePost(postId, updatePostProps);
 
     return await this.findPostById(postId);
   }
@@ -131,20 +134,28 @@ export class PostService {
     return existingPost.viewCount + 1;
   }
 
-  private buildUpdatePostPayload(updatePostDto: UpdatePostDto): UpdatePostPayloadDto {
-    const { categoryId, ...updatePostData } = updatePostDto;
-
-    const updatePostPayload: UpdatePostPayloadDto = {
-      ...updatePostData,
-    };
-    if (categoryId !== undefined) updatePostPayload.category = { id: categoryId };
-
-    return updatePostPayload;
-  }
-
   private async validateCategoryExists(categoryId: number): Promise<void> {
     const existingCategory = await this.postCategoryService.findPostCategoryById(categoryId);
 
     if (!existingCategory) throw new BadRequestException('존재하지 않는 카테고리입니다.');
+  }
+
+  private buildCreatePostProps(createPostDto: CreatePostDto, userId: number): CreatePostProps {
+    return {
+      title: createPostDto.title,
+      content: createPostDto.content,
+      isAnonymous: createPostDto.isAnonymous,
+      category: { id: createPostDto.categoryId },
+      user: { id: userId },
+    };
+  }
+
+  private buildUpdatePostProps(existingPost: Post, updatePostDto: UpdatePostDto): UpdatePostProps {
+    return {
+      title: updatePostDto.title ?? existingPost.title,
+      content: updatePostDto.content ?? existingPost.content,
+      isAnonymous: updatePostDto.isAnonymous ?? existingPost.isAnonymous,
+      category: { id: updatePostDto.categoryId ?? existingPost.category.id },
+    };
   }
 }

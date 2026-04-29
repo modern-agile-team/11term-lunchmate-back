@@ -1,8 +1,7 @@
 import { DeleteResult, Repository } from 'typeorm';
 import { PostRepository } from './posts.repository';
 import { Post } from './entities/post.entity';
-import { CreatePostDto } from './dtos/create-post.dto';
-import { UpdatePostPayloadDto } from './dtos/update-post.dto';
+import { CreatePostProps, UpdatePostProps } from './types/post.type';
 
 describe('PostRepository', () => {
   let postRepository: PostRepository;
@@ -24,30 +23,25 @@ describe('PostRepository', () => {
   });
 
   describe('createPost', () => {
-    it('작성 DTO와 userId로 save를 호출', async () => {
-      const createPostDto: CreatePostDto = {
+    it('저장용 props로 save를 호출', async () => {
+      const createPostProps: CreatePostProps = {
         title: '학생식당 돈까스 맛있어요',
         content: '오늘 점심에 먹었는데 소스가 정말 맛있었어요.',
-        categoryId: 1,
         isAnonymous: false,
+        category: { id: 1 },
+        user: { id: 7 },
       };
       const savedPost = {
         id: 1,
-        ...createPostDto,
+        ...createPostProps,
       };
 
       (postOrmRepository.save as jest.Mock).mockResolvedValue(savedPost);
 
-      const result = await postRepository.createPost(createPostDto, 7);
+      const result = await postRepository.createPost(createPostProps);
 
       expect(result).toEqual(savedPost);
-      expect(postOrmRepository.save).toHaveBeenCalledWith({
-        title: createPostDto.title,
-        content: createPostDto.content,
-        isAnonymous: createPostDto.isAnonymous,
-        category: { id: createPostDto.categoryId },
-        user: { id: 7 },
-      });
+      expect(postOrmRepository.save).toHaveBeenCalledWith(createPostProps);
     });
   });
 
@@ -76,8 +70,8 @@ describe('PostRepository', () => {
   });
 
   describe('updatePost', () => {
-    it('postId와 수정 payload로 update를 호출', async () => {
-      const updatePostPayload: UpdatePostPayloadDto = {
+    it('postId와 수정 props로 update를 호출', async () => {
+      const updatePostProps: UpdatePostProps = {
         title: '수정된 제목',
         category: { id: 2 },
         isAnonymous: true,
@@ -88,10 +82,10 @@ describe('PostRepository', () => {
 
       (postOrmRepository.update as jest.Mock).mockResolvedValue(updateResult);
 
-      const result = await postRepository.updatePost(1, updatePostPayload);
+      const result = await postRepository.updatePost(1, updatePostProps);
 
       expect(result).toEqual(updateResult);
-      expect(postOrmRepository.update).toHaveBeenCalledWith(1, updatePostPayload);
+      expect(postOrmRepository.update).toHaveBeenCalledWith(1, updatePostProps);
     });
   });
 
