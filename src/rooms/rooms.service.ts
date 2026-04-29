@@ -322,6 +322,19 @@ export class RoomService {
     return existingRoom;
   }
 
+  async closeExpiredRooms(): Promise<number[]> {
+    const now = new Date().toISOString();
+    const expiredRooms = await this.roomRepository.findExpiredOpenRooms(now);
+
+    if (expiredRooms.length < 1) return [];
+
+    const roomIds = expiredRooms.map((room) => room.id);
+
+    await this.roomRepository.closeRooms(roomIds);
+
+    return roomIds;
+  }
+
   private buildCreateRoomProps(createRoomDto: CreateRoomDto, userId: number): CreateRoomProps {
     return {
       title: createRoomDto.title,
