@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { Room } from '../src/rooms/entities/room.entity';
+import { formatKoreaDate } from '../src/commons/utils/date-format.util';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
 import { clearRoomTables, createRoomFixture, futureLunchAt, signupUser } from './rooms.e2e-helper';
@@ -58,7 +59,7 @@ describe('Rooms Update (e2e)', () => {
     expect(response.body.description).toBe('수정 후 설명');
     expect(response.body.minAge).toBe(21);
     expect(response.body.maxAge).toBe(25);
-    expect(response.body.lunchAt).toBe(updatedLunchAt);
+    expect(response.body.lunchAt).toBe(formatKoreaDate(updatedLunchAt));
 
     const updatedRoom = await dataSource.getRepository(Room).findOneByOrFail({
       id: room.id,

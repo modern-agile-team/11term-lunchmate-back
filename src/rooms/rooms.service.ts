@@ -9,12 +9,7 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import dayjs from 'dayjs';
-import {
-  ResponseOpenRoomsCountDto,
-  ResponseRoomDetailDto,
-  ResponseRoomListDto,
-} from './dto/room-response.dto';
-import { RoomMapper } from './mappers/room.mapper';
+import { ResponseOpenRoomsCountDto } from './dto/room-response.dto';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -22,9 +17,10 @@ import { UserService } from 'src/users/users.service';
 import { Room, RoomStatus, RoomType } from './entities/room.entity';
 import { calculateAge } from 'src/commons/utils/age.util';
 import { RoomMember } from './entities/room-member.entity';
-import { UserConditionsParam } from './types/room.type';
+import { CreateRoomProps, UpdateRoomProps, UserConditionsParam } from './types/room.type';
 import { RoomGateway } from './rooms.gateway';
 import { CurrentUserResponseDto } from 'src/users/dto/current-user-response.dto';
+import { CursorPaginatedResult } from 'src/commons/types/cursor-pagination.type';
 
 @Injectable()
 export class RoomService {
@@ -36,13 +32,15 @@ export class RoomService {
     private readonly userService: UserService,
   ) {}
 
-  async createRoom(userId: number, createRoomDto: CreateRoomDto): Promise<ResponseRoomDetailDto> {
+  async createRoom(userId: number, createRoomDto: CreateRoomDto): Promise<Room> {
     await this.validateParticipatingRoom(userId);
 
-    this.validateRoomProperties(createRoomDto);
+    this.validateRoomAgeAndLunchAt(createRoomDto);
 
     const newRoomId = await this.dataSource.transaction(async (manager) => {
-      const newRoom = await this.roomRepository.createRoom(manager, userId, createRoomDto);
+      const createRoomProps = this.buildCreateRoomProps(createRoomDto, userId);
+
+      const newRoom = await this.roomRepository.createRoom(manager, createRoomProps);
 
       const roomId = newRoom.id;
 
@@ -54,7 +52,7 @@ export class RoomService {
     return await this.findRoomById(newRoomId);
   }
 
-  async findRooms(query: FindRoomsQueryDto): Promise<ResponseRoomListDto> {
+  async findRooms(query: FindRoomsQueryDto): Promise<CursorPaginatedResult<Room>> {
     if (query.minAge !== undefined && query.maxAge !== undefined && query.minAge > query.maxAge) {
       throw new BadRequestException('최소 나이와 최대 나이 옵션이 올바르지 않습니다.');
     }
@@ -73,13 +71,11 @@ export class RoomService {
     const paginatedRooms = hasNext ? rooms.slice(0, limit) : rooms;
     const nextCursor = hasNext ? paginatedRooms[paginatedRooms.length - 1].id : null;
 
-    return RoomMapper.toListDto(paginatedRooms, nextCursor, hasNext);
+    return { items: paginatedRooms, nextCursor, hasNext };
   }
 
-  async findRoomById(roomId: number): Promise<ResponseRoomDetailDto> {
-    const room = await this.findExistingRoomOrThrow(roomId);
-
-    return RoomMapper.toDetailDto(room);
+  async findRoomById(roomId: number): Promise<Room> {
+    return await this.findExistingRoomOrThrow(roomId);
   }
 
   async findOpenRoomsCount(): Promise<ResponseOpenRoomsCountDto> {
@@ -97,11 +93,11 @@ export class RoomService {
   }
 
   async findParticipatingRoomByUserId(userId: number) {
-    const room = await this.roomMemberService.findParticipatingRoomByUserId(userId);
+    const participatingRoom = await this.roomMemberService.findParticipatingRoomByUserId(userId);
 
-    if (!room) throw new BadRequestException('현재 참여중인 방이 없습니다.');
+    if (!participatingRoom) throw new BadRequestException('현재 참여중인 방이 없습니다.');
 
-    return RoomMapper.toDetailDto(room.room);
+    return participatingRoom.room;
   }
 
   async findJoinableRoomsOrThrow(user: CurrentUserResponseDto, manager: EntityManager) {
@@ -116,26 +112,18 @@ export class RoomService {
     return rooms;
   }
 
-  async updateRoom(
-    roomId: number,
-    updateRoomDto: UpdateRoomDto,
-    userId: number,
-  ): Promise<ResponseRoomDetailDto> {
+  async updateRoom(roomId: number, updateRoomDto: UpdateRoomDto, userId: number): Promise<Room> {
     const existingRoom = await this.findExistingRoomOrThrow(roomId);
 
     if (existingRoom.hostUser.id !== userId)
       throw new ForbiddenException('방장만 방을 수정할 수 있습니다.');
 
-    if (Object.keys(updateRoomDto).length < 1) return RoomMapper.toDetailDto(existingRoom);
+    if (Object.keys(updateRoomDto).length < 1) return existingRoom;
 
-    const mergeRoomForValidation = {
-      minAge: updateRoomDto.minAge ?? existingRoom.minAge,
-      maxAge: updateRoomDto.maxAge ?? existingRoom.maxAge,
-      lunchAt: updateRoomDto.lunchAt ?? existingRoom.lunchAt,
-    };
-    this.validateRoomProperties(mergeRoomForValidation);
+    const updateRoomProps = this.buildUpdateRoomProps(updateRoomDto, existingRoom);
+    this.validateRoomAgeAndLunchAt(updateRoomProps);
 
-    await this.roomRepository.updateRoom(roomId, updateRoomDto);
+    await this.roomRepository.updateRoom(roomId, updateRoomProps);
 
     return await this.findRoomById(roomId);
   }
@@ -260,7 +248,7 @@ export class RoomService {
     }
   }
 
-  validateRoomProperties(dto: { minAge?: number; maxAge?: number; lunchAt?: string }): void {
+  validateRoomAgeAndLunchAt(dto: { minAge?: number; maxAge?: number; lunchAt?: string }): void {
     if (dto.minAge !== undefined && dto.maxAge !== undefined && dto.minAge > dto.maxAge)
       throw new BadRequestException('최소 나이와 최대 나이 옵션이 올바르지 않습니다.');
 
@@ -328,5 +316,32 @@ export class RoomService {
     if (!existingRoom) throw new NotFoundException('존재하지 않는 방입니다.');
 
     return existingRoom;
+  }
+
+  private buildCreateRoomProps(createRoomDto: CreateRoomDto, userId: number): CreateRoomProps {
+    return {
+      title: createRoomDto.title,
+      description: createRoomDto.description,
+      roomType: createRoomDto.roomType,
+      maxMembersCount: createRoomDto.maxMembersCount,
+      maxAge: createRoomDto.maxAge,
+      minAge: createRoomDto.minAge,
+      place: createRoomDto.place,
+      lunchAt: createRoomDto.lunchAt,
+      hostUser: { id: userId },
+    };
+  }
+
+  private buildUpdateRoomProps(updateRoomDto: UpdateRoomDto, existingRoom: Room): UpdateRoomProps {
+    return {
+      title: updateRoomDto.title ?? existingRoom.title,
+      description: updateRoomDto.description ?? existingRoom.description,
+      roomType: updateRoomDto.roomType ?? existingRoom.roomType,
+      maxMembersCount: updateRoomDto.maxMembersCount ?? existingRoom.maxMembersCount,
+      maxAge: updateRoomDto.maxAge ?? existingRoom.maxAge,
+      minAge: updateRoomDto.minAge ?? existingRoom.minAge,
+      place: updateRoomDto.place ?? existingRoom.place,
+      lunchAt: updateRoomDto.lunchAt ?? existingRoom.lunchAt,
+    };
   }
 }

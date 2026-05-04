@@ -1,3 +1,4 @@
+import { formatKoreaDate } from 'src/commons/utils/date-format.util';
 import { User } from 'src/users/entities/user.entity';
 import {
   PostAuthorDto,
@@ -27,7 +28,7 @@ export class PostMapper {
       viewCount: post.viewCount,
       likeCount: post.likeCount,
       commentCount: post.commentCount,
-      createdAt: post.createdAt,
+      createdAt: formatKoreaDate(post.createdAt),
       user: post.isAnonymous ? null : this.toPostAuthorDto(post.user),
     };
   }

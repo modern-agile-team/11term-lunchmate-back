@@ -1,3 +1,4 @@
+import { formatKoreaDate } from 'src/commons/utils/date-format.util';
 import { User } from 'src/users/entities/user.entity';
 import {
   CommentAuthorDto,
@@ -12,7 +13,7 @@ export class CommentMapper {
     return {
       id: comment.id,
       content: comment.content,
-      createdAt: comment.createdAt,
+      createdAt: formatKoreaDate(comment.createdAt),
       likeCount: comment.likeCount,
       user: comment.isAnonymous ? null : this.toAuthorDto(comment.user),
     };
@@ -41,7 +42,7 @@ export class CommentMapper {
     return {
       id: comment.id,
       content: comment.content,
-      createdAt: comment.createdAt,
+      createdAt: formatKoreaDate(comment.createdAt),
       likeCount: comment.likeCount,
       user: comment.isAnonymous ? null : this.toAuthorDto(comment.user),
     };

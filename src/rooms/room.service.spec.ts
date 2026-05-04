@@ -7,7 +7,6 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomStatus, RoomType } from './entities/room.entity';
-import { RoomMapper } from './mappers/room.mapper';
 import { PAGINATION_CONSTANTS } from './constants/room.constant';
 import { RoomMemberService } from './roomMember.service';
 import { UserService } from '../users/users.service';
@@ -46,32 +45,6 @@ const mockRoomEntity = {
 const { hostUser, ...roomEntityBase } = mockRoomEntity;
 void hostUser;
 
-const mockRoomDetailDto = {
-  ...roomEntityBase,
-  hostUserId: mockUserSummary.id,
-  roomMembers: [
-    {
-      id: mockUserSummary.id,
-      nickname: mockUserSummary.nickname,
-      age: 27,
-      gender: mockUserSummary.gender,
-      schoolInfo: mockUserSummary.schoolInfo,
-      mbti: null,
-    },
-  ],
-};
-
-const mockRoomListDto = {
-  items: [
-    {
-      ...roomEntityBase,
-      hostUserId: mockUserSummary.id,
-    },
-  ],
-  nextCursor: null,
-  hasNext: false,
-};
-
 const mockSecondRoomEntity = {
   ...mockRoomEntity,
   id: 2,
@@ -87,6 +60,18 @@ const createRoomDto: CreateRoomDto = {
   lunchAt: mockRoomEntity.lunchAt,
   minAge: mockRoomEntity.minAge,
   maxAge: mockRoomEntity.maxAge,
+};
+
+const createRoomProps = {
+  title: createRoomDto.title,
+  description: createRoomDto.description,
+  roomType: createRoomDto.roomType,
+  maxMembersCount: createRoomDto.maxMembersCount,
+  maxAge: createRoomDto.maxAge,
+  minAge: createRoomDto.minAge,
+  place: createRoomDto.place,
+  lunchAt: createRoomDto.lunchAt,
+  hostUser: { id: mockUserSummary.id },
 };
 
 const mockDataSource = {
@@ -131,14 +116,12 @@ const mockRoomGateway = {
 
 describe('RoomService', () => {
   let roomService: RoomService;
-  let roomMapperSpy: jest.SpiedFunction<typeof RoomMapper.toDetailDto>;
 
   beforeEach(async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-03-27T00:00:00.000Z'));
     jest.restoreAllMocks();
     jest.resetAllMocks();
-    roomMapperSpy = jest.spyOn(RoomMapper, 'toDetailDto');
 
     mockDataSource.transaction.mockImplementation(
       async <T>(callback: (manager: EntityManager) => Promise<T>): Promise<T> => {
@@ -182,13 +165,11 @@ describe('RoomService', () => {
   describe('findRoomById', () => {
     it('ID에 해당하는 방의 정보를 반환', async () => {
       mockRoomRepository.findRoomById.mockResolvedValue(mockRoomEntity);
-      roomMapperSpy.mockReturnValue(mockRoomDetailDto);
 
       const result = await roomService.findRoomById(mockRoomEntity.id);
 
-      expect(result).toEqual(mockRoomDetailDto);
+      expect(result).toEqual(mockRoomEntity);
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
-      expect(roomMapperSpy).toHaveBeenCalledWith(mockRoomEntity);
     });
 
     it('존재하지 않는 방 ID로 조회하면 NotFoundException을 반환', async () => {
@@ -212,13 +193,15 @@ describe('RoomService', () => {
       };
 
       mockRoomRepository.findRooms.mockResolvedValue([mockRoomEntity]);
-      const toListDtoSpy = jest.spyOn(RoomMapper, 'toListDto').mockReturnValue(mockRoomListDto);
 
       const result = await roomService.findRooms(query);
 
-      expect(result).toEqual(mockRoomListDto);
+      expect(result).toEqual({
+        items: [mockRoomEntity],
+        nextCursor: null,
+        hasNext: false,
+      });
       expect(mockRoomRepository.findRooms).toHaveBeenCalledWith(query);
-      expect(toListDtoSpy).toHaveBeenCalledWith([mockRoomEntity], null, false);
     });
 
     it('limit보다 많은 방이 조회되면 nextCursor와 hasNext를 반환', async () => {
@@ -226,30 +209,17 @@ describe('RoomService', () => {
         limit: 1,
       };
       const paginatedListDto = {
-        items: [
-          {
-            ...roomEntityBase,
-            id: mockSecondRoomEntity.id,
-            title: mockSecondRoomEntity.title,
-            hostUserId: mockUserSummary.id,
-          },
-        ],
+        items: [mockSecondRoomEntity],
         nextCursor: mockSecondRoomEntity.id,
         hasNext: true,
       };
 
       mockRoomRepository.findRooms.mockResolvedValue([mockSecondRoomEntity, mockRoomEntity]);
-      const toListDtoSpy = jest.spyOn(RoomMapper, 'toListDto').mockReturnValue(paginatedListDto);
 
       const result = await roomService.findRooms(query);
 
       expect(result).toEqual(paginatedListDto);
       expect(mockRoomRepository.findRooms).toHaveBeenCalledWith(query);
-      expect(toListDtoSpy).toHaveBeenCalledWith(
-        [mockSecondRoomEntity],
-        mockSecondRoomEntity.id,
-        true,
-      );
     });
 
     it('limit이 없으면 기본 페이지 크기를 기준으로 페이징', async () => {
@@ -260,19 +230,12 @@ describe('RoomService', () => {
       }));
 
       mockRoomRepository.findRooms.mockResolvedValue(rooms);
-      const toListDtoSpy = jest.spyOn(RoomMapper, 'toListDto').mockReturnValue({
-        items: [],
-        nextCursor: 1,
+
+      await expect(roomService.findRooms(query)).resolves.toEqual({
+        items: rooms.slice(0, PAGINATION_CONSTANTS.DEFAULT_LIMIT),
+        nextCursor: 2,
         hasNext: true,
       });
-
-      await roomService.findRooms(query);
-
-      expect(toListDtoSpy).toHaveBeenCalledWith(
-        rooms.slice(0, PAGINATION_CONSTANTS.DEFAULT_LIMIT),
-        2,
-        true,
-      );
     });
 
     it('조회 시작 시간이 종료 시간보다 늦으면 BadRequestException을 반환', async () => {
@@ -295,22 +258,16 @@ describe('RoomService', () => {
         user: { id: mockUserSummary.id },
       });
       mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
-      roomMapperSpy.mockReturnValue(mockRoomDetailDto);
 
       const result = await roomService.createRoom(mockUserSummary.id, createRoomDto);
 
-      expect(result).toEqual(mockRoomDetailDto);
+      expect(result).toEqual(mockRoomEntity);
       expect(mockRoomMemberService.findParticipatingRoomByUserId).toHaveBeenCalledWith(
         mockUserSummary.id,
         undefined,
       );
       expect(mockRoomRepository.findRoomById).toHaveBeenCalledWith(mockRoomEntity.id);
-      expect(roomMapperSpy).toHaveBeenCalledWith(mockRoomEntity);
-      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
-        mockManager,
-        mockUserSummary.id,
-        createRoomDto,
-      );
+      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(mockManager, createRoomProps);
       expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
@@ -341,11 +298,7 @@ describe('RoomService', () => {
         createRoomError,
       );
 
-      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
-        mockManager,
-        mockUserSummary.id,
-        createRoomDto,
-      );
+      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(mockManager, createRoomProps);
       expect(mockRoomMemberService.createRoomMember).not.toHaveBeenCalled();
       expect(mockRoomRepository.findRoomById).not.toHaveBeenCalled();
       expect(mockDataSource.transaction).toHaveBeenCalledTimes(1);
@@ -362,11 +315,7 @@ describe('RoomService', () => {
         createRoomMemberError,
       );
 
-      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
-        mockManager,
-        mockUserSummary.id,
-        createRoomDto,
-      );
+      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(mockManager, createRoomProps);
       expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
@@ -389,11 +338,7 @@ describe('RoomService', () => {
         NotFoundException,
       );
 
-      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(
-        mockManager,
-        mockUserSummary.id,
-        createRoomDto,
-      );
+      expect(mockRoomRepository.createRoom).toHaveBeenCalledWith(mockManager, createRoomProps);
       expect(mockRoomMemberService.createRoomMember).toHaveBeenCalledWith(
         mockManager,
         mockUserSummary.id,
@@ -455,18 +400,10 @@ describe('RoomService', () => {
         maxAge: 25,
         lunchAt: '2099-03-28T03:30:00.000Z',
       };
-      const updatedRoomDetailDto = {
-        ...mockRoomDetailDto,
-        title: '수정된 방 제목',
-        minAge: 21,
-        maxAge: 25,
-        lunchAt: '2099-03-28T03:30:00.000Z',
-      };
 
       mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
       mockRoomRepository.updateRoom.mockResolvedValueOnce({ affected: 1 });
       mockRoomRepository.findRoomById.mockResolvedValueOnce(updatedRoomEntity);
-      roomMapperSpy.mockReturnValueOnce(updatedRoomDetailDto);
 
       const result = await roomService.updateRoom(
         mockRoomEntity.id,
@@ -474,9 +411,18 @@ describe('RoomService', () => {
         mockUserSummary.id,
       );
 
-      expect(result).toEqual(updatedRoomDetailDto);
+      expect(result).toEqual(updatedRoomEntity);
       expect(mockRoomRepository.findRoomById).toHaveBeenNthCalledWith(1, mockRoomEntity.id);
-      expect(mockRoomRepository.updateRoom).toHaveBeenCalledWith(mockRoomEntity.id, updateRoomDto);
+      expect(mockRoomRepository.updateRoom).toHaveBeenCalledWith(mockRoomEntity.id, {
+        title: '수정된 방 제목',
+        description: mockRoomEntity.description,
+        roomType: mockRoomEntity.roomType,
+        maxMembersCount: mockRoomEntity.maxMembersCount,
+        maxAge: 25,
+        minAge: 21,
+        place: mockRoomEntity.place,
+        lunchAt: '2099-03-28T03:30:00.000Z',
+      });
       expect(mockRoomRepository.findRoomById).toHaveBeenNthCalledWith(2, mockRoomEntity.id);
     });
 
@@ -534,11 +480,10 @@ describe('RoomService', () => {
 
     it('수정할 값이 없으면 기존 방 정보를 그대로 반환', async () => {
       mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
-      roomMapperSpy.mockReturnValueOnce(mockRoomDetailDto);
 
       const result = await roomService.updateRoom(mockRoomEntity.id, {}, mockUserSummary.id);
 
-      expect(result).toEqual(mockRoomDetailDto);
+      expect(result).toEqual(mockRoomEntity);
       expect(mockRoomRepository.updateRoom).not.toHaveBeenCalled();
     });
   });
