@@ -9,9 +9,8 @@ import {
   Repository,
   UpdateResult,
 } from 'typeorm';
-import { CreatePostDto } from './dtos/create-post.dto';
 import { FindPostsQueryDto } from './dtos/find-posts-query.dto';
-import { UpdatePostPayloadDto } from './dtos/update-post.dto';
+import { CreatePostProps, UpdatePostProps } from './types/post.type';
 
 @Injectable()
 export class PostRepository {
@@ -20,14 +19,8 @@ export class PostRepository {
     private readonly postRepository: Repository<Post>,
   ) {}
 
-  async createPost(createPostDto: CreatePostDto, userId: number): Promise<Post> {
-    return await this.postRepository.save({
-      title: createPostDto.title,
-      content: createPostDto.content,
-      isAnonymous: createPostDto.isAnonymous,
-      category: { id: createPostDto.categoryId },
-      user: { id: userId },
-    });
+  async createPost(createPostProps: CreatePostProps): Promise<Post> {
+    return await this.postRepository.save(createPostProps);
   }
 
   async findPostById(postId: number, manager?: EntityManager): Promise<Post | null> {
@@ -64,8 +57,8 @@ export class PostRepository {
     });
   }
 
-  async updatePost(postId: number, updatePostPayload: UpdatePostPayloadDto): Promise<UpdateResult> {
-    return await this.postRepository.update(postId, updatePostPayload);
+  async updatePost(postId: number, updatePostProps: UpdatePostProps): Promise<UpdateResult> {
+    return await this.postRepository.update(postId, updatePostProps);
   }
 
   async deletePost(postId: number): Promise<DeleteResult> {

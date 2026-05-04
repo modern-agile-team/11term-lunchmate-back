@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { PostService } from './posts.service';
 import { PostRepository } from './posts.repository';
@@ -125,12 +130,14 @@ describe('PostService', () => {
       expect(mockPostRepository.createPost).not.toHaveBeenCalled();
     });
 
-    it('생성 후 게시글을 다시 조회하지 못하면 NotFoundException을 던진다', async () => {
+    it('생성 후 게시글을 다시 조회하지 못하면 InternalServerErrorException을 던진다', async () => {
       mockPostCategoryService.findPostCategoryById.mockResolvedValue(mockCategory);
       mockPostRepository.createPost.mockResolvedValue(mockCreatedPost);
       mockPostRepository.findPostById.mockResolvedValue(null);
 
-      await expect(postService.createPost(createPostDto, 7)).rejects.toThrow(NotFoundException);
+      await expect(postService.createPost(createPostDto, 7)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 
@@ -257,6 +264,9 @@ describe('PostService', () => {
       expect(mockPostCategoryService.findPostCategoryById).not.toHaveBeenCalled();
       expect(mockPostRepository.updatePost).toHaveBeenCalledWith(3, {
         title: '제목만 수정',
+        content: mockPostEntity.content,
+        isAnonymous: mockPostEntity.isAnonymous,
+        category: { id: mockPostEntity.category.id },
       });
     });
 
@@ -283,6 +293,9 @@ describe('PostService', () => {
 
       expect(result).toEqual(updatedPostEntity);
       expect(mockPostRepository.updatePost).toHaveBeenCalledWith(3, {
+        title: mockPostEntity.title,
+        content: mockPostEntity.content,
+        isAnonymous: mockPostEntity.isAnonymous,
         category: { id: 2 },
       });
     });
