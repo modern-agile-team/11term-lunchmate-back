@@ -25,11 +25,19 @@ export class CommentRepository {
     });
   }
 
-  async findByCommentIdAndPostId(commentId: number, postId: number): Promise<Comment | null> {
-    return await this.commentRepository.findOne({
+  async findByCommentIdAndPostId(
+    commentId: number,
+    postId: number,
+    manager?: EntityManager,
+  ): Promise<Comment | null> {
+    const findQuery = {
       where: { id: commentId, post: { id: postId } },
       relations: { user: true, post: true },
-    });
+    };
+
+    if (manager) return await manager.findOne(Comment, findQuery);
+
+    return await this.commentRepository.findOne(findQuery);
   }
 
   async findCommentsByPostId(
@@ -58,5 +66,13 @@ export class CommentRepository {
 
   async deleteComment(commentId: number, manager: EntityManager): Promise<UpdateResult> {
     return await manager.softDelete(Comment, commentId);
+  }
+
+  async increaseCommentLikeCount(commentId: number, manager: EntityManager): Promise<UpdateResult> {
+    return await manager.increment(Comment, { id: commentId }, 'likeCount', 1);
+  }
+
+  async decreaseCommentLikeCount(commentId: number, manager: EntityManager): Promise<UpdateResult> {
+    return await manager.decrement(Comment, { id: commentId }, 'likeCount', 1);
   }
 }

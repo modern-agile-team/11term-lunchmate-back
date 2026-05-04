@@ -1,8 +1,9 @@
 import { User } from '../../users/entities/user.entity';
 import { Comment } from './comment.entity';
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 @Entity('comment_likes')
+@Unique(['user', 'comment'])
 export class CommentLike {
   @PrimaryGeneratedColumn()
   id: number;
