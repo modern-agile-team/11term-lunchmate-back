@@ -10,6 +10,9 @@ import { Comment } from './entities/comment.entity';
 import { PostRepository } from 'src/posts/posts.repository';
 import { DataSource } from 'typeorm';
 import { UpdateCommentDto } from './dtos/update-comment.dto';
+import { FindCommentsQueryDto } from './dtos/find-comments-query.dto';
+import { PAGINATION_CONSTANTS } from './constants/comment.constant';
+import { FindCommentsResult } from './types/comment.type';
 
 @Injectable()
 export class CommentService {
@@ -56,6 +59,28 @@ export class CommentService {
     if (!comment) throw new NotFoundException('존재하지 않는 댓글입니다.');
 
     return comment;
+  }
+
+  async findCommentsByPostId(
+    postId: number,
+    findCommentsQueryDto: FindCommentsQueryDto,
+  ): Promise<FindCommentsResult> {
+    const existingPost = await this.postRepository.findPostById(postId);
+    if (!existingPost) throw new NotFoundException('존재하지 않는 게시글입니다.');
+
+    const limit = findCommentsQueryDto.limit ?? PAGINATION_CONSTANTS.DEFAULT_LIMIT;
+    const cursor = findCommentsQueryDto.cursor ?? null;
+    const comments = await this.commentRepository.findCommentsByPostId(postId, cursor, limit);
+
+    const hasNext = comments.length > limit;
+    const paginatedComments = hasNext ? comments.slice(0, limit) : comments;
+    const nextCursor = hasNext ? paginatedComments[paginatedComments.length - 1].id : null;
+
+    return {
+      items: paginatedComments,
+      nextCursor,
+      hasNext,
+    };
   }
 
   async editComment(

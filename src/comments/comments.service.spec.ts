@@ -10,6 +10,7 @@ import { CommentRepository } from './comments.repository';
 import { PostRepository } from 'src/posts/posts.repository';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { UpdateCommentDto } from './dtos/update-comment.dto';
+import { FindCommentsQueryDto } from './dtos/find-comments-query.dto';
 
 const createCommentDto: CreateCommentDto = {
   content: '저도 같은 생각입니다.',
@@ -40,9 +41,28 @@ const mockCommentEntity = {
   },
 };
 
+const mockCommentList = [
+  {
+    ...mockCommentEntity,
+    id: 1,
+    content: '첫 번째 댓글',
+  },
+  {
+    ...mockCommentEntity,
+    id: 2,
+    content: '두 번째 댓글',
+  },
+  {
+    ...mockCommentEntity,
+    id: 3,
+    content: '세 번째 댓글',
+  },
+];
+
 const mockCommentRepository = {
   createComment: jest.fn(),
   findByCommentIdAndPostId: jest.fn(),
+  findCommentsByPostId: jest.fn(),
   updateComment: jest.fn(),
   deleteComment: jest.fn(),
 };
@@ -151,6 +171,55 @@ describe('CommentService', () => {
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(null);
 
       await expect(commentService.findCommentOrThrow(999, 3)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('findCommentsByPostId', () => {
+    it('게시글이 존재하면 댓글 목록을 반환한다', async () => {
+      const query: FindCommentsQueryDto = {
+        limit: 20,
+      };
+
+      mockPostRepository.findPostById.mockResolvedValue(mockPost);
+      mockCommentRepository.findCommentsByPostId.mockResolvedValue(mockCommentList.slice(0, 2));
+
+      const result = await commentService.findCommentsByPostId(3, query);
+
+      expect(result).toEqual({
+        items: mockCommentList.slice(0, 2),
+        nextCursor: null,
+        hasNext: false,
+      });
+      expect(mockCommentRepository.findCommentsByPostId).toHaveBeenCalledWith(3, null, 20);
+    });
+
+    it('다음 페이지가 있으면 limit 만큼 자르고 nextCursor를 반환한다', async () => {
+      const query: FindCommentsQueryDto = {
+        cursor: 1,
+        limit: 2,
+      };
+
+      mockPostRepository.findPostById.mockResolvedValue(mockPost);
+      mockCommentRepository.findCommentsByPostId.mockResolvedValue(mockCommentList);
+
+      const result = await commentService.findCommentsByPostId(3, query);
+
+      expect(result).toEqual({
+        items: mockCommentList.slice(0, 2),
+        nextCursor: 2,
+        hasNext: true,
+      });
+      expect(mockCommentRepository.findCommentsByPostId).toHaveBeenCalledWith(3, 1, 2);
+    });
+
+    it('존재하지 않는 게시글이면 NotFoundException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(null);
+
+      await expect(commentService.findCommentsByPostId(999, {})).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockCommentRepository.findCommentsByPostId).not.toHaveBeenCalled();
     });
   });
 
