@@ -8,10 +8,12 @@ import { PostRepository } from './posts.repository';
 import { PostCategoryModule } from 'src/post-categories/post-categories.module';
 import { PostLikeService } from './post-like.service';
 import { PostLikeRepository } from './post-like.repository';
+import { CommentModule } from 'src/comments/comments.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, PostLike]), PostCategoryModule],
+  imports: [TypeOrmModule.forFeature([Post, PostLike]), PostCategoryModule, CommentModule],
   controllers: [PostController],
   providers: [PostService, PostRepository, PostLikeService, PostLikeRepository],
+  exports: [PostService, PostRepository],
 })
 export class PostModule {}

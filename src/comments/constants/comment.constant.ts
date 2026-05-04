@@ -1,0 +1,3 @@
+export const COMMENT_CONSTANTS = {
+  MAX_CONTENTS: 500,
+};
