@@ -4,7 +4,6 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { Room } from '../src/rooms/entities/room.entity';
 import { calculateAge } from '../src/commons/utils/age.util';
-import { formatKoreaDate } from '../src/commons/utils/date-format.util';
 import { createAuthUserTestApp } from './test-app';
 import { clearRoomTables, futureLunchAt } from './rooms.e2e-helper';
 
@@ -66,7 +65,7 @@ describe('Rooms Create (e2e)', () => {
     expect(response.body.roomMembers[0].gender).toBe('MALE');
     expect(response.body.roomMembers[0].schoolInfo).toBe('인덕대학교');
     expect(response.body.roomMembers[0].mbti).toBeNull();
-    expect(response.body.lunchAt).toBe(formatKoreaDate(lunchAt));
+    expect(response.body.lunchAt).toBe(lunchAt);
 
     const createdRoom = await dataSource.getRepository(Room).findOne({
       where: { id: response.body.id },
@@ -77,7 +76,7 @@ describe('Rooms Create (e2e)', () => {
 
     expect(createdRoom).not.toBeNull();
     expect(createdRoom?.hostUser.id).toBe(signupResponse.body.user.id);
-    expect(response.body.createdAt).toBe(formatKoreaDate(createdRoom!.createdAt));
+    expect(response.body.createdAt).toBe(new Date(createdRoom!.createdAt).toISOString());
   });
 
   it('POST /rooms 이미 참여 중인 방이 있으면 생성 실패', async () => {

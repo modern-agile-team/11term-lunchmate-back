@@ -3,7 +3,6 @@ import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { calculateAge } from '../src/commons/utils/age.util';
-import { formatKoreaDate } from '../src/commons/utils/date-format.util';
 import { RoomStatus, RoomType } from '../src/rooms/entities/room.entity';
 import { User } from '../src/users/entities/user.entity';
 import { createAuthUserTestApp } from './test-app';
@@ -64,9 +63,9 @@ describe('Rooms Read (e2e)', () => {
     expect(response.body.items).toHaveLength(2);
     expect(response.body.items[0].id).toBe(thirdRoom.id);
     expect(response.body.items[0].title).toBe('세 번째 방');
-    expect(response.body.items[0].lunchAt).toBe(formatKoreaDate(thirdLunchAt));
+    expect(response.body.items[0].lunchAt).toBe(thirdLunchAt);
     expect(response.body.items[1].id).toBe(secondRoom.id);
-    expect(response.body.items[1].lunchAt).toBe(formatKoreaDate(secondLunchAt));
+    expect(response.body.items[1].lunchAt).toBe(secondLunchAt);
     expect(response.body.hasNext).toBe(true);
     expect(response.body.nextCursor).toBe(secondRoom.id);
 
@@ -79,7 +78,7 @@ describe('Rooms Read (e2e)', () => {
     expect(nextPageResponse.status).toBe(200);
     expect(nextPageResponse.body.items).toHaveLength(1);
     expect(nextPageResponse.body.items[0].id).toBe(firstRoom.id);
-    expect(nextPageResponse.body.items[0].lunchAt).toBe(formatKoreaDate(firstLunchAt));
+    expect(nextPageResponse.body.items[0].lunchAt).toBe(firstLunchAt);
     expect(nextPageResponse.body.hasNext).toBe(false);
     expect(nextPageResponse.body.nextCursor).toBeNull();
   });
@@ -106,8 +105,8 @@ describe('Rooms Read (e2e)', () => {
     expect(response.body.description).toBe('상세 설명');
     expect(response.body.hostUserId).toBe(hostUser.id);
     expect(response.body.currentMembersCount).toBe(1);
-    expect(response.body.lunchAt).toBe(formatKoreaDate(lunchAt));
-    expect(response.body.createdAt).toBe(formatKoreaDate(room.createdAt));
+    expect(response.body.lunchAt).toBe(lunchAt);
+    expect(response.body.createdAt).toBe(new Date(room.createdAt).toISOString());
     expect(response.body.roomMembers).toHaveLength(1);
     expect(response.body.roomMembers[0].id).toBe(hostUser.id);
     expect(response.body.roomMembers[0].nickname).toBe('상세호스트');
