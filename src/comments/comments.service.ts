@@ -78,4 +78,22 @@ export class CommentService {
 
     return await this.commentRepository.updateComment(existingComment);
   }
+
+  async deleteComment(postId: number, commentId: number, userId: number): Promise<void> {
+    const existingPost = await this.postRepository.findPostById(postId);
+    if (!existingPost) throw new NotFoundException('존재하지 않는 게시글입니다.');
+
+    const existingComment = await this.findCommentOrThrow(commentId, postId);
+
+    if (existingComment.user.id !== userId)
+      throw new ForbiddenException('댓글을 삭제할 권한이 없습니다.');
+
+    await this.dataSource.transaction(async (manager) => {
+      const deletedResult = await this.commentRepository.deleteComment(commentId, manager);
+      if (!deletedResult.affected)
+        throw new InternalServerErrorException('댓글 삭제에 실패했습니다.');
+
+      await this.postRepository.decreaseCommentCount(postId, manager);
+    });
+  }
 }

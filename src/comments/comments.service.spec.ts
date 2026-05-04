@@ -44,11 +44,13 @@ const mockCommentRepository = {
   createComment: jest.fn(),
   findByCommentIdAndPostId: jest.fn(),
   updateComment: jest.fn(),
+  deleteComment: jest.fn(),
 };
 
 const mockPostRepository = {
   findPostById: jest.fn(),
   increaseCommentCount: jest.fn(),
+  decreaseCommentCount: jest.fn(),
 };
 
 const mockManager = {} as EntityManager;
@@ -202,6 +204,53 @@ describe('CommentService', () => {
       );
 
       expect(mockCommentRepository.findByCommentIdAndPostId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteComment', () => {
+    it('작성자가 댓글을 삭제하면 댓글 수를 감소시킨다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPost);
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+      mockCommentRepository.deleteComment.mockResolvedValue({ affected: 1 });
+      mockPostRepository.decreaseCommentCount.mockResolvedValue({ affected: 1 });
+
+      await expect(commentService.deleteComment(3, 11, 7)).resolves.toBeUndefined();
+
+      expect(mockPostRepository.findPostById).toHaveBeenCalledWith(3);
+      expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenCalledWith(11, 3);
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+      expect(mockCommentRepository.deleteComment).toHaveBeenCalledWith(11, mockManager);
+      expect(mockPostRepository.decreaseCommentCount).toHaveBeenCalledWith(3, mockManager);
+    });
+
+    it('작성자가 아니면 ForbiddenException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPost);
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+
+      await expect(commentService.deleteComment(3, 11, 8)).rejects.toThrow(ForbiddenException);
+
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+      expect(mockCommentRepository.deleteComment).not.toHaveBeenCalled();
+    });
+
+    it('존재하지 않는 게시글이면 NotFoundException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(null);
+
+      await expect(commentService.deleteComment(999, 11, 7)).rejects.toThrow(NotFoundException);
+
+      expect(mockCommentRepository.findByCommentIdAndPostId).not.toHaveBeenCalled();
+    });
+
+    it('트랜잭션에서 삭제 결과가 없으면 InternalServerErrorException을 던진다', async () => {
+      mockPostRepository.findPostById.mockResolvedValue(mockPost);
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+      mockCommentRepository.deleteComment.mockResolvedValue({ affected: 0 });
+
+      await expect(commentService.deleteComment(3, 11, 7)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+
+      expect(mockPostRepository.decreaseCommentCount).not.toHaveBeenCalled();
     });
   });
 });

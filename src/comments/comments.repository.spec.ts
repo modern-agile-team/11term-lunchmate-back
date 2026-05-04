@@ -8,6 +8,7 @@ describe('CommentRepository', () => {
   let commentOrmRepository: Pick<Repository<Comment>, 'findOne' | 'save'>;
   const manager = {
     save: jest.fn(),
+    softDelete: jest.fn(),
   };
 
   beforeEach(() => {
@@ -92,6 +93,21 @@ describe('CommentRepository', () => {
 
       expect(result).toEqual(savedComment);
       expect(commentOrmRepository.save).toHaveBeenCalledWith(comment);
+    });
+  });
+
+  describe('deleteComment', () => {
+    it('commentId로 manager.softDelete를 호출한다', async () => {
+      const deleteResult = {
+        affected: 1,
+      };
+
+      (manager.softDelete as jest.Mock).mockResolvedValue(deleteResult);
+
+      const result = await commentRepository.deleteComment(11, manager as never);
+
+      expect(result).toEqual(deleteResult);
+      expect(manager.softDelete).toHaveBeenCalledWith(Comment, 11);
     });
   });
 });
