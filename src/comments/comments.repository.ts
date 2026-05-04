@@ -36,7 +36,8 @@ export class CommentRepository {
     };
 
     if (manager) return await manager.findOne(Comment, findQuery);
-    else return await this.commentRepository.findOne(findQuery);
+
+    return await this.commentRepository.findOne(findQuery);
   }
 
   async findCommentsByPostId(

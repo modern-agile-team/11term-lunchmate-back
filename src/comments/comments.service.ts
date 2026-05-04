@@ -1,3 +1,4 @@
+import { CommentLikeRepository } from 'src/comments/comment-like.repository';
 import {
   BadRequestException,
   ForbiddenException,
@@ -13,7 +14,6 @@ import { DataSource } from 'typeorm';
 import { UpdateCommentDto } from './dtos/update-comment.dto';
 import { FindCommentsQueryDto } from './dtos/find-comments-query.dto';
 import { PAGINATION_CONSTANTS } from './constants/comment.constant';
-import { CommentLikeService } from './comment-like.service';
 import { CursorPaginatedResult } from 'src/commons/types/cursor-pagination.type';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class CommentService {
   constructor(
     private readonly commentRepository: CommentRepository,
     private readonly postRepository: PostRepository,
-    private readonly commentLikeService: CommentLikeService,
+    private readonly commentLikeRepository: CommentLikeRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -128,14 +128,14 @@ export class CommentService {
   async likeComment(postId: number, commentId: number, userId: number): Promise<Comment> {
     await this.findCommentOrThrow(commentId, postId);
 
-    const existingLike = await this.commentLikeService.findByCommentLikeIdAndUserId(
+    const existingLike = await this.commentLikeRepository.findByCommentIdAndUserId(
       commentId,
       userId,
     );
     if (existingLike) throw new BadRequestException('이미 좋아요한 댓글입니다.');
 
     return await this.dataSource.transaction(async (manager) => {
-      await this.commentLikeService.likeComment(commentId, userId, manager);
+      await this.commentLikeRepository.likeComment(commentId, userId, manager);
 
       await this.commentRepository.increaseCommentLikeCount(commentId, manager);
 
@@ -154,14 +154,18 @@ export class CommentService {
   async unlikeComment(postId: number, commentId: number, userId: number): Promise<Comment> {
     await this.findCommentOrThrow(commentId, postId);
 
-    const existingLike = await this.commentLikeService.findByCommentLikeIdAndUserId(
+    const existingLike = await this.commentLikeRepository.findByCommentIdAndUserId(
       commentId,
       userId,
     );
     if (!existingLike) throw new BadRequestException('좋아요하지 않은 댓글입니다.');
 
     return await this.dataSource.transaction(async (manager) => {
-      const deleteResult = await this.commentLikeService.unlikeComment(commentId, userId, manager);
+      const deleteResult = await this.commentLikeRepository.unlikeComment(
+        commentId,
+        userId,
+        manager,
+      );
       if (!deleteResult.affected)
         throw new InternalServerErrorException('댓글 좋아요 취소에 실패했습니다.');
 

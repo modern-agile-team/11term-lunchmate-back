@@ -9,7 +9,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { CommentService } from './comments.service';
 import { CommentRepository } from './comments.repository';
 import { PostRepository } from 'src/posts/posts.repository';
-import { CommentLikeService } from './comment-like.service';
+import { CommentLikeRepository } from './comment-like.repository';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { UpdateCommentDto } from './dtos/update-comment.dto';
 import { FindCommentsQueryDto } from './dtos/find-comments-query.dto';
@@ -77,8 +77,8 @@ const mockPostRepository = {
   decreaseCommentCount: jest.fn(),
 };
 
-const mockCommentLikeService = {
-  findByCommentLikeIdAndUserId: jest.fn(),
+const mockCommentLikeRepository = {
+  findByCommentIdAndUserId: jest.fn(),
   likeComment: jest.fn(),
   unlikeComment: jest.fn(),
 };
@@ -118,8 +118,8 @@ describe('CommentService', () => {
           useValue: mockPostRepository,
         },
         {
-          provide: CommentLikeService,
-          useValue: mockCommentLikeService,
+          provide: CommentLikeRepository,
+          useValue: mockCommentLikeRepository,
         },
       ],
     }).compile();
@@ -345,13 +345,13 @@ describe('CommentService', () => {
       mockCommentRepository.findByCommentIdAndPostId
         .mockResolvedValueOnce(mockCommentEntity)
         .mockResolvedValueOnce(likedComment);
-      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue(null);
-      mockCommentLikeService.likeComment.mockResolvedValue({ id: 1 });
+      mockCommentLikeRepository.findByCommentIdAndUserId.mockResolvedValue(null);
+      mockCommentLikeRepository.likeComment.mockResolvedValue({ id: 1 });
       mockCommentRepository.increaseCommentLikeCount.mockResolvedValue({ affected: 1 });
 
       await expect(commentService.likeComment(3, 11, 7)).resolves.toEqual(likedComment);
-      expect(mockCommentLikeService.findByCommentLikeIdAndUserId).toHaveBeenCalledWith(11, 7);
-      expect(mockCommentLikeService.likeComment).toHaveBeenCalledWith(11, 7, mockManager);
+      expect(mockCommentLikeRepository.findByCommentIdAndUserId).toHaveBeenCalledWith(11, 7);
+      expect(mockCommentLikeRepository.likeComment).toHaveBeenCalledWith(11, 7, mockManager);
       expect(mockCommentRepository.increaseCommentLikeCount).toHaveBeenCalledWith(11, mockManager);
       expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenLastCalledWith(
         11,
@@ -362,7 +362,7 @@ describe('CommentService', () => {
 
     it('이미 좋아요한 댓글이면 BadRequestException을 던진다', async () => {
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
-      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue({ id: 1 });
+      mockCommentLikeRepository.findByCommentIdAndUserId.mockResolvedValue({ id: 1 });
 
       await expect(commentService.likeComment(3, 11, 7)).rejects.toThrow(BadRequestException);
     });
@@ -371,8 +371,8 @@ describe('CommentService', () => {
       mockCommentRepository.findByCommentIdAndPostId
         .mockResolvedValueOnce(mockCommentEntity)
         .mockResolvedValueOnce(null);
-      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue(null);
-      mockCommentLikeService.likeComment.mockResolvedValue({ id: 1 });
+      mockCommentLikeRepository.findByCommentIdAndUserId.mockResolvedValue(null);
+      mockCommentLikeRepository.likeComment.mockResolvedValue({ id: 1 });
       mockCommentRepository.increaseCommentLikeCount.mockResolvedValue({ affected: 1 });
 
       await expect(commentService.likeComment(3, 11, 7)).rejects.toThrow(
@@ -391,13 +391,13 @@ describe('CommentService', () => {
       mockCommentRepository.findByCommentIdAndPostId
         .mockResolvedValueOnce({ ...mockCommentEntity, likeCount: 1 })
         .mockResolvedValueOnce(unlikedComment);
-      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue({ id: 1 });
-      mockCommentLikeService.unlikeComment.mockResolvedValue({ affected: 1 });
+      mockCommentLikeRepository.findByCommentIdAndUserId.mockResolvedValue({ id: 1 });
+      mockCommentLikeRepository.unlikeComment.mockResolvedValue({ affected: 1 });
       mockCommentRepository.decreaseCommentLikeCount.mockResolvedValue({ affected: 1 });
 
       await expect(commentService.unlikeComment(3, 11, 7)).resolves.toEqual(unlikedComment);
-      expect(mockCommentLikeService.findByCommentLikeIdAndUserId).toHaveBeenCalledWith(11, 7);
-      expect(mockCommentLikeService.unlikeComment).toHaveBeenCalledWith(11, 7, mockManager);
+      expect(mockCommentLikeRepository.findByCommentIdAndUserId).toHaveBeenCalledWith(11, 7);
+      expect(mockCommentLikeRepository.unlikeComment).toHaveBeenCalledWith(11, 7, mockManager);
       expect(mockCommentRepository.decreaseCommentLikeCount).toHaveBeenCalledWith(11, mockManager);
       expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenLastCalledWith(
         11,
@@ -408,15 +408,15 @@ describe('CommentService', () => {
 
     it('좋아요하지 않은 댓글이면 BadRequestException을 던진다', async () => {
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
-      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue(null);
+      mockCommentLikeRepository.findByCommentIdAndUserId.mockResolvedValue(null);
 
       await expect(commentService.unlikeComment(3, 11, 7)).rejects.toThrow(BadRequestException);
     });
 
     it('좋아요 취소 결과가 없으면 InternalServerErrorException을 던진다', async () => {
       mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
-      mockCommentLikeService.findByCommentLikeIdAndUserId.mockResolvedValue({ id: 1 });
-      mockCommentLikeService.unlikeComment.mockResolvedValue({ affected: 0 });
+      mockCommentLikeRepository.findByCommentIdAndUserId.mockResolvedValue({ id: 1 });
+      mockCommentLikeRepository.unlikeComment.mockResolvedValue({ affected: 0 });
 
       await expect(commentService.unlikeComment(3, 11, 7)).rejects.toThrow(
         InternalServerErrorException,
