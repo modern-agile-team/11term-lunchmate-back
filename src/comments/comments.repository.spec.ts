@@ -32,7 +32,7 @@ describe('CommentRepository', () => {
         ...createCommentDto,
       };
 
-      (manager.save as jest.Mock).mockResolvedValue(savedComment);
+      manager.save.mockResolvedValue(savedComment);
 
       const result = await commentRepository.createComment(
         createCommentDto,
@@ -153,7 +153,7 @@ describe('CommentRepository', () => {
         affected: 1,
       };
 
-      (manager.softDelete as jest.Mock).mockResolvedValue(deleteResult);
+      manager.softDelete.mockResolvedValue(deleteResult);
 
       const result = await commentRepository.deleteComment(11, manager as never);
 

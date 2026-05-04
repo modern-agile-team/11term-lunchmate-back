@@ -120,10 +120,7 @@ export class FriendController {
     };
   }
 
-  private toFriendListResponse(
-    friends: Friend[],
-    currentUserId: number,
-  ): FriendListResponseDto {
+  private toFriendListResponse(friends: Friend[], currentUserId: number): FriendListResponseDto {
     return {
       items: friends.map((friend) => this.toFriendListItem(friend, currentUserId)),
     };

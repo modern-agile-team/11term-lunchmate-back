@@ -51,7 +51,11 @@ describe('Rooms Delete (e2e)', () => {
 
   it('DELETE /rooms/:id 방장이 아닌 사용자가 삭제하면 실패한다', async () => {
     const hostSignupResponse = await signupUser(httpApp, 'host-delete-forbidden@gmail.com', '방장');
-    const otherSignupResponse = await signupUser(httpApp, 'guest-delete-forbidden@gmail.com', '일반유저');
+    const otherSignupResponse = await signupUser(
+      httpApp,
+      'guest-delete-forbidden@gmail.com',
+      '일반유저',
+    );
     const hostUser = await dataSource.getRepository(User).findOneByOrFail({
       id: hostSignupResponse.body.user.id,
     });
@@ -68,7 +72,11 @@ describe('Rooms Delete (e2e)', () => {
   });
 
   it('DELETE /rooms/:id 존재하지 않는 방을 삭제하면 실패한다', async () => {
-    const signupResponse = await signupUser(httpApp, 'host-delete-notfound@gmail.com', '없는방삭제');
+    const signupResponse = await signupUser(
+      httpApp,
+      'host-delete-notfound@gmail.com',
+      '없는방삭제',
+    );
 
     const response = await request(httpApp())
       .delete('/rooms/999999')

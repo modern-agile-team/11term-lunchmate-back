@@ -55,16 +55,18 @@ describe('Meal Menus (e2e)', () => {
     return response.body.accessToken as string;
   }
 
-  async function createMealMenu(params: {
-    schoolInfo?: string;
-    mealDate?: string;
-    mealType?: MealType;
-    menuName?: string;
-    price?: number | null;
-    calorie?: number | null;
-    likeCount?: number;
-    dislikeCount?: number;
-  } = {}): Promise<MealMenu> {
+  async function createMealMenu(
+    params: {
+      schoolInfo?: string;
+      mealDate?: string;
+      mealType?: MealType;
+      menuName?: string;
+      price?: number | null;
+      calorie?: number | null;
+      likeCount?: number;
+      dislikeCount?: number;
+    } = {},
+  ): Promise<MealMenu> {
     return dataSource.getRepository(MealMenu).save({
       schoolInfo: params.schoolInfo ?? 'Hongik University',
       mealDate: params.mealDate ?? '2026-03-31',
@@ -340,7 +342,9 @@ describe('Meal Menus (e2e)', () => {
     it('기존 DISLIKE에서 좋아요 호출 시 LIKE로 전환되고 카운트가 교정됨', async () => {
       const accessToken = await signupAndGetAccessToken('switch@example.com', 'switch-user');
       const mealMenu = await createMealMenu({ likeCount: 0, dislikeCount: 1 });
-      const user = await dataSource.getRepository(User).findOneByOrFail({ email: 'switch@example.com' });
+      const user = await dataSource
+        .getRepository(User)
+        .findOneByOrFail({ email: 'switch@example.com' });
 
       await dataSource.getRepository(MealMenuReaction).save({
         actionType: ActionType.DISLIKE,
@@ -368,7 +372,10 @@ describe('Meal Menus (e2e)', () => {
     });
 
     it('이미 LIKE인 상태에서 다시 호출 시 200 멱등 성공', async () => {
-      const accessToken = await signupAndGetAccessToken('idempotent@example.com', 'idempotent-user');
+      const accessToken = await signupAndGetAccessToken(
+        'idempotent@example.com',
+        'idempotent-user',
+      );
       const mealMenu = await createMealMenu({ likeCount: 1, dislikeCount: 0 });
       const user = await dataSource
         .getRepository(User)

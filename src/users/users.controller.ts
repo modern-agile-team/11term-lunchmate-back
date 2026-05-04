@@ -28,9 +28,7 @@ export class UserController {
   @Authenticated()
   @ApiOperation({ summary: '내 정보 조회' })
   @ApiOkResponse({ type: CurrentUserResponseDto })
-  async getMe(
-    @CurrentUser() currentUser: AuthenticatedUser,
-  ): Promise<CurrentUserResponseDto> {
+  async getMe(@CurrentUser() currentUser: AuthenticatedUser): Promise<CurrentUserResponseDto> {
     const user = await this.userService.findMe(currentUser.userId);
     return this.toCurrentUserResponse(user);
   }

@@ -103,11 +103,7 @@ export class MealMenuRepository {
         actionType,
       );
 
-      const didChangeCounts = this.applyReactionCounts(
-        mealMenu,
-        previousActionType,
-        actionType,
-      );
+      const didChangeCounts = this.applyReactionCounts(mealMenu, previousActionType, actionType);
 
       if (didChangeCounts) {
         await mealMenuRepository.update(mealMenuId, {

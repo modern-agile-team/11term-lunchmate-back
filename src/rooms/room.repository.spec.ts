@@ -113,7 +113,7 @@ describe('RoomRepository', () => {
         affected: 1,
       };
 
-      (manager.update as jest.Mock).mockResolvedValue(updateResult);
+      manager.update.mockResolvedValue(updateResult);
 
       const result = await roomRepository.updateRoomHostUser(manager as never, 1, 2);
 

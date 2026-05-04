@@ -97,7 +97,9 @@ describe('Comments Like (e2e)', () => {
       likeCount: 1,
     });
 
-    const likedComment = await dataSource.getRepository(Comment).findOneByOrFail({ id: comment.id });
+    const likedComment = await dataSource
+      .getRepository(Comment)
+      .findOneByOrFail({ id: comment.id });
     const commentLike = await dataSource.getRepository(CommentLike).findOne({
       where: {
         comment: { id: comment.id },
