@@ -14,7 +14,8 @@ import { Post } from './entities/post.entity';
 import { UpdatePostDto } from './dtos/update-post.dto';
 import { DataSource, EntityManager } from 'typeorm';
 import { PostLikeService } from './post-like.service';
-import { CreatePostProps, FindPostsResult, UpdatePostProps } from './types/post.type';
+import { CreatePostProps, UpdatePostProps } from './types/post.type';
+import { CursorPaginatedResult } from 'src/commons/types/cursor-pagination.type';
 
 @Injectable()
 export class PostService {
@@ -41,7 +42,7 @@ export class PostService {
     return createdPostDetail;
   }
 
-  async findPosts(findPostsQuery: FindPostsQueryDto): Promise<FindPostsResult> {
+  async findPosts(findPostsQuery: FindPostsQueryDto): Promise<CursorPaginatedResult<Post>> {
     if (findPostsQuery.categoryId !== undefined)
       await this.validateCategoryExists(findPostsQuery.categoryId);
 

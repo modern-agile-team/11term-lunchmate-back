@@ -17,14 +17,10 @@ import { UserService } from 'src/users/users.service';
 import { Room, RoomStatus, RoomType } from './entities/room.entity';
 import { calculateAge } from 'src/commons/utils/age.util';
 import { RoomMember } from './entities/room-member.entity';
-import {
-  CreateRoomProps,
-  FindRoomsResult,
-  UpdateRoomProps,
-  UserConditionsParam,
-} from './types/room.type';
+import { CreateRoomProps, UpdateRoomProps, UserConditionsParam } from './types/room.type';
 import { RoomGateway } from './rooms.gateway';
 import { CurrentUserResponseDto } from 'src/users/dto/current-user-response.dto';
+import { CursorPaginatedResult } from 'src/commons/types/cursor-pagination.type';
 
 @Injectable()
 export class RoomService {
@@ -56,7 +52,7 @@ export class RoomService {
     return await this.findRoomById(newRoomId);
   }
 
-  async findRooms(query: FindRoomsQueryDto): Promise<FindRoomsResult> {
+  async findRooms(query: FindRoomsQueryDto): Promise<CursorPaginatedResult<Room>> {
     if (query.minAge !== undefined && query.maxAge !== undefined && query.minAge > query.maxAge) {
       throw new BadRequestException('최소 나이와 최대 나이 옵션이 올바르지 않습니다.');
     }
