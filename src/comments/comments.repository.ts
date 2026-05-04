@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { CreateCommentDto } from './dtos/create-comment.dto';
 import { Comment } from './entities/comment.entity';
+import { UpdateResult } from 'typeorm';
 
 @Injectable()
 export class CommentRepository {
@@ -16,7 +17,7 @@ export class CommentRepository {
     postId: number,
     userId: number,
     manager: EntityManager,
-  ) {
+  ): Promise<Comment> {
     return await manager.save(Comment, {
       ...createCommentDto,
       post: { id: postId },
@@ -24,10 +25,14 @@ export class CommentRepository {
     });
   }
 
-  async findCommentById(commentId: number): Promise<Comment | null> {
+  async findByCommentIdAndPostId(commentId: number, postId: number): Promise<Comment | null> {
     return await this.commentRepository.findOne({
-      where: { id: commentId },
-      relations: { user: true },
+      where: { id: commentId, post: { id: postId } },
+      relations: { user: true, post: true },
     });
+  }
+
+  async updateComment(comment: Comment): Promise<Comment> {
+    return await this.commentRepository.save(comment);
   }
 }

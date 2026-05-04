@@ -5,7 +5,7 @@ import { CreateCommentDto } from './dtos/create-comment.dto';
 
 describe('CommentRepository', () => {
   let commentRepository: CommentRepository;
-  let commentOrmRepository: Pick<Repository<Comment>, 'findOne'>;
+  let commentOrmRepository: Pick<Repository<Comment>, 'findOne' | 'save'>;
   const manager = {
     save: jest.fn(),
   };
@@ -13,6 +13,7 @@ describe('CommentRepository', () => {
   beforeEach(() => {
     commentOrmRepository = {
       findOne: jest.fn(),
+      save: jest.fn(),
     };
 
     commentRepository = new CommentRepository(commentOrmRepository as Repository<Comment>);
@@ -48,8 +49,8 @@ describe('CommentRepository', () => {
     });
   });
 
-  describe('findCommentById', () => {
-    it('commentId로 findOne을 호출', async () => {
+  describe('findByCommentIdAndPostId', () => {
+    it('commentId와 postId로 findOne을 호출', async () => {
       const comment = {
         id: 11,
         content: '댓글',
@@ -57,17 +58,40 @@ describe('CommentRepository', () => {
 
       (commentOrmRepository.findOne as jest.Mock).mockResolvedValue(comment);
 
-      const result = await commentRepository.findCommentById(11);
+      const result = await commentRepository.findByCommentIdAndPostId(11, 3);
 
       expect(result).toEqual(comment);
       expect(commentOrmRepository.findOne).toHaveBeenCalledWith({
         where: {
           id: 11,
+          post: { id: 3 },
         },
         relations: {
           user: true,
+          post: true,
         },
       });
+    });
+  });
+
+  describe('updateComment', () => {
+    it('수정된 comment entity로 save를 호출한다', async () => {
+      const comment = {
+        id: 11,
+        content: '수정된 댓글',
+        isAnonymous: false,
+      };
+      const savedComment = {
+        ...comment,
+        createdAt: '2026-04-20T00:00:00.000Z',
+      };
+
+      (commentOrmRepository.save as jest.Mock).mockResolvedValue(savedComment);
+
+      const result = await commentRepository.updateComment(comment as Comment);
+
+      expect(result).toEqual(savedComment);
+      expect(commentOrmRepository.save).toHaveBeenCalledWith(comment);
     });
   });
 });

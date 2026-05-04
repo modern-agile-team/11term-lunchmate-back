@@ -1,10 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { CommentService } from './comments.service';
 import { CommentRepository } from './comments.repository';
 import { PostRepository } from 'src/posts/posts.repository';
 import { CreateCommentDto } from './dtos/create-comment.dto';
+import { UpdateCommentDto } from './dtos/update-comment.dto';
 
 const createCommentDto: CreateCommentDto = {
   content: '저도 같은 생각입니다.',
@@ -26,6 +31,9 @@ const mockCommentEntity = {
   likeCount: 0,
   isAnonymous: false,
   createdAt: '2026-04-16T00:00:00.000Z',
+  post: {
+    id: 3,
+  },
   user: {
     id: 7,
     nickname: 'commenter',
@@ -34,7 +42,8 @@ const mockCommentEntity = {
 
 const mockCommentRepository = {
   createComment: jest.fn(),
-  findCommentById: jest.fn(),
+  findByCommentIdAndPostId: jest.fn(),
+  updateComment: jest.fn(),
 };
 
 const mockPostRepository = {
@@ -87,7 +96,7 @@ describe('CommentService', () => {
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
       mockCommentRepository.createComment.mockResolvedValue(mockCreatedComment);
       mockPostRepository.increaseCommentCount.mockResolvedValue({ affected: 1 });
-      mockCommentRepository.findCommentById.mockResolvedValue(mockCommentEntity);
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
 
       const result = await commentService.createComment(createCommentDto, 3, 7);
 
@@ -101,7 +110,7 @@ describe('CommentService', () => {
         mockManager,
       );
       expect(mockPostRepository.increaseCommentCount).toHaveBeenCalledWith(3, mockManager);
-      expect(mockCommentRepository.findCommentById).toHaveBeenCalledWith(11);
+      expect(mockCommentRepository.findByCommentIdAndPostId).toHaveBeenCalledWith(11, 3);
     });
 
     it('존재하지 않는 게시글이면 NotFoundException을 던진다', async () => {
@@ -119,7 +128,7 @@ describe('CommentService', () => {
       mockPostRepository.findPostById.mockResolvedValue(mockPost);
       mockCommentRepository.createComment.mockResolvedValue(mockCreatedComment);
       mockPostRepository.increaseCommentCount.mockResolvedValue({ affected: 1 });
-      mockCommentRepository.findCommentById.mockResolvedValue(null);
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(null);
 
       await expect(commentService.createComment(createCommentDto, 3, 7)).rejects.toThrow(
         InternalServerErrorException,
@@ -127,19 +136,72 @@ describe('CommentService', () => {
     });
   });
 
-  describe('findCommentById', () => {
+  describe('findCommentOrThrow', () => {
     it('댓글 상세 정보를 반환한다', async () => {
-      mockCommentRepository.findCommentById.mockResolvedValue(mockCommentEntity);
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
 
-      const result = await commentService.findCommentById(11);
+      const result = await commentService.findCommentOrThrow(11, 3);
 
       expect(result).toEqual(mockCommentEntity);
     });
 
-    it('존재하지 않는 댓글이면 null을 반환한다', async () => {
-      mockCommentRepository.findCommentById.mockResolvedValue(null);
+    it('존재하지 않는 댓글이면 NotFoundException을 던진다', async () => {
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(null);
 
-      await expect(commentService.findCommentById(999)).resolves.toBeNull();
+      await expect(commentService.findCommentOrThrow(999, 3)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('editComment', () => {
+    it('작성자가 댓글을 수정하면 수정 후 댓글 상세 정보를 반환한다', async () => {
+      const updateCommentDto: UpdateCommentDto = {
+        content: '수정된 댓글입니다.',
+      };
+      const updatedCommentEntity = {
+        ...mockCommentEntity,
+        content: '수정된 댓글입니다.',
+      };
+
+      mockPostRepository.findPostById.mockResolvedValue(mockPost);
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+      mockCommentRepository.updateComment.mockResolvedValue(updatedCommentEntity);
+
+      const result = await commentService.editComment(updateCommentDto, 3, 11, 7);
+
+      expect(result).toEqual(updatedCommentEntity);
+      expect(mockCommentRepository.updateComment).toHaveBeenCalledWith({
+        ...mockCommentEntity,
+        content: '수정된 댓글입니다.',
+      });
+    });
+
+    it('작성자가 아니면 ForbiddenException을 던진다', async () => {
+      const updateCommentDto: UpdateCommentDto = {
+        content: '수정 시도',
+      };
+
+      mockPostRepository.findPostById.mockResolvedValue(mockPost);
+      mockCommentRepository.findByCommentIdAndPostId.mockResolvedValue(mockCommentEntity);
+
+      await expect(commentService.editComment(updateCommentDto, 3, 11, 8)).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(mockCommentRepository.updateComment).not.toHaveBeenCalled();
+    });
+
+    it('존재하지 않는 게시글이면 NotFoundException을 던진다', async () => {
+      const updateCommentDto: UpdateCommentDto = {
+        content: '수정 시도',
+      };
+
+      mockPostRepository.findPostById.mockResolvedValue(null);
+
+      await expect(commentService.editComment(updateCommentDto, 999, 11, 7)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockCommentRepository.findByCommentIdAndPostId).not.toHaveBeenCalled();
     });
   });
 });
