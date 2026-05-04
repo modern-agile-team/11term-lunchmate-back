@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
@@ -318,15 +319,20 @@ export class RoomService {
     return existingRoom;
   }
 
-  async closeExpiredRooms(): Promise<number[]> {
+  async findExpiredRooms(): Promise<number[]> {
     const now = new Date().toISOString();
     const expiredRooms = await this.roomRepository.findExpiredOpenRooms(now);
 
     if (expiredRooms.length < 1) return [];
 
-    const roomIds = expiredRooms.map((room) => room.id);
+    return expiredRooms.map((room) => room.id);
+  }
 
-    await this.roomRepository.closeRooms(roomIds);
+  async closeExpiredRooms(roomIds: number[]): Promise<number[]> {
+    const updateResult = await this.roomRepository.closeRooms(roomIds);
+
+    if (updateResult.affected !== roomIds.length)
+      throw new InternalServerErrorException('일부 만료된 방의 상태를 변경하지 못했습니다.');
 
     return roomIds;
   }

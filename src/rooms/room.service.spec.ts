@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RoomService } from './rooms.service';
 import { RoomRepository } from './room.repository';
 import { DataSource, DeleteResult, EntityManager } from 'typeorm';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -87,6 +92,8 @@ const mockRoomRepository = {
   findRoomById: jest.fn(),
   findRooms: jest.fn(),
   findJoinableRooms: jest.fn(),
+  findExpiredOpenRooms: jest.fn(),
+  closeRooms: jest.fn(),
   updateRoom: jest.fn(),
   deleteRoom: jest.fn(),
   increaseCurrentMembersCount: jest.fn(),
@@ -836,6 +843,49 @@ describe('RoomService', () => {
       ).rejects.toThrow(BadRequestException);
 
       expect(mockRoomRepository.decreaseCurrentMembersCount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findExpiredRooms', () => {
+    it('지난 시간의 열린 방 ID 목록을 반환', async () => {
+      mockRoomRepository.findExpiredOpenRooms.mockResolvedValueOnce([
+        mockRoomEntity,
+        mockSecondRoomEntity,
+      ]);
+
+      const result = await roomService.findExpiredRooms();
+
+      expect(result).toEqual([mockRoomEntity.id, mockSecondRoomEntity.id]);
+      expect(mockRoomRepository.findExpiredOpenRooms).toHaveBeenCalledWith(
+        '2026-03-27T00:00:00.000Z',
+      );
+    });
+
+    it('지난 시간의 열린 방이 없으면 빈 배열을 반환', async () => {
+      mockRoomRepository.findExpiredOpenRooms.mockResolvedValueOnce([]);
+
+      await expect(roomService.findExpiredRooms()).resolves.toEqual([]);
+    });
+  });
+
+  describe('closeExpiredRooms', () => {
+    it('전달받은 방 ID 목록의 상태를 CLOSE로 변경하고 ID 목록을 반환', async () => {
+      const roomIds = [mockRoomEntity.id, mockSecondRoomEntity.id];
+      mockRoomRepository.closeRooms.mockResolvedValueOnce({ affected: roomIds.length });
+
+      const result = await roomService.closeExpiredRooms(roomIds);
+
+      expect(result).toEqual(roomIds);
+      expect(mockRoomRepository.closeRooms).toHaveBeenCalledWith(roomIds);
+    });
+
+    it('상태 변경된 개수가 방 ID 개수와 다르면 InternalServerErrorException을 반환', async () => {
+      const roomIds = [mockRoomEntity.id, mockSecondRoomEntity.id];
+      mockRoomRepository.closeRooms.mockResolvedValueOnce({ affected: 1 });
+
+      await expect(roomService.closeExpiredRooms(roomIds)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });

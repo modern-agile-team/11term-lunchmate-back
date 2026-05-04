@@ -13,10 +13,19 @@ export class RoomScheduler {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async closeExpiredRooms() {
-    const closedRoomIds = await this.roomService.closeExpiredRooms();
+    try {
+      const expiredRoomIds = await this.roomService.findExpiredRooms();
 
-    if (closedRoomIds.length > 0) {
-      this.logger.info(`Closed rooms : ${closedRoomIds.join(', ')}`);
+      if (expiredRoomIds.length > 0) {
+        const closedRoomIds = await this.roomService.closeExpiredRooms(expiredRoomIds);
+
+        this.logger.info(`Closed rooms : ${closedRoomIds.join(', ')}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to close expired rooms.`, {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
   }
 }
