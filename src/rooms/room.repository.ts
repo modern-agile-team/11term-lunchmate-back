@@ -116,6 +116,10 @@ export class RoomRepository {
     return await this.roomRepository.update(roomId, updateRoomProps);
   }
 
+  async updateRoomStatusToComplete(roomId: number): Promise<UpdateResult> {
+    return await this.roomRepository.update(roomId, { status: RoomStatus.COMPLETE });
+  }
+
   async deleteRoom(roomId: number, manager?: EntityManager): Promise<DeleteResult> {
     if (manager) {
       return await manager.softDelete(Room, roomId);

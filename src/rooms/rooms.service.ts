@@ -129,6 +129,23 @@ export class RoomService {
     return await this.findRoomById(roomId);
   }
 
+  async completeRoom(roomId: number, userId: number): Promise<Room> {
+    const existingRoom = await this.findExistingRoomOrThrow(roomId);
+
+    if (existingRoom.hostUser.id !== userId)
+      throw new ForbiddenException('방장만 방을 수정할 수 있습니다.');
+
+    if (existingRoom.status === RoomStatus.COMPLETE)
+      throw new BadRequestException('이미 종료된 방입니다.');
+
+    const updateResult = await this.roomRepository.updateRoomStatusToComplete(roomId);
+
+    if (!updateResult.affected)
+      throw new InternalServerErrorException('방의 상태 병경에 실패했습니다.');
+
+    return await this.findRoomById(roomId);
+  }
+
   async deleteRoom(roomId: number, userId: number): Promise<void> {
     const existingRoom = await this.findExistingRoomOrThrow(roomId);
 

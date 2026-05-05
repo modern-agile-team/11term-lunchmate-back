@@ -94,6 +94,7 @@ const mockRoomRepository = {
   findJoinableRooms: jest.fn(),
   findExpiredOpenRooms: jest.fn(),
   closeRooms: jest.fn(),
+  updateRoomStatusToComplete: jest.fn(),
   updateRoom: jest.fn(),
   deleteRoom: jest.fn(),
   increaseCurrentMembersCount: jest.fn(),
@@ -492,6 +493,68 @@ describe('RoomService', () => {
 
       expect(result).toEqual(mockRoomEntity);
       expect(mockRoomRepository.updateRoom).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('completeRoom', () => {
+    it('방장이 방 상태를 COMPLETE로 변경하면 변경된 방 정보를 반환', async () => {
+      const completedRoomEntity = {
+        ...mockRoomEntity,
+        status: RoomStatus.COMPLETE,
+      };
+
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.updateRoomStatusToComplete.mockResolvedValueOnce({ affected: 1 });
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(completedRoomEntity);
+
+      const result = await roomService.completeRoom(mockRoomEntity.id, mockUserSummary.id);
+
+      expect(result).toEqual(completedRoomEntity);
+      expect(mockRoomRepository.findRoomById).toHaveBeenNthCalledWith(1, mockRoomEntity.id);
+      expect(mockRoomRepository.updateRoomStatusToComplete).toHaveBeenCalledWith(mockRoomEntity.id);
+      expect(mockRoomRepository.findRoomById).toHaveBeenNthCalledWith(2, mockRoomEntity.id);
+    });
+
+    it('방장이 아닌 사용자가 상태를 변경하면 ForbiddenException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+
+      await expect(roomService.completeRoom(mockRoomEntity.id, 999)).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(mockRoomRepository.updateRoomStatusToComplete).not.toHaveBeenCalled();
+    });
+
+    it('존재하지 않는 방을 완료 처리하면 NotFoundException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(null);
+
+      await expect(roomService.completeRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(mockRoomRepository.updateRoomStatusToComplete).not.toHaveBeenCalled();
+    });
+
+    it('이미 COMPLETE 상태인 방이면 BadRequestException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce({
+        ...mockRoomEntity,
+        status: RoomStatus.COMPLETE,
+      });
+
+      await expect(roomService.completeRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(mockRoomRepository.updateRoomStatusToComplete).not.toHaveBeenCalled();
+    });
+
+    it('상태 변경 결과 affected가 0이면 InternalServerErrorException을 반환', async () => {
+      mockRoomRepository.findRoomById.mockResolvedValueOnce(mockRoomEntity);
+      mockRoomRepository.updateRoomStatusToComplete.mockResolvedValueOnce({ affected: 0 });
+
+      await expect(roomService.completeRoom(mockRoomEntity.id, mockUserSummary.id)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 

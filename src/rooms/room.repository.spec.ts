@@ -91,6 +91,24 @@ describe('RoomRepository', () => {
     });
   });
 
+  describe('updateRoomStatusToComplete', () => {
+    it('roomId로 상태를 COMPLETE로 변경하는 update를 호출', async () => {
+      const roomId = 1;
+      const updateResult = {
+        affected: 1,
+      };
+
+      (roomOrmRepository.update as jest.Mock).mockResolvedValue(updateResult);
+
+      const result = await roomRepository.updateRoomStatusToComplete(roomId);
+
+      expect(result).toEqual(updateResult);
+      expect(roomOrmRepository.update).toHaveBeenCalledWith(roomId, {
+        status: RoomStatus.COMPLETE,
+      });
+    });
+  });
+
   describe('deleteRoom', () => {
     it('roomId로 softDelete를 호출', async () => {
       const roomId = 1;

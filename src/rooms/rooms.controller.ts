@@ -118,6 +118,23 @@ export class RoomController {
     return RoomMapper.toDetailDto(updatedRoom);
   }
 
+  @Patch(':id/complete')
+  @Authenticated()
+  @ApiOperation({ summary: '방의 상태를 완료 상태로 변경' })
+  @ApiOkResponse({ type: ResponseRoomDetailDto })
+  @ApiNotFoundResponse({ description: '존재하지 않는 방을 수정하려는 경우' })
+  @ApiForbiddenResponse({ description: '방장이 아닌 사용자가 수정을 시도한 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  @ApiBadRequestResponse({ description: '이미 COMPLETE 상태의 방인 경우' })
+  async completeRoom(
+    @Param('id', ParseIntPipe) roomId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const completedRoom = await this.roomService.completeRoom(roomId, user.userId);
+
+    return RoomMapper.toDetailDto(completedRoom);
+  }
+
   @Delete(':id')
   @Authenticated()
   @HttpCode(204)
