@@ -55,6 +55,7 @@ export class TypeOrmConfig implements TypeOrmOptionsFactory {
       entities: [__dirname + '/../**/entities/*.entity{.ts,.js}'],
       synchronize: false,
       logging: true,
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     };
   }
 }
