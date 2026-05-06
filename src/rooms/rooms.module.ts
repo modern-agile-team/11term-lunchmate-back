@@ -12,11 +12,13 @@ import { UserRepository } from 'src/users/users.repository';
 import { RoomMemberService } from './roomMember.service';
 import { RoomGateway } from './rooms.gateway';
 import { AuthModule } from 'src/auth/auth.module';
+import { RoomScheduler } from './schedulers/room.scheduler';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Room, RoomMember, User]), AuthModule],
   controllers: [RoomController],
   providers: [
+    RoomScheduler,
     RoomService,
     RoomRepository,
     RoomMemberService,

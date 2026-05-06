@@ -7,6 +7,7 @@ import {
   DeleteResult,
   EntityManager,
   FindOptionsWhere,
+  In,
   LessThan,
   LessThanOrEqual,
   MoreThanOrEqual,
@@ -135,5 +136,18 @@ export class RoomRepository {
     return await manager.update(Room, roomId, {
       hostUserId: newHostUserId,
     });
+  }
+
+  async findExpiredOpenRooms(now: string): Promise<Room[]> {
+    return await this.roomRepository.find({
+      where: {
+        status: RoomStatus.OPEN,
+        lunchAt: LessThan(now),
+      },
+    });
+  }
+
+  async closeRooms(roomIds: number[]): Promise<UpdateResult> {
+    return await this.roomRepository.update({ id: In(roomIds) }, { status: RoomStatus.CLOSE });
   }
 }

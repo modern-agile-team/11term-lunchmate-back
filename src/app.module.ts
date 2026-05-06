@@ -16,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
 import { WinstonModule } from 'nest-winston';
 import { winstonOptions } from './config/winston.config';
 import { AllExceptionFilter } from './commons/filters/all-exception.filter';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AllExceptionFilter } from './commons/filters/all-exception.filter';
     WinstonModule.forRoot({
       transports: winstonOptions,
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     UserModule,
     RoomModule,
