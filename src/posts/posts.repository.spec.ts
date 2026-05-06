@@ -111,7 +111,7 @@ describe('PostRepository', () => {
         affected: 1,
       };
 
-      (manager.increment as jest.Mock).mockResolvedValue(updateResult);
+      manager.increment.mockResolvedValue(updateResult);
 
       const result = await postRepository.increasePostLikeCount(1, manager as never);
 
@@ -126,7 +126,7 @@ describe('PostRepository', () => {
         affected: 1,
       };
 
-      (manager.decrement as jest.Mock).mockResolvedValue(updateResult);
+      manager.decrement.mockResolvedValue(updateResult);
 
       const result = await postRepository.decreasePostLikeCount(1, manager as never);
 

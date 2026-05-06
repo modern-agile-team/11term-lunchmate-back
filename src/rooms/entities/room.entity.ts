@@ -12,6 +12,7 @@ export enum RoomType {
 export enum RoomStatus {
   OPEN = 'OPEN',
   CLOSE = 'CLOSE',
+  COMPLETE = 'COMPLETE',
 }
 
 @Entity('rooms')

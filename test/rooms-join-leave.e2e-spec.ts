@@ -131,8 +131,16 @@ describe('Rooms Join/Leave (e2e)', () => {
   });
 
   it('POST /rooms/quick-join 참여 가능한 방이 없으면 실패', async () => {
-    const hostSignupResponse = await signupUser(httpApp, 'quick-no-room-host@gmail.com', '여성방장');
-    const guestSignupResponse = await signupUser(httpApp, 'quick-no-room-user@gmail.com', '남성유저');
+    const hostSignupResponse = await signupUser(
+      httpApp,
+      'quick-no-room-host@gmail.com',
+      '여성방장',
+    );
+    const guestSignupResponse = await signupUser(
+      httpApp,
+      'quick-no-room-user@gmail.com',
+      '남성유저',
+    );
     const hostUser = await dataSource.getRepository(User).findOneByOrFail({
       id: hostSignupResponse.body.user.id,
     });

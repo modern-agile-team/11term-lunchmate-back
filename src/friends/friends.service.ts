@@ -21,10 +21,7 @@ export class FriendService {
     await this.validateReceiver(requesterId, receiverId);
     await this.ensureRequestableRelation(requesterId, receiverId);
 
-    return this.friendRepository.createOrRestoreRequest(
-      requesterId,
-      receiverId,
-    );
+    return this.friendRepository.createOrRestoreRequest(requesterId, receiverId);
   }
 
   async acceptRequest(currentUserId: number, friendshipId: number): Promise<Friend> {

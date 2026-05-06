@@ -103,7 +103,11 @@ describe('Rooms Socket (e2e)', () => {
   });
 
   it('방이 삭제되면 room.deleted 이벤트를 받는다', async () => {
-    const hostSignupResponse = await signupUser(httpApp, 'socket-delete-host@gmail.com', '삭제방장');
+    const hostSignupResponse = await signupUser(
+      httpApp,
+      'socket-delete-host@gmail.com',
+      '삭제방장',
+    );
     const hostUser = await dataSource.getRepository(User).findOneByOrFail({
       id: hostSignupResponse.body.user.id,
     });
