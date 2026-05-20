@@ -1,0 +1,26 @@
+services:
+  lunchmate-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lunchmate-backend
+    image: imdongyoung207/${DOCKER_TAG}
+    expose:
+      - '3000'
+    env_file:
+      - .env
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: lunchmate-nginx
+    restart: always
+    depends_on:
+      - lunchmate-backend
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
