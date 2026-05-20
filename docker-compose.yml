@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: lunchmate-backend
-    image: imdongyoung207/${DOCKER_TAG}
+    image: ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
     expose:
       - '3000'
     env_file:
