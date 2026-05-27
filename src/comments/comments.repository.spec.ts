@@ -5,7 +5,7 @@ import { CreateCommentDto } from './dtos/create-comment.dto';
 
 describe('CommentRepository', () => {
   let commentRepository: CommentRepository;
-  let commentOrmRepository: Pick<Repository<Comment>, 'findOne' | 'find' | 'update'>;
+  let commentOrmRepository: Pick<Repository<Comment>, 'findOne' | 'find' | 'update' | 'save'>;
   const manager = {
     save: jest.fn(),
     softDelete: jest.fn(),
@@ -16,6 +16,7 @@ describe('CommentRepository', () => {
       findOne: jest.fn(),
       find: jest.fn(),
       update: jest.fn(),
+      save: jest.fn(),
     };
 
     commentRepository = new CommentRepository(commentOrmRepository as Repository<Comment>);
