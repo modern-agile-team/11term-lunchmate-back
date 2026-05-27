@@ -9,10 +9,22 @@ import { RoomMember } from '../../rooms/entities/room-member.entity';
 import { Room } from '../../rooms/entities/room.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+}
+
 @Entity('users')
 export class User extends BaseTableEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
 
   @Column({
     unique: true,
