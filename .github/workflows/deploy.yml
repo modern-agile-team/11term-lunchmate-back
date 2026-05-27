@@ -1,0 +1,116 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ['main', 'develop']
+  pull_request:
+    branches: ['main', 'develop']
+  workflow_dispatch:
+
+jobs:
+  setup-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: install packages
+        run: pnpm install --frozen-lockfile
+
+      - name: create .env
+        run: |
+          echo '${{ secrets.ENV }}' > .env
+
+      - name: run test
+        run: pnpm run test
+
+  build-and-push:
+    if: github.event_name == 'push'
+    needs: setup-and-test
+    runs-on: ubuntu-latest
+
+    outputs:
+      env_tag: ${{ steps.tag.outputs.env_tag }}
+
+    steps:
+      - name: chechout
+        uses: actions/checkout@v4
+
+      - name: set image tag
+        id: tag
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "env_tag=latest" >> $GITHUB_OUTPUT
+          elif [ "${GITHUB_REF_NAME}" = "develop" ]; then
+            echo "env_tag=develop-latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: login ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: setup docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main'}}
+            type=raw,value=develop-latest,enable=${{ github.ref == 'refs/heads/develop'}}
+            type=sha,format=long
+
+      - name: build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-to-ec2:
+    if: github.event_name == 'push'
+    needs: build-and-push
+    runs-on: [self-hosted, lunchmate-runner]
+
+    steps:
+      - name: deploy to ec2
+        run: |
+          set -e
+
+          cd ~/${{ secrets.APP_NAME }}
+
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
+          IMAGE_NAME=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY}}
+          IMAGE_TAG=${{ needs.build-and-push.outputs.env_tag }}
+
+          echo "배포 브랜치 : ${{ github.ref_name }}"
+          echo "배포 이미지 : $IMAGE_NAME:$IMAGE_TAG"
+
+          IMAGE_NAME=$IMAGE_NAME IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yml pull
+          IMAGE_NAME=$IMAGE_NAME IMAGE_TAG=$IMAGE_TAG docker compose -f docker-compose.prod.yml up -d
+
+          docker image prune -f

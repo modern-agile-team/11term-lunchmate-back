@@ -1,10 +1,7 @@
 services:
   lunchmate-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
     container_name: lunchmate-backend
-    image: ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
+    image: ${IMAGE_NAME}:${IMAGE_TAG}
     expose:
       - '3000'
     env_file:
