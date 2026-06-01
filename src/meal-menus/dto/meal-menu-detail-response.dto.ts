@@ -4,8 +4,6 @@ import { MealType } from '../entities/meal-menu.entity';
 export class MealMenuDetailResponseDto {
   id: number;
 
-  mealDate: string;
-
   @ApiProperty({ enum: MealType })
   mealType: MealType;
 

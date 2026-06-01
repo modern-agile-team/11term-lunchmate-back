@@ -21,12 +21,6 @@ export class MealMenu extends BaseTableEntity {
   schoolInfo: string;
 
   @Column({
-    type: 'date',
-    name: 'meal_date',
-  })
-  mealDate: Date;
-
-  @Column({
     type: 'enum',
     enum: MealType,
     name: 'meal_type',

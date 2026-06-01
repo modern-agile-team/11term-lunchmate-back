@@ -90,7 +90,6 @@ export class MealMenusController {
   private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
     return {
       id: mealMenu.id,
-      mealDate: this.formatMealDate(mealMenu.mealDate),
       mealType: mealMenu.mealType,
       menuName: mealMenu.menuName,
       price: mealMenu.price ?? null,
@@ -103,7 +102,6 @@ export class MealMenusController {
   private toDetailResponse(mealMenu: MealMenu): MealMenuDetailResponseDto {
     return {
       id: mealMenu.id,
-      mealDate: this.formatMealDate(mealMenu.mealDate),
       mealType: mealMenu.mealType,
       menuName: mealMenu.menuName,
       price: mealMenu.price ?? null,
@@ -122,13 +120,5 @@ export class MealMenusController {
       likeCount: mealMenu.likeCount,
       dislikeCount: mealMenu.dislikeCount,
     };
-  }
-
-  private formatMealDate(mealDate: Date | string): string {
-    if (mealDate instanceof Date) {
-      return mealDate.toISOString().slice(0, 10);
-    }
-
-    return String(mealDate);
   }
 }

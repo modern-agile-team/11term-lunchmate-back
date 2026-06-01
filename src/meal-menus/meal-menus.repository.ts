@@ -6,12 +6,10 @@ import { ActionType, MealMenuReaction } from './entities/meal-menu-reaction.enti
 import { User } from '../users/entities/user.entity';
 
 export interface FindMealMenusParams {
-  mealDate?: string;
   mealType?: MealType;
 }
 
 export interface FindMealMenuRankingsParams {
-  mealDate?: string;
   mealType?: MealType;
   actionType: ActionType;
 }
@@ -32,7 +30,7 @@ export class MealMenuRepository {
       params,
     );
 
-    query.orderBy('mealMenu.meal_date', 'DESC').addOrderBy('mealMenu.id', 'DESC');
+    query.orderBy('mealMenu.id', 'DESC');
 
     return query.getMany();
   }
@@ -170,10 +168,6 @@ export class MealMenuRepository {
     query: SelectQueryBuilder<MealMenu>,
     params: FindMealMenusParams | FindMealMenuRankingsParams,
   ): SelectQueryBuilder<MealMenu> {
-    if (params.mealDate) {
-      query.andWhere('mealMenu.meal_date = :mealDate', { mealDate: params.mealDate });
-    }
-
     if (params.mealType && params.mealType !== MealType.ALL) {
       query.andWhere('mealMenu.meal_type = :mealType', { mealType: params.mealType });
     }
