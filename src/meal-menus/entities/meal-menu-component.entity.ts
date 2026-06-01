@@ -1,5 +1,5 @@
-import { MealMenu } from './meal-menu.entity';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { MealMenuComponentMapping } from './meal-menu-component-mapping.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('meal_menu_components')
 export class MealMenuComponent {
@@ -11,7 +11,9 @@ export class MealMenuComponent {
   })
   name: string;
 
-  @ManyToOne(() => MealMenu, (mealMenu) => mealMenu.components)
-  @JoinColumn({ name: 'meal_menu_id' })
-  mealMenu: MealMenu;
+  @OneToMany(
+    () => MealMenuComponentMapping,
+    (mealMenuComponentMapping) => mealMenuComponentMapping.mealMenuComponent,
+  )
+  mealMenuComponentMappings: MealMenuComponentMapping[];
 }
