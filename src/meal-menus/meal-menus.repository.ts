@@ -38,7 +38,10 @@ export class MealMenuRepository {
   async findById(mealMenuId: number): Promise<MealMenu | null> {
     // Single-record lookups stay on repository helpers unless they need joins or
     // more complex query composition.
-    return this.mealMenuRepository.findOneBy({ id: mealMenuId });
+    return this.mealMenuRepository.findOne({
+      where: { id: mealMenuId },
+      relations: { components: true },
+    });
   }
 
   async findRankings(params: FindMealMenuRankingsParams): Promise<MealMenu[]> {

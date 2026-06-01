@@ -18,4 +18,6 @@ export class MealMenuDetailResponseDto {
   likeCount: number;
 
   dislikeCount: number;
+
+  components: string[];
 }
