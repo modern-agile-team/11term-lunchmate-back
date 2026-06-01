@@ -1,6 +1,7 @@
 import { MealMenuReaction } from './meal-menu-reaction.entity';
 import { BaseTableEntity } from '../../commons/entities/base.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { MealMenuComponent } from './meal-menu-component.entity';
 
 export enum MealType {
   BREAKFAST = 'BREAKFAST',
@@ -57,4 +58,7 @@ export class MealMenu extends BaseTableEntity {
 
   @OneToMany(() => MealMenuReaction, (MealMenuReaction) => MealMenuReaction.mealMenu)
   reactions: MealMenuReaction[];
+
+  @OneToMany(() => MealMenuComponent, (mealMenuComponent) => mealMenuComponent.mealMenu)
+  components: MealMenuComponent[];
 }
