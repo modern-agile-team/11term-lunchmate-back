@@ -11,14 +11,12 @@ export class MealMenusService {
 
   async findMealMenus(query: GetMealMenuListQueryDto): Promise<MealMenu[]> {
     return this.mealMenuRepository.findMany({
-      mealDate: query.mealDate,
       mealType: query.mealType,
     });
   }
 
   async findMealMenuRankings(query: GetMealMenuRankingQueryDto): Promise<MealMenu[]> {
     return this.mealMenuRepository.findRankings({
-      mealDate: query.mealDate,
       mealType: query.mealType,
       actionType: query.actionType,
     });
