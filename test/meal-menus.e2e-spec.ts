@@ -221,6 +221,7 @@ describe('Meal Menus (e2e)', () => {
         calorie: 750,
         likeCount: 5,
         dislikeCount: 2,
+        components: [],
       });
     });
 

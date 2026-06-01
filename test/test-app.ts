@@ -18,6 +18,7 @@ import { Comment } from '../src/comments/entities/comment.entity';
 import { Friend } from '../src/friends/entities/friend.entity';
 import { MealMenuModule } from '../src/meal-menus/meal-menus.module';
 import { FriendModule } from '../src/friends/friends.module';
+import { MealMenuComponent } from '../src/meal-menus/entities/meal-menu-component.entity';
 import { MealMenuReaction } from '../src/meal-menus/entities/meal-menu-reaction.entity';
 import { MealMenu } from '../src/meal-menus/entities/meal-menu.entity';
 import { PostCategory } from '../src/post-categories/entities/post-category.entity';
@@ -41,6 +42,7 @@ const TEST_ENTITIES = [
   Comment,
   CommentLike,
   MealMenu,
+  MealMenuComponent,
   MealMenuReaction,
 ];
 
