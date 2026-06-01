@@ -40,7 +40,11 @@ export class MealMenuRepository {
     // more complex query composition.
     return this.mealMenuRepository.findOne({
       where: { id: mealMenuId },
-      relations: { components: true },
+      relations: {
+        mealMenuComponentMappings: {
+          mealMenuComponent: true,
+        },
+      },
     });
   }
 

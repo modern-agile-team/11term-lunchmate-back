@@ -21,7 +21,6 @@ import { MealMenuReactionResponseDto } from './dto/meal-menu-reaction-response.d
 import { ActionType } from './entities/meal-menu-reaction.entity';
 import { MealMenu } from './entities/meal-menu.entity';
 import { MealMenusService } from './meal-menus.service';
-import { MealMenuComponent } from './entities/meal-menu-component.entity';
 
 @ApiTags('MealMenu')
 @Controller('meal-menus')
@@ -109,7 +108,9 @@ export class MealMenusController {
       calorie: mealMenu.calorie ?? null,
       likeCount: mealMenu.likeCount,
       dislikeCount: mealMenu.dislikeCount,
-      components: mealMenu.components.map((component) => component.name),
+      components: mealMenu.mealMenuComponentMappings.map(
+        (mapping) => mapping.mealMenuComponent.name,
+      ),
     };
   }
 

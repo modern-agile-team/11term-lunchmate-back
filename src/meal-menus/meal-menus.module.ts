@@ -7,9 +7,18 @@ import { MealMenusController } from './meal-menus.controller';
 import { MealMenuRepository } from './meal-menus.repository';
 import { MealMenusService } from './meal-menus.service';
 import { MealMenuComponent } from './entities/meal-menu-component.entity';
+import { MealMenuComponentMapping } from './entities/meal-menu-component-mapping.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MealMenu, MealMenuReaction, MealMenuComponent]), AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([
+      MealMenu,
+      MealMenuReaction,
+      MealMenuComponent,
+      MealMenuComponentMapping,
+    ]),
+    AuthModule,
+  ],
   controllers: [MealMenusController],
   providers: [MealMenuRepository, MealMenusService],
 })
