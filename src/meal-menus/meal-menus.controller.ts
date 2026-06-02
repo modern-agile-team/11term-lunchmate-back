@@ -11,7 +11,17 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -37,6 +47,12 @@ export class MealMenusController {
   @Post()
   @Roles(UserRole.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '학식 추가' })
+  @ApiCreatedResponse({ type: MealMenuDetailResponseDto, description: '학식 추가 성공' })
+  @ApiBadRequestResponse({ description: '학식 추가 요청 값이 올바르지 않은 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  @ApiForbiddenResponse({ description: '관리자 권한이 없는 사용자가 요청한 경우' })
   async createMealMenu(
     @Body() createMealMenuDto: CreateMealMenuDto,
   ): Promise<MealMenuDetailResponseDto> {
