@@ -30,6 +30,7 @@ import { Room } from '../src/rooms/entities/room.entity';
 import { RoomModule } from '../src/rooms/rooms.module';
 import { User } from '../src/users/entities/user.entity';
 import { UserModule } from '../src/users/users.module';
+import { MealMenuComponentMapping } from 'src/meal-menus/entities/meal-menu-component-mapping.entity';
 
 const TEST_ENTITIES = [
   User,
@@ -43,6 +44,7 @@ const TEST_ENTITIES = [
   CommentLike,
   MealMenu,
   MealMenuComponent,
+  MealMenuComponentMapping,
   MealMenuReaction,
 ];
 

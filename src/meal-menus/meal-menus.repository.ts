@@ -1,9 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  In,
+  InsertResult,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { MealMenu, MealType } from './entities/meal-menu.entity';
 import { ActionType, MealMenuReaction } from './entities/meal-menu-reaction.entity';
 import { User } from '../users/entities/user.entity';
+import { CreateMealMenuProps } from './types/meal-menu.type';
+import { MealMenuComponent } from './entities/meal-menu-component.entity';
+import { MealMenuComponentMapping } from './entities/meal-menu-component-mapping.entity';
 
 export interface FindMealMenusParams {
   mealType?: MealType;
@@ -21,8 +31,18 @@ export class MealMenuRepository {
     private readonly mealMenuRepository: Repository<MealMenu>,
     @InjectRepository(MealMenuReaction)
     private readonly mealMenuReactionRepository: Repository<MealMenuReaction>,
+    @InjectRepository(MealMenuComponent)
+    private readonly mealMenuComponentRepository: Repository<MealMenuComponent>,
+
     private readonly dataSource: DataSource,
   ) {}
+
+  async createMealMenu(
+    newMealMenuProps: CreateMealMenuProps,
+    manager: EntityManager,
+  ): Promise<MealMenu> {
+    return await manager.save(MealMenu, newMealMenuProps);
+  }
 
   async findMany(params: FindMealMenusParams): Promise<MealMenu[]> {
     const query = this.applyReadFilters(
@@ -119,6 +139,47 @@ export class MealMenuRepository {
 
       return mealMenu;
     });
+  }
+
+  async createMealMenuComponent(
+    components: { name: string }[],
+    manager: EntityManager,
+  ): Promise<InsertResult> {
+    return await manager
+      .createQueryBuilder(MealMenuComponent, 'meal_menu_components')
+      .insert()
+      .into(MealMenuComponent)
+      .values(components)
+      .returning(['id'])
+      .execute();
+  }
+
+  async findExistingComponentsByName(names: string[]): Promise<MealMenuComponent[]> {
+    return await this.mealMenuComponentRepository.find({
+      where: {
+        name: In(names),
+      },
+    });
+  }
+
+  async createMealMenuComponentMapping(
+    mealMenuId: number,
+    componentIds: number[],
+    manager: EntityManager,
+  ): Promise<void> {
+    if (!componentIds.length) return;
+
+    await manager
+      .createQueryBuilder()
+      .insert()
+      .into(MealMenuComponentMapping)
+      .values(
+        componentIds.map((componentId) => ({
+          mealMenu: { id: mealMenuId },
+          mealMenuComponent: { id: componentId },
+        })),
+      )
+      .execute();
   }
 
   private async persistReaction(

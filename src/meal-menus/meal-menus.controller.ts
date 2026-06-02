@@ -1,4 +1,6 @@
+import { JwtAuthGuard } from './../auth/guards/jwt-auth.guard';
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -7,6 +9,7 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
@@ -21,11 +24,26 @@ import { MealMenuReactionResponseDto } from './dto/meal-menu-reaction-response.d
 import { ActionType } from './entities/meal-menu-reaction.entity';
 import { MealMenu } from './entities/meal-menu.entity';
 import { MealMenusService } from './meal-menus.service';
+import { Roles } from 'src/auth/decorators/role.decorator';
+import { UserRole } from 'src/users/entities/user.entity';
+import { RolesGuard } from 'src/auth/guards/role.guard';
+import { CreateMealMenuDto } from './dto/create-meal-menu.dto';
 
 @ApiTags('MealMenu')
 @Controller('meal-menus')
 export class MealMenusController {
   constructor(private readonly mealMenusService: MealMenusService) {}
+
+  @Post()
+  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async createMealMenu(
+    @Body() createMealMenuDto: CreateMealMenuDto,
+  ): Promise<MealMenuDetailResponseDto> {
+    const newMealMenu = await this.mealMenusService.createMealMenu(createMealMenuDto);
+
+    return this.toDetailResponse(newMealMenu);
+  }
 
   @Get()
   @ApiOperation({ summary: '학식 목록 조회' })
