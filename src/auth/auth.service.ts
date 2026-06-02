@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../users/users.service';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { AUTH_ERROR_MESSAGES, JWT_DEFAULTS } from './auth.constants';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -46,6 +46,7 @@ export class AuthService {
       user.id,
       user.email,
       user.nickname,
+      user.role,
       user.tokenVersion ?? 0,
     );
 
@@ -57,7 +58,13 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<AuthResult> {
     const user = await this.validateCredentials(loginDto);
-    const tokens = await this.issueTokens(user.id, user.email, user.nickname, user.tokenVersion);
+    const tokens = await this.issueTokens(
+      user.id,
+      user.email,
+      user.nickname,
+      user.role,
+      user.tokenVersion,
+    );
 
     return {
       ...tokens,
@@ -90,6 +97,7 @@ export class AuthService {
       user.id,
       user.email,
       user.nickname,
+      user.role,
       user.tokenVersion,
     );
 
@@ -135,9 +143,16 @@ export class AuthService {
     userId: number,
     email: string,
     nickname: string,
+    role: UserRole,
     tokenVersion: number,
   ): Promise<AuthTokensResult> {
-    const tokens = await this.issueTokensWithoutPersisting(userId, email, nickname, tokenVersion);
+    const tokens = await this.issueTokensWithoutPersisting(
+      userId,
+      email,
+      nickname,
+      role,
+      tokenVersion,
+    );
     const refreshTokenHash = await this.createRefreshTokenHash(tokens.refreshToken);
     await this.userService.updateRefreshTokenHash(userId, refreshTokenHash);
 
@@ -148,18 +163,19 @@ export class AuthService {
     userId: number,
     email: string,
     nickname: string,
+    role: UserRole,
     tokenVersion: number,
   ): Promise<AuthTokensResult> {
     const accessTokenId = randomUUID();
     const refreshTokenId = randomUUID();
 
     const accessToken = await this.jwtService.signAsync(
-      this.buildAccessPayload(userId, email, nickname, tokenVersion, accessTokenId),
+      this.buildAccessPayload(userId, email, nickname, role, tokenVersion, accessTokenId),
       this.getAccessTokenOptions(),
     );
 
     const refreshToken = await this.jwtService.signAsync(
-      this.buildRefreshPayload(userId, email, nickname, tokenVersion, refreshTokenId),
+      this.buildRefreshPayload(userId, email, nickname, role, tokenVersion, refreshTokenId),
       this.getRefreshTokenOptions(),
     );
 
@@ -216,6 +232,7 @@ export class AuthService {
     userId: number,
     email: string,
     nickname: string,
+    role: UserRole,
     tokenVersion: number,
     tokenId: string,
   ): JwtAccessPayload {
@@ -223,6 +240,7 @@ export class AuthService {
       sub: userId,
       email,
       nickname,
+      role,
       tokenVersion,
       tokenId,
       type: 'access',
@@ -233,6 +251,7 @@ export class AuthService {
     userId: number,
     email: string,
     nickname: string,
+    role: UserRole,
     tokenVersion: number,
     tokenId: string,
   ): JwtRefreshPayload {
@@ -240,6 +259,7 @@ export class AuthService {
       sub: userId,
       email,
       nickname,
+      role,
       tokenVersion,
       tokenId,
       type: 'refresh',
