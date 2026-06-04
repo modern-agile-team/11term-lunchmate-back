@@ -1,16 +1,10 @@
-import { ApiProperty, PickType } from '@nestjs/swagger';
-import { MealMenu, MealType } from '../entities/meal-menu.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import { MealType } from '../entities/meal-menu.entity';
 import { IsEnum, IsNotEmpty, IsNumber, IsString, Max, MaxLength, Min } from 'class-validator';
 import { MEAL_MENU_CONSTANT } from '../constants/meal-menu.constant';
 import { Transform } from 'class-transformer';
 
-export class CreateMealMenuDto extends PickType(MealMenu, [
-  'menuName',
-  'mealType',
-  'price',
-  'calorie',
-  'schoolInfo',
-]) {
+export class CreateMealMenuDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @ApiProperty({ example: '제육덮밥', description: '학식 메뉴 이름' })
   @IsString()

@@ -154,8 +154,11 @@ export class MealMenuRepository {
       .execute();
   }
 
-  async findExistingComponentsByName(names: string[]): Promise<MealMenuComponent[]> {
-    return await this.mealMenuComponentRepository.find({
+  async findExistingComponentsByName(
+    names: string[],
+    manager: EntityManager,
+  ): Promise<MealMenuComponent[]> {
+    return await manager.find(MealMenuComponent, {
       where: {
         name: In(names),
       },

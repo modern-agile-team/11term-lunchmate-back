@@ -160,8 +160,8 @@ describe('MealMenusService', () => {
         mealType: MealType.DINNER,
         menuName: '저녁식단',
         mealMenuComponentMappings: [
-          { mealMenuComponent: { id: 1, name: '포기김치' } },
           { mealMenuComponent: { id: 2, name: '백미밥' } },
+          { mealMenuComponent: { id: 1, name: '포기김치' } },
         ],
       });
     });

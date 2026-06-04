@@ -5,7 +5,7 @@ import { ActionType } from './entities/meal-menu-reaction.entity';
 import { MealMenu } from './entities/meal-menu.entity';
 import { MealMenuRepository } from './meal-menus.repository';
 import { CreateMealMenuDto } from './dto/create-meal-menu.dto';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { CreateMealMenuProps } from './types/meal-menu.type';
 
 @Injectable()
@@ -16,40 +16,14 @@ export class MealMenusService {
   ) {}
 
   async createMealMenu(createMealMenuDto: CreateMealMenuDto): Promise<MealMenu> {
-    const [newNealMenuProps, components] = this.buildMealMenuProps(createMealMenuDto);
-
-    const uniqueComponents = [
-      ...new Set(components.map((component) => component.trim()).filter(Boolean)),
-    ];
-
-    const existingComponents =
-      await this.mealMenuRepository.findExistingComponentsByName(uniqueComponents);
-    const existingComponentsName = existingComponents.map((component) => component.name);
+    const { mealMenuProps, componentNames } = this.buildMealMenuProps(createMealMenuDto);
 
     const mealMenuId = await this.dataSource.transaction(async (manager) => {
-      const newMealMenu = await this.mealMenuRepository.createMealMenu(newNealMenuProps, manager);
+      const newMealMenu = await this.mealMenuRepository.createMealMenu(mealMenuProps, manager);
 
       const mealMenuId = newMealMenu.id;
 
-      const nonExistentComponents = uniqueComponents
-        .filter((component) => !existingComponentsName.includes(component))
-        .map((component) => ({ name: component }));
-
-      let newComponentIds: number[] = [];
-      if (nonExistentComponents.length > 0) {
-        const insertResult = await this.mealMenuRepository.createMealMenuComponent(
-          nonExistentComponents,
-          manager,
-        );
-
-        if (insertResult.identifiers.length !== nonExistentComponents.length)
-          throw new InternalServerErrorException('일부 데이터가 삽입되지 않았습니다.');
-
-        newComponentIds = insertResult.identifiers.map((component) => component.id as number);
-      }
-
-      const existingComponentsId = existingComponents.map((component) => component.id);
-      const componentIds = [...existingComponentsId, ...newComponentIds];
+      const componentIds = await this.findOrCreateComponentIds(componentNames, manager);
 
       await this.mealMenuRepository.createMealMenuComponentMapping(
         mealMenuId,
@@ -110,13 +84,55 @@ export class MealMenusService {
     return mealMenu;
   }
 
-  private buildMealMenuProps(
-    createMealMenuDto: CreateMealMenuDto,
-  ): [CreateMealMenuProps, string[]] {
+  private buildMealMenuProps(createMealMenuDto: CreateMealMenuDto): {
+    mealMenuProps: CreateMealMenuProps;
+    componentNames: string[];
+  } {
     const { components, ...mealMenuProps } = createMealMenuDto;
 
-    const splitComponents = components.split(' ').filter(Boolean);
+    const componentNames = components.split(' ').filter(Boolean);
 
-    return [mealMenuProps, splitComponents];
+    return { mealMenuProps, componentNames };
+  }
+
+  private async findOrCreateComponentIds(
+    componentNames: string[],
+    manager: EntityManager,
+  ): Promise<number[]> {
+    const uniqueComponents = [
+      ...new Set(componentNames.map((component) => component.trim()).filter(Boolean)),
+    ];
+
+    const existingComponents = await this.mealMenuRepository.findExistingComponentsByName(
+      uniqueComponents,
+      manager,
+    );
+
+    const existingComponentSet = new Set(existingComponents.map((component) => component.name));
+
+    const nonExistentComponentNames = uniqueComponents
+      .filter((componentName) => !existingComponentSet.has(componentName))
+      .map((componentName) => ({
+        name: componentName,
+      }));
+
+    if (nonExistentComponentNames.length > 0) {
+      const insertResult = await this.mealMenuRepository.createMealMenuComponent(
+        nonExistentComponentNames,
+        manager,
+      );
+
+      if (insertResult.identifiers.length !== nonExistentComponentNames.length)
+        throw new InternalServerErrorException('일부 데이터가 삽입되지 않았습니다.');
+    }
+
+    const components = await this.mealMenuRepository.findExistingComponentsByName(
+      uniqueComponents,
+      manager,
+    );
+
+    const componentsMap = new Map(components.map((component) => [component.name, component.id]));
+
+    return uniqueComponents.map((componentName) => componentsMap.get(componentName) as number);
   }
 }
