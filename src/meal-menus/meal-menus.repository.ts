@@ -202,6 +202,10 @@ export class MealMenuRepository {
     return await manager.delete(MealMenuComponentMapping, { mealMenu: { id: mealMenuId } });
   }
 
+  async deleteMealMenu(mealMenuId: number): Promise<void> {
+    await this.mealMenuRepository.delete(mealMenuId);
+  }
+
   private async persistReaction(
     repository: Repository<MealMenuReaction>,
     existingReaction: MealMenuReaction | null,

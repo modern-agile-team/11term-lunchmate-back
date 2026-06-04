@@ -90,6 +90,12 @@ export class MealMenusService {
     return this.findMealMenuById(mealMenuId);
   }
 
+  async deleteMealMenu(mealMenuId: number): Promise<void> {
+    await this.findMealMenuOrFail(mealMenuId);
+
+    await this.mealMenuRepository.deleteMealMenu(mealMenuId);
+  }
+
   private async applyReactionOrFail(
     userId: number,
     mealMenuId: number,
