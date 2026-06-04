@@ -7,3 +7,5 @@ export type CreateMealMenuProps = {
   price: number;
   calorie: number;
 };
+
+export type UpdateMealMenuProps = Partial<CreateMealMenuProps>;

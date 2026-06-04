@@ -1,5 +1,6 @@
 import { JwtAuthGuard } from './../auth/guards/jwt-auth.guard';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -7,6 +8,7 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -16,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -37,6 +40,7 @@ import { Roles } from 'src/auth/decorators/role.decorator';
 import { UserRole } from 'src/users/entities/user.entity';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { CreateMealMenuDto } from './dto/create-meal-menu.dto';
+import { UpdateMealMenuDto } from './dto/update-meal-menu.dto';
 
 @ApiTags('MealMenu')
 @Controller('meal-menus')
@@ -112,6 +116,31 @@ export class MealMenusController {
   ): Promise<MealMenuReactionResponseDto> {
     const mealMenu = await this.mealMenusService.dislikeMealMenu(currentUser.userId, mealMenuId);
     return this.toReactionResponse(ActionType.DISLIKE, mealMenu);
+  }
+
+  @Patch(':mealMenuId')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '학식 수정' })
+  @ApiOkResponse({ type: MealMenuDetailResponseDto, description: '학식 수정 성공' })
+  @ApiNotFoundResponse({ description: '존재하지 않는 학식을 수정하려는 경우' })
+  @ApiBadRequestResponse({ description: '학식 수정 요청 값이 올바르지 않은 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  @ApiForbiddenResponse({ description: '관리자 권한이 없는 사용자가 요청한 경우' })
+  async updateMealMenu(
+    @Body() updateMealMenuDto: UpdateMealMenuDto,
+    @Param('mealMenuId', ParseIntPipe) mealMenuId: number,
+  ): Promise<MealMenuDetailResponseDto> {
+    if (Object.keys(updateMealMenuDto).length < 1)
+      throw new BadRequestException('수정할 값이 없습니다.');
+
+    const updatedMealMenu = await this.mealMenusService.updateMealMenu(
+      mealMenuId,
+      updateMealMenuDto,
+    );
+
+    return this.toDetailResponse(updatedMealMenu);
   }
 
   private toListResponse(mealMenus: MealMenu[]): MealMenuListResponseDto {

@@ -7,11 +7,13 @@ import {
   InsertResult,
   Repository,
   SelectQueryBuilder,
+  DeleteResult,
+  UpdateResult,
 } from 'typeorm';
 import { MealMenu, MealType } from './entities/meal-menu.entity';
 import { ActionType, MealMenuReaction } from './entities/meal-menu-reaction.entity';
 import { User } from '../users/entities/user.entity';
-import { CreateMealMenuProps } from './types/meal-menu.type';
+import { CreateMealMenuProps, UpdateMealMenuProps } from './types/meal-menu.type';
 import { MealMenuComponent } from './entities/meal-menu-component.entity';
 import { MealMenuComponentMapping } from './entities/meal-menu-component-mapping.entity';
 
@@ -183,6 +185,21 @@ export class MealMenuRepository {
         })),
       )
       .execute();
+  }
+
+  async updateMealMenu(
+    mealMenuId: number,
+    mealMenuProps: UpdateMealMenuProps,
+    manager: EntityManager,
+  ): Promise<UpdateResult> {
+    return await manager.update(MealMenu, mealMenuId, mealMenuProps);
+  }
+
+  async deleteComponentMappingByMealMenuId(
+    mealMenuId: number,
+    manager: EntityManager,
+  ): Promise<DeleteResult> {
+    return await manager.delete(MealMenuComponentMapping, { mealMenu: { id: mealMenuId } });
   }
 
   private async persistReaction(

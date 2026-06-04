@@ -6,7 +6,8 @@ import { MealMenu } from './entities/meal-menu.entity';
 import { MealMenuRepository } from './meal-menus.repository';
 import { CreateMealMenuDto } from './dto/create-meal-menu.dto';
 import { DataSource, EntityManager } from 'typeorm';
-import { CreateMealMenuProps } from './types/meal-menu.type';
+import { CreateMealMenuProps, UpdateMealMenuProps } from './types/meal-menu.type';
+import { UpdateMealMenuDto } from './dto/update-meal-menu.dto';
 
 @Injectable()
 export class MealMenusService {
@@ -16,7 +17,7 @@ export class MealMenusService {
   ) {}
 
   async createMealMenu(createMealMenuDto: CreateMealMenuDto): Promise<MealMenu> {
-    const { mealMenuProps, componentNames } = this.buildMealMenuProps(createMealMenuDto);
+    const { mealMenuProps, componentNames } = this.buildCreateMealMenuProps(createMealMenuDto);
 
     const mealMenuId = await this.dataSource.transaction(async (manager) => {
       const newMealMenu = await this.mealMenuRepository.createMealMenu(mealMenuProps, manager);
@@ -62,6 +63,33 @@ export class MealMenusService {
     return this.applyReactionOrFail(userId, mealMenuId, ActionType.DISLIKE);
   }
 
+  async updateMealMenu(
+    mealMenuId: number,
+    updateMealMenuDto: UpdateMealMenuDto,
+  ): Promise<MealMenu> {
+    await this.findMealMenuOrFail(mealMenuId);
+
+    const { mealMenuProps, componentNames } = this.buildUpdateMealMenuProps(updateMealMenuDto);
+
+    await this.dataSource.transaction(async (manager) => {
+      if (componentNames.length > 0) {
+        await this.mealMenuRepository.deleteComponentMappingByMealMenuId(mealMenuId, manager);
+
+        const componentIds = await this.findOrCreateComponentIds(componentNames, manager);
+
+        await this.mealMenuRepository.createMealMenuComponentMapping(
+          mealMenuId,
+          componentIds,
+          manager,
+        );
+      }
+
+      await this.mealMenuRepository.updateMealMenu(mealMenuId, mealMenuProps, manager);
+    });
+
+    return this.findMealMenuById(mealMenuId);
+  }
+
   private async applyReactionOrFail(
     userId: number,
     mealMenuId: number,
@@ -84,13 +112,24 @@ export class MealMenusService {
     return mealMenu;
   }
 
-  private buildMealMenuProps(createMealMenuDto: CreateMealMenuDto): {
+  private buildCreateMealMenuProps(createMealMenuDto: CreateMealMenuDto): {
     mealMenuProps: CreateMealMenuProps;
     componentNames: string[];
   } {
     const { components, ...mealMenuProps } = createMealMenuDto;
 
     const componentNames = components.split(' ').filter(Boolean);
+
+    return { mealMenuProps, componentNames };
+  }
+
+  private buildUpdateMealMenuProps(updateMealMenuDto: UpdateMealMenuDto): {
+    mealMenuProps: UpdateMealMenuProps;
+    componentNames: string[];
+  } {
+    const { components, ...mealMenuProps } = updateMealMenuDto;
+
+    const componentNames = components ? components.split(' ').filter(Boolean) : [];
 
     return { mealMenuProps, componentNames };
   }
