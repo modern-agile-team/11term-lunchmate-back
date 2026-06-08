@@ -14,6 +14,12 @@ export enum UserRole {
   USER = 'USER',
 }
 
+export enum AuthProvider {
+  LOCAL = 'local',
+  GOOGLE = 'google',
+  KAKAO = 'kakao',
+}
+
 @Entity('users')
 export class User extends BaseTableEntity {
   @PrimaryGeneratedColumn()
@@ -79,6 +85,22 @@ export class User extends BaseTableEntity {
     select: false,
   })
   refreshTokenHash: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: AuthProvider,
+    default: AuthProvider.LOCAL,
+  })
+  provider: AuthProvider;
+
+  @Column({ nullable: true })
+  providerId: string;
+
+  @Column({ nullable: true })
+  providerAccessToken: string;
+
+  @Column({ nullable: true })
+  providerRefreshToken: string;
 
   @Column({
     type: 'integer',
