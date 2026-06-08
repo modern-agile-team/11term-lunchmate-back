@@ -8,17 +8,7 @@ import { Post } from '../../posts/entities/post.entity';
 import { RoomMember } from '../../rooms/entities/room-member.entity';
 import { Room } from '../../rooms/entities/room.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-}
-
-export enum AuthProvider {
-  LOCAL = 'local',
-  GOOGLE = 'google',
-  KAKAO = 'kakao',
-}
+import { AuthProvider, Mbti, UserGender, UserRole } from '../types/user.type';
 
 @Entity('users')
 export class User extends BaseTableEntity {
@@ -55,9 +45,9 @@ export class User extends BaseTableEntity {
 
   @Column({
     type: 'enum',
-    enum: ['MALE', 'FEMALE'],
+    enum: UserGender,
   })
-  gender: 'MALE' | 'FEMALE';
+  gender: UserGender;
 
   @Column({
     length: 100,
@@ -72,11 +62,11 @@ export class User extends BaseTableEntity {
   introduce: string | null;
 
   @Column({
-    type: 'varchar',
+    type: 'enum',
+    enum: Mbti,
     nullable: true,
-    length: 4,
   })
-  mbti: string | null;
+  mbti: Mbti | null;
 
   @Column({
     type: 'varchar',
