@@ -34,8 +34,8 @@ export class User extends BaseTableEntity {
   })
   nickname: string;
 
-  @Column({ name: 'hashed_password', select: false })
-  hashedPassword: string;
+  @Column({ type: 'varchar', name: 'hashed_password', nullable: true, select: false })
+  hashedPassword: string | null;
 
   @Column({
     type: 'date',
@@ -79,7 +79,7 @@ export class User extends BaseTableEntity {
   @Column({
     type: 'enum',
     enum: AuthProvider,
-    default: AuthProvider.LOCAL,
+    default: AuthProvider.local,
   })
   provider: AuthProvider;
 
