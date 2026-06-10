@@ -1,6 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsDateString, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import { Mbti } from '../types/user.type';
 
 export class UpdateMeDto {
   @ApiPropertyOptional({
@@ -55,8 +64,6 @@ export class UpdateMeDto {
   })
   @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
-  @IsString()
-  @MinLength(4)
-  @MaxLength(4)
-  mbti?: string;
+  @IsEnum(Mbti)
+  mbti?: Mbti | null;
 }
