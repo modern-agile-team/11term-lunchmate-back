@@ -30,8 +30,14 @@ export class User extends BaseTableEntity {
   email: string;
 
   @Column({
+    length: 20,
+  })
+  name: string;
+
+  @Column({
     unique: true,
     length: 50,
+    nullable: true,
   })
   nickname: string;
 
@@ -41,18 +47,21 @@ export class User extends BaseTableEntity {
   @Column({
     type: 'date',
     name: 'birth_date',
+    nullable: true,
   })
   birthDate: string;
 
   @Column({
     type: 'enum',
     enum: UserGender,
+    nullable: true,
   })
   gender: UserGender;
 
   @Column({
     length: 100,
     name: 'school_info',
+    nullable: true,
   })
   schoolInfo: string;
 
