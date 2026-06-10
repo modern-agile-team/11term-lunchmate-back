@@ -4,9 +4,9 @@ export enum UserRole {
 }
 
 export enum AuthProvider {
-  LOCAL = 'LOCAL',
-  GOOGLE = 'GOOGLE',
-  KAKAO = 'KAKAO',
+  local = 'local',
+  google = 'google',
+  kakao = 'kakao',
 }
 
 export enum UserGender {
@@ -32,3 +32,18 @@ export enum Mbti {
   ESTP = 'ESTP',
   ESFP = 'ESFP',
 }
+
+export enum RegisterStatus {
+  SOCIAL_PENDING = 'SOCIAL_PENDING',
+  COMPLETE = 'COMPLETE',
+}
+
+export type CreateSocialUserProps = {
+  email: string;
+  nickname: string;
+  provider: AuthProvider;
+  providerId: string;
+  providerAccessToken: string;
+  providerRefreshToken: string;
+  registerStatus: RegisterStatus;
+};
