@@ -30,6 +30,7 @@ describe('MealMenusService', () => {
     | 'createMealMenuComponentMapping'
     | 'deleteComponentMappingByMealMenuId'
     | 'updateMealMenu'
+    | 'deleteMealMenu'
     | 'findById'
   >;
   let components: Component[];
@@ -102,6 +103,11 @@ describe('MealMenusService', () => {
         Object.assign(mealMenu, props);
 
         return { affected: 1 } as never;
+      }),
+
+      deleteMealMenu: jest.fn(async (mealMenuId: number) => {
+        mealMenus = mealMenus.filter((mealMenu) => mealMenu.id !== mealMenuId);
+        mappings = mappings.filter((mapping) => mapping.mealMenuId !== mealMenuId);
       }),
 
       findById: jest.fn(async (mealMenuId: number) => {
@@ -268,6 +274,35 @@ describe('MealMenusService', () => {
       };
 
       await expect(mealMenusService.updateMealMenu(999, input)).rejects.toThrow(
+        'Meal menu not found.',
+      );
+    });
+  });
+
+  describe('deleteMealMenu', () => {
+    it('학식을 삭제한다', async () => {
+      mealMenus.push({
+        id: 1,
+        schoolInfo: '인덕대학교',
+        mealType: MealType.LUNCH,
+        menuName: '삭제할식단',
+        price: 5000,
+        calorie: 650,
+        likeCount: 0,
+        dislikeCount: 0,
+      });
+      components.push({ id: 1, name: '백미밥' });
+      mappings.push({ mealMenuId: 1, componentId: 1 });
+
+      await mealMenusService.deleteMealMenu(1);
+
+      await expect(mealMenusService.findMealMenuById(1)).rejects.toThrow(
+        'Meal menu not found.',
+      );
+    });
+
+    it('존재하지 않는 학식이면 예외를 던진다', async () => {
+      await expect(mealMenusService.deleteMealMenu(999)).rejects.toThrow(
         'Meal menu not found.',
       );
     });

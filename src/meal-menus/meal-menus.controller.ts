@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -18,6 +19,7 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -141,6 +143,20 @@ export class MealMenusController {
     );
 
     return this.toDetailResponse(updatedMealMenu);
+  }
+
+  @Delete(':mealMenuId')
+  @HttpCode(204)
+  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '학식 삭제' })
+  @ApiNoContentResponse({ description: '학식 삭제 성공, 응답 본문은 반환되지 않음' })
+  @ApiNotFoundResponse({ description: '존재하지 않는 학식을 삭제하려는 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  @ApiForbiddenResponse({ description: '관리자 권한이 없는 사용자가 요청한 경우' })
+  async deleteMealMenu(@Param('mealMenuId', ParseIntPipe) mealMenuId: number): Promise<void> {
+    return await this.mealMenusService.deleteMealMenu(mealMenuId);
   }
 
   private toListResponse(mealMenus: MealMenu[]): MealMenuListResponseDto {

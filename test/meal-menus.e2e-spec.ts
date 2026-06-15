@@ -340,6 +340,100 @@ describe('Meal Menus (e2e)', () => {
     });
   });
 
+  describe('Delete', () => {
+    it('ADMIN 사용자는 학식을 삭제할 수 있다', async () => {
+      const accessToken = await signupAndGetAdminAccessToken(
+        'delete-admin@example.com',
+        'delete-admin',
+      );
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/meal-menus')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          schoolInfo: '인덕대학교 학생식당',
+          mealType: MealType.LUNCH,
+          menuName: '제육덮밥',
+          price: 5000,
+          calorie: 550,
+          components: '밥 미역국 제육볶음 배추김치',
+        });
+
+      const mappingCountBeforeDelete = await dataSource
+        .getRepository(MealMenuComponentMapping)
+        .count({
+          where: {
+            mealMenu: { id: createResponse.body.id },
+          },
+        });
+
+      const response = await request(app.getHttpServer())
+        .delete(`/meal-menus/${createResponse.body.id}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      const detailResponse = await request(app.getHttpServer()).get(
+        `/meal-menus/${createResponse.body.id}`,
+      );
+      const mappingCountAfterDelete = await dataSource
+        .getRepository(MealMenuComponentMapping)
+        .count({
+          where: {
+            mealMenu: { id: createResponse.body.id },
+          },
+        });
+
+      expect(mappingCountBeforeDelete).toBe(4);
+      expect(response.status).toBe(204);
+      expect(response.body).toEqual({});
+      expect(detailResponse.status).toBe(404);
+      expect(mappingCountAfterDelete).toBe(0);
+    });
+
+    it('인증 없이 학식 삭제 요청 시 401', async () => {
+      const response = await request(app.getHttpServer()).delete('/meal-menus/1');
+
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toEqual({
+        statusCode: 401,
+        message: 'Unauthorized',
+      });
+    });
+
+    it('USER 사용자가 학식 삭제 요청 시 403', async () => {
+      const accessToken = await signupAndGetAccessToken('delete-user@example.com', 'delete-user');
+
+      const response = await request(app.getHttpServer())
+        .delete('/meal-menus/1')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toEqual({
+        statusCode: 403,
+        message: AUTH_ERROR_MESSAGES.accessDenied,
+      });
+    });
+
+    it('존재하지 않는 학식 삭제 요청 시 404', async () => {
+      const accessToken = await signupAndGetAdminAccessToken(
+        'missing-delete-admin@example.com',
+        'missing-delete-admin',
+      );
+
+      const response = await request(app.getHttpServer())
+        .delete('/meal-menus/999999')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toEqual({
+        statusCode: 404,
+        message: 'Meal menu not found.',
+      });
+    });
+  });
+
   describe('List', () => {
     it('학식 목록 조회 성공', async () => {
       const mealMenu = await createMealMenu({
