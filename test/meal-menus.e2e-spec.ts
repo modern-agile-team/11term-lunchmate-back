@@ -161,6 +161,185 @@ describe('Meal Menus (e2e)', () => {
     });
   });
 
+  describe('Update', () => {
+    it('ADMIN 사용자는 학식을 수정할 수 있다', async () => {
+      const accessToken = await signupAndGetAdminAccessToken(
+        'update-admin@example.com',
+        'update-admin',
+      );
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/meal-menus')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          schoolInfo: '인덕대학교 학생식당',
+          mealType: MealType.LUNCH,
+          menuName: '제육덮밥',
+          price: 5000,
+          calorie: 550,
+          components: '밥 미역국 제육볶음 배추김치',
+        });
+
+      const input = {
+        mealType: MealType.DINNER,
+        menuName: '돈까스정식',
+        price: 6500,
+        calorie: 880,
+        components: '밥 우동 돈까스 깍두기',
+      };
+
+      const response = await request(app.getHttpServer())
+        .patch(`/meal-menus/${createResponse.body.id}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(input);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        id: createResponse.body.id,
+        mealType: MealType.DINNER,
+        menuName: '돈까스정식',
+        price: 6500,
+        calorie: 880,
+        likeCount: 0,
+        dislikeCount: 0,
+        components: ['밥', '우동', '돈까스', '깍두기'],
+      });
+    });
+
+    it('components 없이 수정하면 기존 구성 요소를 유지한다', async () => {
+      const accessToken = await signupAndGetAdminAccessToken(
+        'partial-update-admin@example.com',
+        'partial-update-admin',
+      );
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/meal-menus')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          schoolInfo: '인덕대학교 학생식당',
+          mealType: MealType.LUNCH,
+          menuName: '제육덮밥',
+          price: 5000,
+          calorie: 550,
+          components: '밥 미역국 제육볶음 배추김치',
+        });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/meal-menus/${createResponse.body.id}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          menuName: '제육정식',
+          price: 6000,
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        id: createResponse.body.id,
+        mealType: MealType.LUNCH,
+        menuName: '제육정식',
+        price: 6000,
+        calorie: 550,
+        likeCount: 0,
+        dislikeCount: 0,
+        components: ['밥', '미역국', '제육볶음', '배추김치'],
+      });
+    });
+
+    it('인증 없이 학식 수정 요청 시 401', async () => {
+      const response = await request(app.getHttpServer()).patch('/meal-menus/1').send({
+        menuName: '돈까스정식',
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toEqual({
+        statusCode: 401,
+        message: 'Unauthorized',
+      });
+    });
+
+    it('USER 사용자가 학식 수정 요청 시 403', async () => {
+      const accessToken = await signupAndGetAccessToken('update-user@example.com', 'update-user');
+
+      const response = await request(app.getHttpServer())
+        .patch('/meal-menus/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          menuName: '돈까스정식',
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toEqual({
+        statusCode: 403,
+        message: AUTH_ERROR_MESSAGES.accessDenied,
+      });
+    });
+
+    it('존재하지 않는 학식 수정 요청 시 404', async () => {
+      const accessToken = await signupAndGetAdminAccessToken(
+        'missing-update-admin@example.com',
+        'missing-update-admin',
+      );
+
+      const response = await request(app.getHttpServer())
+        .patch('/meal-menus/999999')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          menuName: '돈까스정식',
+        });
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toEqual({
+        statusCode: 404,
+        message: 'Meal menu not found.',
+      });
+    });
+
+    it('빈 body로 학식 수정 요청 시 400', async () => {
+      const accessToken = await signupAndGetAdminAccessToken(
+        'empty-update-admin@example.com',
+        'empty-update-admin',
+      );
+
+      const response = await request(app.getHttpServer())
+        .patch('/meal-menus/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toEqual({
+        statusCode: 400,
+        message: '수정할 값이 없습니다.',
+      });
+    });
+
+    it('잘못된 mealType으로 학식 수정 요청 시 400', async () => {
+      const accessToken = await signupAndGetAdminAccessToken(
+        'invalid-update-admin@example.com',
+        'invalid-update-admin',
+      );
+
+      const response = await request(app.getHttpServer())
+        .patch('/meal-menus/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          mealType: 'INVALID',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toEqual({
+        statusCode: 400,
+        message: [
+          'mealType must be one of the following values: BREAKFAST, LUNCH, DINNER, ALL',
+        ],
+      });
+    });
+  });
+
   describe('List', () => {
     it('학식 목록 조회 성공', async () => {
       const mealMenu = await createMealMenu({

@@ -2,7 +2,7 @@ import { DataSource, EntityManager, InsertResult } from 'typeorm';
 import { MealType } from './entities/meal-menu.entity';
 import { MealMenuRepository } from './meal-menus.repository';
 import { MealMenusService } from './meal-menus.service';
-import { CreateMealMenuProps } from './types/meal-menu.type';
+import { CreateMealMenuProps, UpdateMealMenuProps } from './types/meal-menu.type';
 
 type Component = {
   id: number;
@@ -28,6 +28,8 @@ describe('MealMenusService', () => {
     | 'findExistingComponentsByName'
     | 'createMealMenuComponent'
     | 'createMealMenuComponentMapping'
+    | 'deleteComponentMappingByMealMenuId'
+    | 'updateMealMenu'
     | 'findById'
   >;
   let components: Component[];
@@ -36,7 +38,7 @@ describe('MealMenusService', () => {
 
   const manager = {} as EntityManager;
   const dataSource = {
-    transaction: async (callback: (manager: EntityManager) => Promise<number>) => callback(manager),
+    transaction: async <T>(callback: (manager: EntityManager) => Promise<T>) => callback(manager),
   } as DataSource;
 
   beforeEach(() => {
@@ -87,6 +89,20 @@ describe('MealMenusService', () => {
           );
         },
       ),
+
+      deleteComponentMappingByMealMenuId: jest.fn(async (mealMenuId: number) => {
+        mappings = mappings.filter((mapping) => mapping.mealMenuId !== mealMenuId);
+      }),
+
+      updateMealMenu: jest.fn(async (mealMenuId: number, props: UpdateMealMenuProps) => {
+        const mealMenu = mealMenus.find((item) => item.id === mealMenuId);
+
+        if (!mealMenu) return { affected: 0 } as never;
+
+        Object.assign(mealMenu, props);
+
+        return { affected: 1 } as never;
+      }),
 
       findById: jest.fn(async (mealMenuId: number) => {
         const mealMenu = mealMenus.find((item) => item.id === mealMenuId);
@@ -164,6 +180,96 @@ describe('MealMenusService', () => {
           { mealMenuComponent: { id: 1, name: '포기김치' } },
         ],
       });
+    });
+  });
+
+  describe('updateMealMenu', () => {
+    it('학식 기본 정보와 구성 요소를 수정한다', async () => {
+      mealMenus.push({
+        id: 1,
+        schoolInfo: '인덕대학교',
+        mealType: MealType.LUNCH,
+        menuName: '기존식단',
+        price: 5000,
+        calorie: 650,
+        likeCount: 2,
+        dislikeCount: 1,
+      });
+      components.push(
+        { id: 1, name: '백미밥' },
+        { id: 2, name: '포기김치' },
+      );
+      mappings.push(
+        { mealMenuId: 1, componentId: 1 },
+        { mealMenuId: 1, componentId: 2 },
+      );
+
+      const input = {
+        mealType: MealType.DINNER,
+        menuName: '수정식단',
+        price: 6500,
+        calorie: 900,
+        components: '흑미밥 포기김치 된장국',
+      };
+
+      const result = await mealMenusService.updateMealMenu(1, input);
+
+      expect(result).toMatchObject({
+        id: 1,
+        schoolInfo: '인덕대학교',
+        mealType: MealType.DINNER,
+        menuName: '수정식단',
+        price: 6500,
+        calorie: 900,
+        likeCount: 2,
+        dislikeCount: 1,
+        mealMenuComponentMappings: [
+          { mealMenuComponent: { id: 3, name: '흑미밥' } },
+          { mealMenuComponent: { id: 2, name: '포기김치' } },
+          { mealMenuComponent: { id: 4, name: '된장국' } },
+        ],
+      });
+    });
+
+    it('구성 요소가 없으면 학식 기본 정보만 수정한다', async () => {
+      mealMenus.push({
+        id: 1,
+        schoolInfo: '인덕대학교',
+        mealType: MealType.LUNCH,
+        menuName: '기존식단',
+        price: 5000,
+        calorie: 650,
+        likeCount: 0,
+        dislikeCount: 0,
+      });
+      components.push({ id: 1, name: '백미밥' });
+      mappings.push({ mealMenuId: 1, componentId: 1 });
+
+      const input = {
+        menuName: '이름만수정',
+        price: 5500,
+      };
+
+      const result = await mealMenusService.updateMealMenu(1, input);
+
+      expect(result).toMatchObject({
+        id: 1,
+        mealType: MealType.LUNCH,
+        menuName: '이름만수정',
+        price: 5500,
+        calorie: 650,
+        mealMenuComponentMappings: [{ mealMenuComponent: { id: 1, name: '백미밥' } }],
+      });
+    });
+
+    it('존재하지 않는 학식이면 예외를 던진다', async () => {
+      const input = {
+        menuName: '수정식단',
+      };
+
+      await expect(mealMenusService.updateMealMenu(999, input)).rejects.toThrow(
+        'Meal menu not found.',
+      );
     });
   });
 });
