@@ -18,6 +18,7 @@ import { Comment } from '../src/comments/entities/comment.entity';
 import { Friend } from '../src/friends/entities/friend.entity';
 import { MealMenuModule } from '../src/meal-menus/meal-menus.module';
 import { FriendModule } from '../src/friends/friends.module';
+import { MealMenuComponent } from '../src/meal-menus/entities/meal-menu-component.entity';
 import { MealMenuReaction } from '../src/meal-menus/entities/meal-menu-reaction.entity';
 import { MealMenu } from '../src/meal-menus/entities/meal-menu.entity';
 import { PostCategory } from '../src/post-categories/entities/post-category.entity';
@@ -29,6 +30,7 @@ import { Room } from '../src/rooms/entities/room.entity';
 import { RoomModule } from '../src/rooms/rooms.module';
 import { User } from '../src/users/entities/user.entity';
 import { UserModule } from '../src/users/users.module';
+import { MealMenuComponentMapping } from 'src/meal-menus/entities/meal-menu-component-mapping.entity';
 
 const TEST_ENTITIES = [
   User,
@@ -41,6 +43,8 @@ const TEST_ENTITIES = [
   Comment,
   CommentLike,
   MealMenu,
+  MealMenuComponent,
+  MealMenuComponentMapping,
   MealMenuReaction,
 ];
 

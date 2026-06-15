@@ -1,17 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  In,
+  InsertResult,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { MealMenu, MealType } from './entities/meal-menu.entity';
 import { ActionType, MealMenuReaction } from './entities/meal-menu-reaction.entity';
 import { User } from '../users/entities/user.entity';
+import { CreateMealMenuProps } from './types/meal-menu.type';
+import { MealMenuComponent } from './entities/meal-menu-component.entity';
+import { MealMenuComponentMapping } from './entities/meal-menu-component-mapping.entity';
 
 export interface FindMealMenusParams {
-  mealDate?: string;
   mealType?: MealType;
 }
 
 export interface FindMealMenuRankingsParams {
-  mealDate?: string;
   mealType?: MealType;
   actionType: ActionType;
 }
@@ -23,8 +31,18 @@ export class MealMenuRepository {
     private readonly mealMenuRepository: Repository<MealMenu>,
     @InjectRepository(MealMenuReaction)
     private readonly mealMenuReactionRepository: Repository<MealMenuReaction>,
+    @InjectRepository(MealMenuComponent)
+    private readonly mealMenuComponentRepository: Repository<MealMenuComponent>,
+
     private readonly dataSource: DataSource,
   ) {}
+
+  async createMealMenu(
+    newMealMenuProps: CreateMealMenuProps,
+    manager: EntityManager,
+  ): Promise<MealMenu> {
+    return await manager.save(MealMenu, newMealMenuProps);
+  }
 
   async findMany(params: FindMealMenusParams): Promise<MealMenu[]> {
     const query = this.applyReadFilters(
@@ -32,7 +50,7 @@ export class MealMenuRepository {
       params,
     );
 
-    query.orderBy('mealMenu.meal_date', 'DESC').addOrderBy('mealMenu.id', 'DESC');
+    query.orderBy('mealMenu.id', 'DESC');
 
     return query.getMany();
   }
@@ -40,7 +58,14 @@ export class MealMenuRepository {
   async findById(mealMenuId: number): Promise<MealMenu | null> {
     // Single-record lookups stay on repository helpers unless they need joins or
     // more complex query composition.
-    return this.mealMenuRepository.findOneBy({ id: mealMenuId });
+    return this.mealMenuRepository.findOne({
+      where: { id: mealMenuId },
+      relations: {
+        mealMenuComponentMappings: {
+          mealMenuComponent: true,
+        },
+      },
+    });
   }
 
   async findRankings(params: FindMealMenuRankingsParams): Promise<MealMenu[]> {
@@ -116,6 +141,50 @@ export class MealMenuRepository {
     });
   }
 
+  async createMealMenuComponent(
+    components: { name: string }[],
+    manager: EntityManager,
+  ): Promise<InsertResult> {
+    return await manager
+      .createQueryBuilder(MealMenuComponent, 'meal_menu_components')
+      .insert()
+      .into(MealMenuComponent)
+      .values(components)
+      .returning(['id'])
+      .execute();
+  }
+
+  async findExistingComponentsByName(
+    names: string[],
+    manager: EntityManager,
+  ): Promise<MealMenuComponent[]> {
+    return await manager.find(MealMenuComponent, {
+      where: {
+        name: In(names),
+      },
+    });
+  }
+
+  async createMealMenuComponentMapping(
+    mealMenuId: number,
+    componentIds: number[],
+    manager: EntityManager,
+  ): Promise<void> {
+    if (!componentIds.length) return;
+
+    await manager
+      .createQueryBuilder()
+      .insert()
+      .into(MealMenuComponentMapping)
+      .values(
+        componentIds.map((componentId) => ({
+          mealMenu: { id: mealMenuId },
+          mealMenuComponent: { id: componentId },
+        })),
+      )
+      .execute();
+  }
+
   private async persistReaction(
     repository: Repository<MealMenuReaction>,
     existingReaction: MealMenuReaction | null,
@@ -170,10 +239,6 @@ export class MealMenuRepository {
     query: SelectQueryBuilder<MealMenu>,
     params: FindMealMenusParams | FindMealMenuRankingsParams,
   ): SelectQueryBuilder<MealMenu> {
-    if (params.mealDate) {
-      query.andWhere('mealMenu.meal_date = :mealDate', { mealDate: params.mealDate });
-    }
-
     if (params.mealType && params.mealType !== MealType.ALL) {
       query.andWhere('mealMenu.meal_type = :mealType', { mealType: params.mealType });
     }

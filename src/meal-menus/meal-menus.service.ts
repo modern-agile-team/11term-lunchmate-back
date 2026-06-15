@@ -1,24 +1,50 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { GetMealMenuListQueryDto } from './dto/get-meal-menu-list-query.dto';
 import { GetMealMenuRankingQueryDto } from './dto/get-meal-menu-ranking-query.dto';
 import { ActionType } from './entities/meal-menu-reaction.entity';
 import { MealMenu } from './entities/meal-menu.entity';
 import { MealMenuRepository } from './meal-menus.repository';
+import { CreateMealMenuDto } from './dto/create-meal-menu.dto';
+import { DataSource, EntityManager } from 'typeorm';
+import { CreateMealMenuProps } from './types/meal-menu.type';
 
 @Injectable()
 export class MealMenusService {
-  constructor(private readonly mealMenuRepository: MealMenuRepository) {}
+  constructor(
+    private readonly mealMenuRepository: MealMenuRepository,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  async createMealMenu(createMealMenuDto: CreateMealMenuDto): Promise<MealMenu> {
+    const { mealMenuProps, componentNames } = this.buildMealMenuProps(createMealMenuDto);
+
+    const mealMenuId = await this.dataSource.transaction(async (manager) => {
+      const newMealMenu = await this.mealMenuRepository.createMealMenu(mealMenuProps, manager);
+
+      const mealMenuId = newMealMenu.id;
+
+      const componentIds = await this.findOrCreateComponentIds(componentNames, manager);
+
+      await this.mealMenuRepository.createMealMenuComponentMapping(
+        mealMenuId,
+        componentIds,
+        manager,
+      );
+
+      return mealMenuId;
+    });
+
+    return this.findMealMenuById(mealMenuId);
+  }
 
   async findMealMenus(query: GetMealMenuListQueryDto): Promise<MealMenu[]> {
     return this.mealMenuRepository.findMany({
-      mealDate: query.mealDate,
       mealType: query.mealType,
     });
   }
 
   async findMealMenuRankings(query: GetMealMenuRankingQueryDto): Promise<MealMenu[]> {
     return this.mealMenuRepository.findRankings({
-      mealDate: query.mealDate,
       mealType: query.mealType,
       actionType: query.actionType,
     });
@@ -56,5 +82,57 @@ export class MealMenusService {
     }
 
     return mealMenu;
+  }
+
+  private buildMealMenuProps(createMealMenuDto: CreateMealMenuDto): {
+    mealMenuProps: CreateMealMenuProps;
+    componentNames: string[];
+  } {
+    const { components, ...mealMenuProps } = createMealMenuDto;
+
+    const componentNames = components.split(' ').filter(Boolean);
+
+    return { mealMenuProps, componentNames };
+  }
+
+  private async findOrCreateComponentIds(
+    componentNames: string[],
+    manager: EntityManager,
+  ): Promise<number[]> {
+    const uniqueComponents = [
+      ...new Set(componentNames.map((component) => component.trim()).filter(Boolean)),
+    ];
+
+    const existingComponents = await this.mealMenuRepository.findExistingComponentsByName(
+      uniqueComponents,
+      manager,
+    );
+
+    const existingComponentSet = new Set(existingComponents.map((component) => component.name));
+
+    const nonExistentComponentNames = uniqueComponents
+      .filter((componentName) => !existingComponentSet.has(componentName))
+      .map((componentName) => ({
+        name: componentName,
+      }));
+
+    if (nonExistentComponentNames.length > 0) {
+      const insertResult = await this.mealMenuRepository.createMealMenuComponent(
+        nonExistentComponentNames,
+        manager,
+      );
+
+      if (insertResult.identifiers.length !== nonExistentComponentNames.length)
+        throw new InternalServerErrorException('일부 데이터가 삽입되지 않았습니다.');
+    }
+
+    const components = await this.mealMenuRepository.findExistingComponentsByName(
+      uniqueComponents,
+      manager,
+    );
+
+    const componentsMap = new Map(components.map((component) => [component.name, component.id]));
+
+    return uniqueComponents.map((componentName) => componentsMap.get(componentName) as number);
   }
 }

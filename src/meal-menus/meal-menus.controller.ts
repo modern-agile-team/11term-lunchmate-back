@@ -1,4 +1,6 @@
+import { JwtAuthGuard } from './../auth/guards/jwt-auth.guard';
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -7,8 +9,18 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -21,11 +33,32 @@ import { MealMenuReactionResponseDto } from './dto/meal-menu-reaction-response.d
 import { ActionType } from './entities/meal-menu-reaction.entity';
 import { MealMenu } from './entities/meal-menu.entity';
 import { MealMenusService } from './meal-menus.service';
+import { Roles } from 'src/auth/decorators/role.decorator';
+import { UserRole } from 'src/users/entities/user.entity';
+import { RolesGuard } from 'src/auth/guards/role.guard';
+import { CreateMealMenuDto } from './dto/create-meal-menu.dto';
 
 @ApiTags('MealMenu')
 @Controller('meal-menus')
 export class MealMenusController {
   constructor(private readonly mealMenusService: MealMenusService) {}
+
+  @Post()
+  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '학식 추가' })
+  @ApiCreatedResponse({ type: MealMenuDetailResponseDto, description: '학식 추가 성공' })
+  @ApiBadRequestResponse({ description: '학식 추가 요청 값이 올바르지 않은 경우' })
+  @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
+  @ApiForbiddenResponse({ description: '관리자 권한이 없는 사용자가 요청한 경우' })
+  async createMealMenu(
+    @Body() createMealMenuDto: CreateMealMenuDto,
+  ): Promise<MealMenuDetailResponseDto> {
+    const newMealMenu = await this.mealMenusService.createMealMenu(createMealMenuDto);
+
+    return this.toDetailResponse(newMealMenu);
+  }
 
   @Get()
   @ApiOperation({ summary: '학식 목록 조회' })
@@ -90,7 +123,6 @@ export class MealMenusController {
   private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
     return {
       id: mealMenu.id,
-      mealDate: this.formatMealDate(mealMenu.mealDate),
       mealType: mealMenu.mealType,
       menuName: mealMenu.menuName,
       price: mealMenu.price ?? null,
@@ -103,13 +135,15 @@ export class MealMenusController {
   private toDetailResponse(mealMenu: MealMenu): MealMenuDetailResponseDto {
     return {
       id: mealMenu.id,
-      mealDate: this.formatMealDate(mealMenu.mealDate),
       mealType: mealMenu.mealType,
       menuName: mealMenu.menuName,
       price: mealMenu.price ?? null,
       calorie: mealMenu.calorie ?? null,
       likeCount: mealMenu.likeCount,
       dislikeCount: mealMenu.dislikeCount,
+      components: mealMenu.mealMenuComponentMappings.map(
+        (mapping) => mapping.mealMenuComponent.name,
+      ),
     };
   }
 
@@ -122,13 +156,5 @@ export class MealMenusController {
       likeCount: mealMenu.likeCount,
       dislikeCount: mealMenu.dislikeCount,
     };
-  }
-
-  private formatMealDate(mealDate: Date | string): string {
-    if (mealDate instanceof Date) {
-      return mealDate.toISOString().slice(0, 10);
-    }
-
-    return String(mealDate);
   }
 }

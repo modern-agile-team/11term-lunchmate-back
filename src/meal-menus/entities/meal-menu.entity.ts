@@ -1,6 +1,7 @@
 import { MealMenuReaction } from './meal-menu-reaction.entity';
 import { BaseTableEntity } from '../../commons/entities/base.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { MealMenuComponentMapping } from './meal-menu-component-mapping.entity';
 
 export enum MealType {
   BREAKFAST = 'BREAKFAST',
@@ -19,12 +20,6 @@ export class MealMenu extends BaseTableEntity {
     name: 'school_info',
   })
   schoolInfo: string;
-
-  @Column({
-    type: 'date',
-    name: 'meal_date',
-  })
-  mealDate: Date;
 
   @Column({
     type: 'enum',
@@ -63,4 +58,10 @@ export class MealMenu extends BaseTableEntity {
 
   @OneToMany(() => MealMenuReaction, (MealMenuReaction) => MealMenuReaction.mealMenu)
   reactions: MealMenuReaction[];
+
+  @OneToMany(
+    () => MealMenuComponentMapping,
+    (mealMenuComponentMapping) => mealMenuComponentMapping.mealMenu,
+  )
+  mealMenuComponentMappings: MealMenuComponentMapping[];
 }
