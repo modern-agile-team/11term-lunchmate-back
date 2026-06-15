@@ -1,4 +1,3 @@
-import { RegisterStatus } from './../types/user.type';
 import { CommentLike } from '../../comments/entities/comment-like.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 import { BaseTableEntity } from '../../commons/entities/base.entity';
@@ -101,9 +100,6 @@ export class User extends BaseTableEntity {
 
   @Column({ nullable: true })
   providerRefreshToken: string;
-
-  @Column({ type: 'enum', enum: RegisterStatus, default: RegisterStatus.COMPLETE })
-  registerStatus: RegisterStatus;
 
   @Column({
     type: 'integer',
