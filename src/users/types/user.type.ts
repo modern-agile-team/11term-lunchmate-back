@@ -33,17 +33,17 @@ export enum Mbti {
   ESFP = 'ESFP',
 }
 
-export enum RegisterStatus {
-  SOCIAL_PENDING = 'SOCIAL_PENDING',
-  COMPLETE = 'COMPLETE',
-}
-
 export type CreateSocialUserProps = {
   email: string;
+  name: string;
   nickname: string;
+  birthDate: string;
+  gender: UserGender;
+  schoolInfo?: string;
+  introduce?: string;
+  mbti?: Mbti;
   provider: AuthProvider;
   providerId: string;
-  providerAccessToken: string;
-  providerRefreshToken: string;
-  registerStatus: RegisterStatus;
+  providerAccessToken?: string;
+  providerRefreshToken?: string;
 };

@@ -1,4 +1,4 @@
-import { UserRole } from 'src/users/entities/user.entity';
+import { AuthProvider, UserRole } from 'src/users/types/user.type';
 
 export interface JwtAccessPayload {
   sub: number;
@@ -18,6 +18,14 @@ export interface JwtRefreshPayload {
   tokenVersion: number;
   tokenId: string;
   type: 'refresh';
+}
+
+export interface JwtRegisterPayload {
+  type: 'social_register';
+  email: string;
+  name: string;
+  provider: AuthProvider;
+  providerId: string;
 }
 
 export interface AuthenticatedUser {

@@ -4,12 +4,18 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../users/users.service';
-import { User, UserRole } from '../users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { AUTH_ERROR_MESSAGES, JWT_DEFAULTS } from './auth.constants';
 import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignupDto } from './dto/signup.dto';
-import { JwtAccessPayload, JwtRefreshPayload } from './interfaces/jwt-payload.interface';
+import {
+  JwtAccessPayload,
+  JwtRefreshPayload,
+  JwtRegisterPayload,
+} from './interfaces/jwt-payload.interface';
+import { SocialLoginResult, SocialUserProps } from './types/social-user.type';
+import { AuthProvider, UserRole } from 'src/users/types/user.type';
+import { SocialRegisterDto } from './dto/social-register.dto';
 
 export type AuthTokensResult = {
   accessToken: string;
@@ -35,6 +41,7 @@ export class AuthService {
       email: signupDto.email,
       birthDate: signupDto.birthDate,
       gender: signupDto.gender,
+      name: signupDto.name,
       nickname: signupDto.nickname,
       hashedPassword,
       schoolInfo: signupDto.schoolInfo,
@@ -72,8 +79,8 @@ export class AuthService {
     };
   }
 
-  async refresh(refreshTokenDto: RefreshTokenDto): Promise<AuthTokensResult> {
-    const payload = await this.verifyRefreshToken(refreshTokenDto.refreshToken);
+  async refresh(refreshToken: string): Promise<AuthTokensResult> {
+    const payload = await this.verifyRefreshToken(refreshToken);
     const user = await this.userService.findByIdForRefresh(payload.sub);
 
     if (!user?.refreshTokenHash) {
@@ -85,7 +92,7 @@ export class AuthService {
     }
 
     const isRefreshTokenValid = await bcrypt.compare(
-      this.createRefreshTokenFingerprint(refreshTokenDto.refreshToken),
+      this.createRefreshTokenFingerprint(refreshToken),
       user.refreshTokenHash,
     );
 
@@ -139,6 +146,74 @@ export class AuthService {
     }
   }
 
+  async handleSocialLogin(
+    provider: AuthProvider,
+    socialUserProps: SocialUserProps,
+  ): Promise<SocialLoginResult> {
+    const existingUser = await this.userService.findByProviderId(
+      provider,
+      socialUserProps.providerId,
+    );
+
+    if (existingUser) {
+      if (socialUserProps.refreshToken) {
+        await this.userService.updateProviderToken(
+          existingUser.id,
+          socialUserProps.accessToken,
+          socialUserProps.refreshToken,
+        );
+      }
+
+      const tokens = await this.issueTokens(
+        existingUser.id,
+        existingUser.email,
+        existingUser.nickname,
+        existingUser.role,
+        existingUser.tokenVersion,
+      );
+
+      return { isNewUser: false, authResult: { user: existingUser, ...tokens } };
+    }
+
+    return {
+      isNewUser: true,
+      registerToken: this.issueRegisterToken(socialUserProps, provider),
+    };
+  }
+
+  async registerSocialUser(
+    registerPayload: JwtRegisterPayload,
+    socialRegisterDto: SocialRegisterDto,
+  ): Promise<AuthResult> {
+    await Promise.all([
+      this.userService.assertEmailAvailable(registerPayload.email),
+      this.userService.assertNicknameAvailable(socialRegisterDto.nickname),
+    ]);
+
+    const user = await this.userService.createSocialUser({
+      email: registerPayload.email,
+      name: registerPayload.name,
+      provider: registerPayload.provider,
+      providerId: registerPayload.providerId,
+      nickname: socialRegisterDto.nickname,
+      birthDate: socialRegisterDto.birthDate,
+      gender: socialRegisterDto.gender,
+      schoolInfo: socialRegisterDto.schoolInfo,
+      introduce: socialRegisterDto.introduce,
+      mbti: socialRegisterDto.mbti,
+    });
+
+    const tokens = await this.issueTokens(
+      user.id,
+      user.email,
+      user.nickname,
+      user.role,
+      user.tokenVersion ?? 0,
+    );
+
+    return { user, ...tokens };
+  }
+
   private async issueTokens(
     userId: number,
     email: string,
@@ -157,6 +232,25 @@ export class AuthService {
     await this.userService.updateRefreshTokenHash(userId, refreshTokenHash);
 
     return tokens;
+  }
+
+  private issueRegisterToken(socialUserProps: SocialUserProps, provider: AuthProvider): string {
+    return this.jwtService.sign(
+      {
+        type: 'social_register',
+        email: socialUserProps.email,
+        name: socialUserProps.name,
+        provider,
+        providerId: socialUserProps.providerId,
+      },
+      {
+        secret: this.configService.get<string>('JWT_REGISTER_SECRET', JWT_DEFAULTS.registerSecret),
+        expiresIn: this.configService.get<string>(
+          'JWT_REGISTER_EXPIRES_IN',
+          JWT_DEFAULTS.registerExpiresIn,
+        ) as never,
+      },
+    );
   }
 
   private async issueTokensWithoutPersisting(
@@ -219,7 +313,7 @@ export class AuthService {
       throw new UnauthorizedException(AUTH_ERROR_MESSAGES.invalidCredentials);
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.hashedPassword);
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.hashedPassword as string);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException(AUTH_ERROR_MESSAGES.invalidCredentials);

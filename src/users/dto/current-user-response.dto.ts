@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Mbti, UserGender } from '../types/user.type';
 
 export class CurrentUserResponseDto {
   id: number;
@@ -7,15 +8,15 @@ export class CurrentUserResponseDto {
 
   birthDate: string;
 
-  @ApiProperty({ enum: ['MALE', 'FEMALE'] })
-  gender: 'MALE' | 'FEMALE';
+  @ApiProperty({ enum: UserGender })
+  gender: UserGender;
 
   schoolInfo: string;
 
-  @ApiProperty({ nullable: true })
+  @ApiProperty({ nullable: true, example: '오늘 점심 메이트 구해요.' })
   introduce: string | null;
 
-  @ApiProperty({ nullable: true })
+  @ApiProperty({ nullable: true, enum: Mbti, example: 'ENFP' })
   mbti: string | null;
 
   createdAt: string;
