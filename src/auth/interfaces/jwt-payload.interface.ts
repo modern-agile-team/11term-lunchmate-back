@@ -26,6 +26,9 @@ export interface JwtRegisterPayload {
   name: string;
   provider: AuthProvider;
   providerId: string;
+  nickname?: string | null;
+  gender?: string | null;
+  birthDate?: string | null;
 }
 
 export interface AuthenticatedUser {

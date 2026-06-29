@@ -40,6 +40,10 @@ export class UserService {
     }
   }
 
+  async existsByEmail(email: string): Promise<boolean> {
+    return await this.userRepository.existsByEmail(email);
+  }
+
   async assertNicknameAvailable(nickname: string, excludeUserId?: number): Promise<void> {
     const existingUser = excludeUserId
       ? await this.userRepository.existsByNicknameExcludingUser(nickname, excludeUserId)
