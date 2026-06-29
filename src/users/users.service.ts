@@ -3,6 +3,8 @@ import { User } from './entities/user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { USER_ERROR_MESSAGES } from './user.constants';
 import { UpdateMePatch, UserRepository } from './users.repository';
+import { AuthProvider, UserGender, Mbti, CreateSocialUserProps } from './types/user.type';
+import { UpdateResult } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -11,10 +13,12 @@ export class UserService {
   async findAllUsers(): Promise<User[]> {
     return this.userRepository.findAll();
   }
+
   async createUser(params: {
     email: string;
     birthDate: string;
     gender: 'MALE' | 'FEMALE';
+    name: string;
     nickname: string;
     hashedPassword: string;
     schoolInfo: string;
@@ -22,6 +26,10 @@ export class UserService {
     mbti: string | null;
   }): Promise<User> {
     return this.userRepository.createUser(params);
+  }
+
+  async createSocialUser(params: CreateSocialUserProps): Promise<User> {
+    return await this.userRepository.createSocialUser(params);
   }
 
   async assertEmailAvailable(email: string): Promise<void> {
@@ -115,6 +123,26 @@ export class UserService {
     await this.userRepository.softDelete(userId);
   }
 
+  async findByProviderId(provider: AuthProvider, providerId: string): Promise<User | null> {
+    return await this.userRepository.findByProviderId(provider, providerId);
+  }
+
+  async findByNickname(nickname: string): Promise<User | null> {
+    return await this.userRepository.findByNickname(nickname);
+  }
+
+  async updateProviderToken(
+    userId: number,
+    providerAccessToken: string,
+    providerRefreshToken: string,
+  ): Promise<UpdateResult> {
+    return await this.userRepository.updateProviderToken(
+      userId,
+      providerAccessToken,
+      providerRefreshToken,
+    );
+  }
+
   private toUpdateMePatch(user: User, updateMeDto: UpdateMeDto): UpdateMePatch {
     const patch: UpdateMePatch = {};
 
@@ -126,8 +154,11 @@ export class UserService {
       patch.birthDate = updateMeDto.birthDate;
     }
 
-    if (updateMeDto.gender !== undefined && updateMeDto.gender !== user.gender) {
-      patch.gender = updateMeDto.gender;
+    if (
+      updateMeDto.gender !== undefined &&
+      UserGender[updateMeDto.gender] !== UserGender[user.gender]
+    ) {
+      patch.gender = UserGender[updateMeDto.gender];
     }
 
     if (updateMeDto.schoolInfo !== undefined && updateMeDto.schoolInfo !== user.schoolInfo) {
@@ -139,7 +170,7 @@ export class UserService {
     }
 
     if (updateMeDto.mbti !== undefined && updateMeDto.mbti !== user.mbti) {
-      patch.mbti = updateMeDto.mbti;
+      patch.mbti = Mbti[updateMeDto.mbti as Mbti];
     }
 
     return patch;

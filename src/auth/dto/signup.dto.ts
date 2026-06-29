@@ -4,6 +4,7 @@ import {
   IsDateString,
   IsEmail,
   IsIn,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -28,6 +29,7 @@ export class SignupDto {
     example: '1999-01-01',
   })
   @IsDateString()
+  @IsNotEmpty()
   birthDate: string;
 
   @ApiProperty({
@@ -35,8 +37,19 @@ export class SignupDto {
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
+  @IsNotEmpty()
   @IsIn(['MALE', 'FEMALE'])
   gender: 'MALE' | 'FEMALE';
+
+  @ApiProperty({
+    example: '홍길동',
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(2)
+  @MaxLength(20)
+  @IsNotEmpty()
+  name: string;
 
   @ApiProperty({
     example: 'lunchmate',
@@ -45,6 +58,7 @@ export class SignupDto {
   @IsString()
   @MinLength(2)
   @MaxLength(50)
+  @IsNotEmpty()
   nickname: string;
 
   @ApiProperty({

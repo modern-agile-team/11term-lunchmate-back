@@ -39,10 +39,10 @@ import { ActionType } from './entities/meal-menu-reaction.entity';
 import { MealMenu } from './entities/meal-menu.entity';
 import { MealMenusService } from './meal-menus.service';
 import { Roles } from 'src/auth/decorators/role.decorator';
-import { UserRole } from 'src/users/entities/user.entity';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { CreateMealMenuDto } from './dto/create-meal-menu.dto';
 import { UpdateMealMenuDto } from './dto/update-meal-menu.dto';
+import { UserRole } from 'src/users/types/user.type';
 
 @ApiTags('MealMenu')
 @Controller('meal-menus')

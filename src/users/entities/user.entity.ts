@@ -8,11 +8,7 @@ import { Post } from '../../posts/entities/post.entity';
 import { RoomMember } from '../../rooms/entities/room-member.entity';
 import { Room } from '../../rooms/entities/room.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-}
+import { AuthProvider, Mbti, UserGender, UserRole } from '../types/user.type';
 
 @Entity('users')
 export class User extends BaseTableEntity {
@@ -33,29 +29,38 @@ export class User extends BaseTableEntity {
   email: string;
 
   @Column({
+    length: 20,
+  })
+  name: string;
+
+  @Column({
     unique: true,
     length: 50,
+    nullable: true,
   })
   nickname: string;
 
-  @Column({ name: 'hashed_password', select: false })
-  hashedPassword: string;
+  @Column({ type: 'varchar', name: 'hashed_password', nullable: true, select: false })
+  hashedPassword: string | null;
 
   @Column({
     type: 'date',
     name: 'birth_date',
+    nullable: true,
   })
   birthDate: string;
 
   @Column({
     type: 'enum',
-    enum: ['MALE', 'FEMALE'],
+    enum: UserGender,
+    nullable: true,
   })
-  gender: 'MALE' | 'FEMALE';
+  gender: UserGender;
 
   @Column({
     length: 100,
     name: 'school_info',
+    nullable: true,
   })
   schoolInfo: string;
 
@@ -66,11 +71,11 @@ export class User extends BaseTableEntity {
   introduce: string | null;
 
   @Column({
-    type: 'varchar',
+    type: 'enum',
+    enum: Mbti,
     nullable: true,
-    length: 4,
   })
-  mbti: string | null;
+  mbti: Mbti | null;
 
   @Column({
     type: 'varchar',
@@ -79,6 +84,22 @@ export class User extends BaseTableEntity {
     select: false,
   })
   refreshTokenHash: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: AuthProvider,
+    default: AuthProvider.local,
+  })
+  provider: AuthProvider;
+
+  @Column({ nullable: true })
+  providerId: string;
+
+  @Column({ nullable: true })
+  providerAccessToken: string;
+
+  @Column({ nullable: true })
+  providerRefreshToken: string;
 
   @Column({
     type: 'integer',

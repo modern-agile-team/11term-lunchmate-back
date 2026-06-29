@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { UserGender } from '../types/user.type';
 
 export class PublicUserResponseDto {
   id: number;
@@ -7,8 +8,8 @@ export class PublicUserResponseDto {
 
   birthDate: string;
 
-  @ApiProperty({ enum: ['MALE', 'FEMALE'] })
-  gender: 'MALE' | 'FEMALE';
+  @ApiProperty({ enum: UserGender })
+  gender: UserGender;
 
   schoolInfo: string;
 
