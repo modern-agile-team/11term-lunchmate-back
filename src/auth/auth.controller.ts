@@ -108,6 +108,57 @@ export class AuthController {
     return res.redirect(FRONT_URL);
   }
 
+  @Get('kakao')
+  @UseGuards(AuthGuard('kakao'))
+  @ApiOperation({
+    summary: '카카오 OAuth 로그인',
+    description: '카카오 로그인 페이지로 리다이렉트',
+  })
+  async kakaoAuth() {}
+
+  @Get('kakao/callback')
+  @UseGuards(AuthGuard('kakao'))
+  @ApiExcludeEndpoint()
+  async kakaoCallback(@Req() req: Request, @Res() res: Response) {
+    const FRONT_URL = this.configService.getOrThrow<string>('FRONT_URL');
+    const cookieOptions = this.setCookieOptions();
+
+    const result = await this.authService.handleSocialLogin(
+      AuthProvider.kakao,
+      req.user as SocialUserProps,
+    );
+
+    if (result.isNewUser) {
+      res.cookie('register_token', result.registerToken, {
+        ...cookieOptions,
+        maxAge: this.configService.get<number>(
+          'COOKIE_REGISTER_MAX_AGE',
+          JWT_DEFAULTS.registerCookieMaxAge,
+        ),
+      });
+      return res.redirect(
+        `${FRONT_URL}/${this.configService.getOrThrow<string>('FRONT_SOCIAL_ENDPOINT')}`,
+      );
+    }
+
+    this.setTokens(
+      res,
+      result.authResult.accessToken,
+      result.authResult.refreshToken,
+      cookieOptions,
+    );
+    return res.redirect(FRONT_URL);
+  }
+
+  @Get('register/social')
+  @UseGuards(RegisterTokenGuard)
+  @ApiOperation({ summary: '소셜 회원가입 시 콜백으로 넘겨준 프로필 정보 토큰의 내용을 반환' })
+  async getSocialRegisterDraft(@Req() request: Request & { socialUser: JwtRegisterPayload }) {
+    const { email, name, nickname, gender, birthDate } = request.socialUser;
+
+    return { email, name, nickname, gender, birthDate };
+  }
+
   @Post('register/social')
   @UseGuards(RegisterTokenGuard)
   @ApiOperation({

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -175,6 +175,9 @@ export class AuthService {
       return { isNewUser: false, authResult: { user: existingUser, ...tokens } };
     }
 
+    const emailTaken = await this.userService.existsByEmail(socialUserProps.email);
+    if (emailTaken) throw new ConflictException('이미 다른 방식으로 가입된 이메일입니다.');
+
     return {
       isNewUser: true,
       registerToken: this.issueRegisterToken(socialUserProps, provider),
@@ -235,13 +238,12 @@ export class AuthService {
   }
 
   private issueRegisterToken(socialUserProps: SocialUserProps, provider: AuthProvider): string {
+    const { accessToken, refreshToken, ...payload } = socialUserProps;
     return this.jwtService.sign(
       {
         type: 'social_register',
-        email: socialUserProps.email,
-        name: socialUserProps.name,
         provider,
-        providerId: socialUserProps.providerId,
+        ...payload,
       },
       {
         secret: this.configService.get<string>('JWT_REGISTER_SECRET', JWT_DEFAULTS.registerSecret),
