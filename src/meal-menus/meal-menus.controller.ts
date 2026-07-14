@@ -174,6 +174,7 @@ export class MealMenusController {
       calorie: mealMenu.calorie ?? null,
       likeCount: mealMenu.likeCount,
       dislikeCount: mealMenu.dislikeCount,
+      schoolInfo: mealMenu.schoolInfo,
     };
   }
 
@@ -186,6 +187,7 @@ export class MealMenusController {
       calorie: mealMenu.calorie ?? null,
       likeCount: mealMenu.likeCount,
       dislikeCount: mealMenu.dislikeCount,
+      schoolInfo: mealMenu.schoolInfo,
       components: mealMenu.mealMenuComponentMappings.map(
         (mapping) => mapping.mealMenuComponent.name,
       ),

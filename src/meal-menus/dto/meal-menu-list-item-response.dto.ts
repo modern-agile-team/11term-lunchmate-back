@@ -18,4 +18,6 @@ export class MealMenuListItemResponseDto {
   likeCount: number;
 
   dislikeCount: number;
+
+  schoolInfo: string;
 }
