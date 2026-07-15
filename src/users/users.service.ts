@@ -1,14 +1,23 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { USER_ERROR_MESSAGES } from './user.constants';
 import { UpdateMePatch, UserRepository } from './users.repository';
 import { AuthProvider, UserGender, Mbti, CreateSocialUserProps } from './types/user.type';
 import { UpdateResult } from 'typeorm';
+import { S3Service } from '../s3/s3.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly s3Service: S3Service,
+  ) {}
 
   async findAllUsers(): Promise<User[]> {
     return this.userRepository.findAll();
@@ -106,6 +115,14 @@ export class UserService {
 
   async updateMe(userId: number, updateMeDto: UpdateMeDto): Promise<User> {
     const user = await this.findActiveUserOrFail(userId);
+
+    if (
+      updateMeDto.profileImageUrl !== undefined &&
+      !this.s3Service.isS3Url(updateMeDto.profileImageUrl)
+    ) {
+      throw new BadRequestException(USER_ERROR_MESSAGES.invalidProfileImageUrl);
+    }
+
     const patch = this.toUpdateMePatch(user, updateMeDto);
 
     if (patch.nickname !== undefined) {
@@ -117,6 +134,10 @@ export class UserService {
     }
 
     await this.userRepository.updateMe(userId, patch);
+
+    if (patch.profileImageUrl !== undefined && user.profileImageUrl) {
+      await this.s3Service.deleteImage(user.profileImageUrl);
+    }
 
     return this.findActiveUserOrFail(userId);
   }
@@ -175,6 +196,13 @@ export class UserService {
 
     if (updateMeDto.mbti !== undefined && updateMeDto.mbti !== user.mbti) {
       patch.mbti = Mbti[updateMeDto.mbti as Mbti];
+    }
+
+    if (
+      updateMeDto.profileImageUrl !== undefined &&
+      updateMeDto.profileImageUrl !== user.profileImageUrl
+    ) {
+      patch.profileImageUrl = updateMeDto.profileImageUrl;
     }
 
     return patch;

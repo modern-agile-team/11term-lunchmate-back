@@ -5,7 +5,10 @@ import { User } from './entities/user.entity';
 import { AuthProvider, UserGender, Mbti, CreateSocialUserProps } from './types/user.type';
 
 export type UpdateMePatch = Partial<
-  Pick<User, 'nickname' | 'birthDate' | 'gender' | 'schoolInfo' | 'introduce' | 'mbti'>
+  Pick<
+    User,
+    'nickname' | 'birthDate' | 'gender' | 'schoolInfo' | 'introduce' | 'mbti' | 'profileImageUrl'
+  >
 >;
 
 @Injectable()

@@ -6,13 +6,21 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseFilePipeBuilder,
   ParseIntPipe,
   Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
+import { S3_CONSTANT } from '../s3/constants/s3.constant';
+import { ImageResponseDto } from '../s3/dto/s3.dto';
+import { S3Service } from '../s3/s3.service';
 import { CurrentUserResponseDto } from './dto/current-user-response.dto';
 import { PublicUserResponseDto } from './dto/public-user-response.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
@@ -22,7 +30,10 @@ import { UserService } from './users.service';
 @ApiTags('User')
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @Get('me')
   @Authenticated()
@@ -43,6 +54,24 @@ export class UserController {
   ): Promise<CurrentUserResponseDto> {
     const user = await this.userService.updateMe(currentUser.userId, updateMeDto);
     return this.toCurrentUserResponse(user);
+  }
+
+  @Post('me/profile-image')
+  @Authenticated()
+  @ApiOperation({ summary: '프로필 이미지 업로드' })
+  @ApiOkResponse({ type: ImageResponseDto })
+  @UseInterceptors(FileInterceptor('image'))
+  async uploadProfileImage(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: S3_CONSTANT.ALLOWED_IMAGE_TYPES })
+        .addMaxSizeValidator({ maxSize: S3_CONSTANT.MAX_IMAGE_SIZE })
+        .build(),
+    )
+    image: Express.Multer.File,
+  ): Promise<ImageResponseDto> {
+    return this.s3Service.uploadImage(currentUser.userId, image);
   }
 
   @Delete('me')
@@ -82,6 +111,7 @@ export class UserController {
       ...this.toPublicUserResponse(user),
       email: user.email,
       role: user.role,
+      profileImageUrl: user.profileImageUrl,
     };
   }
 }
