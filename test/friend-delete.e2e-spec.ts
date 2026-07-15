@@ -48,7 +48,7 @@ describe('Friend Delete (e2e)', () => {
     schoolInfo?: string;
   }) {
     return request(app.getHttpServer())
-      .post('/auth/signup')
+      .post('/api/v1/auth/signup')
       .send({
         email: params.email,
         password: 'password1234',
@@ -88,7 +88,7 @@ describe('Friend Delete (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .delete(`/friends/${friendship.id}`)
+      .delete(`/api/v1/friends/${friendship.id}`)
       .set('Authorization', `Bearer ${firstUser.body.accessToken}`);
 
     expect(response.status).toBe(204);
@@ -129,7 +129,7 @@ describe('Friend Delete (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .delete(`/friends/${pendingFriendship.id}`)
+      .delete(`/api/v1/friends/${pendingFriendship.id}`)
       .set('Authorization', `Bearer ${firstUser.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.acceptedOnly);
@@ -156,7 +156,7 @@ describe('Friend Delete (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .delete(`/friends/${friendship.id}`)
+      .delete(`/api/v1/friends/${friendship.id}`)
       .set('Authorization', `Bearer ${thirdUser.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 403, FRIEND_ERROR_MESSAGES.relatedUsersOnly);

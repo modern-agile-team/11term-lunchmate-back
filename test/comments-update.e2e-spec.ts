@@ -37,7 +37,7 @@ describe('Comments Update (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -85,7 +85,7 @@ describe('Comments Update (e2e)', () => {
     const comment = await createComment(post.id, signupResponse.body.user.id);
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}/comments/${comment.id}`)
+      .patch(`/api/v1/posts/${post.id}/comments/${comment.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: '수정 후 댓글입니다.',
@@ -121,7 +121,7 @@ describe('Comments Update (e2e)', () => {
     const comment = await createComment(post.id, writerSignup.body.user.id);
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}/comments/${comment.id}`)
+      .patch(`/api/v1/posts/${post.id}/comments/${comment.id}`)
       .set('Authorization', `Bearer ${otherSignup.body.accessToken}`)
       .send({
         content: '권한 없는 수정',
@@ -142,7 +142,7 @@ describe('Comments Update (e2e)', () => {
     const comment = await createComment(post.id, signupResponse.body.user.id);
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}/comments/${comment.id}`)
+      .patch(`/api/v1/posts/${post.id}/comments/${comment.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: 'a'.repeat(501),
@@ -163,7 +163,7 @@ describe('Comments Update (e2e)', () => {
     const comment = await createComment(post.id, signupResponse.body.user.id);
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}/comments/${comment.id}`)
+      .patch(`/api/v1/posts/${post.id}/comments/${comment.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({});
 
@@ -179,7 +179,7 @@ describe('Comments Update (e2e)', () => {
     const signupResponse = await signupUser('comment-no-post@example.com', 'comment-no-post');
 
     const response = await request(httpApp())
-      .patch('/posts/999/comments/1')
+      .patch('/api/v1/posts/999/comments/1')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: '없는 게시글의 댓글 수정',
@@ -199,7 +199,7 @@ describe('Comments Update (e2e)', () => {
     const post = await createPost(signupResponse.body.user.id, category.id);
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}/comments/999`)
+      .patch(`/api/v1/posts/${post.id}/comments/999`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: '없는 댓글 수정',
@@ -225,7 +225,7 @@ describe('Comments Update (e2e)', () => {
     const comment = await createComment(firstPost.id, signupResponse.body.user.id);
 
     const response = await request(httpApp())
-      .patch(`/posts/${secondPost.id}/comments/${comment.id}`)
+      .patch(`/api/v1/posts/${secondPost.id}/comments/${comment.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: '다른 게시글 경로로 수정 시도',
@@ -246,7 +246,7 @@ describe('Comments Update (e2e)', () => {
     const comment = await createComment(post.id, signupResponse.body.user.id);
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}/comments/${comment.id}`)
+      .patch(`/api/v1/posts/${post.id}/comments/${comment.id}`)
       .send({
         content: '로그인 없이 수정',
       });

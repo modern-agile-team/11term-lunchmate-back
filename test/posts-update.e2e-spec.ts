@@ -33,7 +33,7 @@ describe('Posts Update (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -78,7 +78,7 @@ describe('Posts Update (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}`)
+      .patch(`/api/v1/posts/${post.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '수정 후 제목',
@@ -127,7 +127,7 @@ describe('Posts Update (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}`)
+      .patch(`/api/v1/posts/${post.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         categoryId: infoCategory.id,
@@ -166,7 +166,7 @@ describe('Posts Update (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}`)
+      .patch(`/api/v1/posts/${post.id}`)
       .set('Authorization', `Bearer ${otherSignup.body.accessToken}`)
       .send({
         title: '권한 없는 수정',
@@ -194,7 +194,7 @@ describe('Posts Update (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}`)
+      .patch(`/api/v1/posts/${post.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '   ',
@@ -223,7 +223,7 @@ describe('Posts Update (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}`)
+      .patch(`/api/v1/posts/${post.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({});
 
@@ -252,7 +252,7 @@ describe('Posts Update (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/posts/${post.id}`)
+      .patch(`/api/v1/posts/${post.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         categoryId: 999,
@@ -270,7 +270,7 @@ describe('Posts Update (e2e)', () => {
     const signupResponse = await signupUser('post-not-found@example.com', 'not-found');
 
     const response = await request(httpApp())
-      .patch('/posts/999')
+      .patch('/api/v1/posts/999')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '없는 게시글 수정',
@@ -297,7 +297,7 @@ describe('Posts Update (e2e)', () => {
       category,
     });
 
-    const response = await request(httpApp()).patch(`/posts/${post.id}`).send({
+    const response = await request(httpApp()).patch(`/api/v1/posts/${post.id}`).send({
       title: '로그인 없이 수정',
     });
 

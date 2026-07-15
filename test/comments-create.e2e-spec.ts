@@ -37,7 +37,7 @@ describe('Comments Create (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -71,7 +71,7 @@ describe('Comments Create (e2e)', () => {
     const post = await createPost(signupResponse.body.user.id, category.id);
 
     const response = await request(httpApp())
-      .post(`/posts/${post.id}/comments`)
+      .post(`/api/v1/posts/${post.id}/comments`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: '저도 같은 생각입니다.',
@@ -113,7 +113,7 @@ describe('Comments Create (e2e)', () => {
     const post = await createPost(signupResponse.body.user.id, category.id);
 
     const response = await request(httpApp())
-      .post(`/posts/${post.id}/comments`)
+      .post(`/api/v1/posts/${post.id}/comments`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: '익명으로 남기는 댓글입니다.',
@@ -128,7 +128,7 @@ describe('Comments Create (e2e)', () => {
     const signupResponse = await signupUser('missing-post@example.com', 'missing-post');
 
     const response = await request(httpApp())
-      .post('/posts/999/comments')
+      .post('/api/v1/posts/999/comments')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: '없는 게시글에 다는 댓글',
@@ -149,7 +149,7 @@ describe('Comments Create (e2e)', () => {
     const post = await createPost(signupResponse.body.user.id, category.id);
 
     const response = await request(httpApp())
-      .post(`/posts/${post.id}/comments`)
+      .post(`/api/v1/posts/${post.id}/comments`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         content: '',
@@ -178,7 +178,7 @@ describe('Comments Create (e2e)', () => {
     const category = await createCategory('자유');
     const post = await createPost(signupResponse.body.user.id, category.id);
 
-    const response = await request(httpApp()).post(`/posts/${post.id}/comments`).send({
+    const response = await request(httpApp()).post(`/api/v1/posts/${post.id}/comments`).send({
       content: '로그인 없이 작성하는 댓글',
       isAnonymous: false,
     });

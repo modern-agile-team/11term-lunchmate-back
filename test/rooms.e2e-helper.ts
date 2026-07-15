@@ -13,7 +13,7 @@ export const signupUser = async (
   email: string,
   nickname: string,
 ): Promise<Response> => {
-  return request(httpApp()).post('/auth/signup').send({
+  return request(httpApp()).post('/api/v1/auth/signup').send({
     email,
     password: '1q2w3e4r',
     birthDate: '2000-01-01',

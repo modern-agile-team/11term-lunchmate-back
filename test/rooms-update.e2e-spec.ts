@@ -42,7 +42,7 @@ describe('Rooms Update (e2e)', () => {
     const updatedLunchAt = futureLunchAt(2);
 
     const response = await request(httpApp())
-      .patch(`/rooms/${room.id}`)
+      .patch(`/api/v1/rooms/${room.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '수정 후 방 제목',
@@ -82,7 +82,7 @@ describe('Rooms Update (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/rooms/${room.id}`)
+      .patch(`/api/v1/rooms/${room.id}`)
       .set('Authorization', `Bearer ${otherSignupResponse.body.accessToken}`)
       .send({
         title: '권한 없는 수정',
@@ -103,7 +103,7 @@ describe('Rooms Update (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/rooms/${room.id}`)
+      .patch(`/api/v1/rooms/${room.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         minAge: 30,
@@ -117,7 +117,7 @@ describe('Rooms Update (e2e)', () => {
     const signupResponse = await signupUser(httpApp, 'host-notfound@gmail.com', '없는방수정');
 
     const response = await request(httpApp())
-      .patch('/rooms/999999')
+      .patch('/api/v1/rooms/999999')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '없는 방 수정 시도',

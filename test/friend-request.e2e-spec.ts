@@ -49,7 +49,7 @@ describe('Friend Request (e2e)', () => {
     schoolInfo?: string;
   }) {
     return request(app.getHttpServer())
-      .post('/auth/signup')
+      .post('/api/v1/auth/signup')
       .send({
         email: params.email,
         password: 'password1234',
@@ -74,7 +74,7 @@ describe('Friend Request (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${requester.body.accessToken}`)
       .send({
         receiverId: receiver.body.user.id,
@@ -108,7 +108,7 @@ describe('Friend Request (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${user.body.accessToken}`)
       .send({
         receiverId: user.body.user.id,
@@ -124,7 +124,7 @@ describe('Friend Request (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${requester.body.accessToken}`)
       .send({
         receiverId: 999999,
@@ -144,14 +144,14 @@ describe('Friend Request (e2e)', () => {
     });
 
     await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${requester.body.accessToken}`)
       .send({
         receiverId: receiver.body.user.id,
       });
 
     const response = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${requester.body.accessToken}`)
       .send({
         receiverId: receiver.body.user.id,
@@ -171,14 +171,14 @@ describe('Friend Request (e2e)', () => {
     });
 
     await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${secondUser.body.accessToken}`)
       .send({
         receiverId: firstUser.body.user.id,
       });
 
     const response = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${firstUser.body.accessToken}`)
       .send({
         receiverId: secondUser.body.user.id,
@@ -204,7 +204,7 @@ describe('Friend Request (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${requester.body.accessToken}`)
       .send({
         receiverId: receiver.body.user.id,
@@ -219,7 +219,7 @@ describe('Friend Request (e2e)', () => {
       nickname: 'unauthorized-receiver',
     });
 
-    const response = await request(app.getHttpServer()).post('/friends/requests').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/friends/requests').send({
       receiverId: receiver.body.user.id,
     });
 

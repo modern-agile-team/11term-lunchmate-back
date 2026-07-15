@@ -34,7 +34,7 @@ describe('Meal Menus (e2e)', () => {
   });
 
   async function signupAndGetAccessToken(email: string, nickname: string): Promise<string> {
-    const response = await request(app.getHttpServer()).post('/auth/signup').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email,
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -47,7 +47,7 @@ describe('Meal Menus (e2e)', () => {
   }
 
   async function signupAndGetAdminAccessToken(email: string, nickname: string): Promise<string> {
-    await request(app.getHttpServer()).post('/auth/signup').send({
+    await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email,
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -58,7 +58,7 @@ describe('Meal Menus (e2e)', () => {
 
     await dataSource.getRepository(User).update({ email }, { role: UserRole.ADMIN });
 
-    const response = await request(app.getHttpServer()).post('/auth/login').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
       email,
       password: 'password1234',
     });
@@ -102,7 +102,7 @@ describe('Meal Menus (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .post('/meal-menus')
+        .post('/api/v1/meal-menus')
         .set('Authorization', `Bearer ${accessToken}`)
         .send(input);
 
@@ -120,7 +120,7 @@ describe('Meal Menus (e2e)', () => {
     });
 
     it('인증 없이 학식 추가 요청 시 401', async () => {
-      const response = await request(app.getHttpServer()).post('/meal-menus').send({
+      const response = await request(app.getHttpServer()).post('/api/v1/meal-menus').send({
         schoolInfo: '인덕대학교 학생식당',
         mealType: MealType.LUNCH,
         menuName: '제육덮밥',
@@ -141,7 +141,7 @@ describe('Meal Menus (e2e)', () => {
       const accessToken = await signupAndGetAccessToken('user@example.com', 'normal-user');
 
       const response = await request(app.getHttpServer())
-        .post('/meal-menus')
+        .post('/api/v1/meal-menus')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           schoolInfo: '인덕대학교 학생식당',
@@ -169,7 +169,7 @@ describe('Meal Menus (e2e)', () => {
       );
 
       const createResponse = await request(app.getHttpServer())
-        .post('/meal-menus')
+        .post('/api/v1/meal-menus')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           schoolInfo: '인덕대학교 학생식당',
@@ -189,7 +189,7 @@ describe('Meal Menus (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .patch(`/meal-menus/${createResponse.body.id}`)
+        .patch(`/api/v1/meal-menus/${createResponse.body.id}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .send(input);
 
@@ -213,7 +213,7 @@ describe('Meal Menus (e2e)', () => {
       );
 
       const createResponse = await request(app.getHttpServer())
-        .post('/meal-menus')
+        .post('/api/v1/meal-menus')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           schoolInfo: '인덕대학교 학생식당',
@@ -225,7 +225,7 @@ describe('Meal Menus (e2e)', () => {
         });
 
       const response = await request(app.getHttpServer())
-        .patch(`/meal-menus/${createResponse.body.id}`)
+        .patch(`/api/v1/meal-menus/${createResponse.body.id}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           menuName: '제육정식',
@@ -246,7 +246,7 @@ describe('Meal Menus (e2e)', () => {
     });
 
     it('인증 없이 학식 수정 요청 시 401', async () => {
-      const response = await request(app.getHttpServer()).patch('/meal-menus/1').send({
+      const response = await request(app.getHttpServer()).patch('/api/v1/meal-menus/1').send({
         menuName: '돈까스정식',
       });
 
@@ -262,7 +262,7 @@ describe('Meal Menus (e2e)', () => {
       const accessToken = await signupAndGetAccessToken('update-user@example.com', 'update-user');
 
       const response = await request(app.getHttpServer())
-        .patch('/meal-menus/1')
+        .patch('/api/v1/meal-menus/1')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           menuName: '돈까스정식',
@@ -283,7 +283,7 @@ describe('Meal Menus (e2e)', () => {
       );
 
       const response = await request(app.getHttpServer())
-        .patch('/meal-menus/999999')
+        .patch('/api/v1/meal-menus/999999')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           menuName: '돈까스정식',
@@ -304,7 +304,7 @@ describe('Meal Menus (e2e)', () => {
       );
 
       const response = await request(app.getHttpServer())
-        .patch('/meal-menus/1')
+        .patch('/api/v1/meal-menus/1')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({});
 
@@ -323,7 +323,7 @@ describe('Meal Menus (e2e)', () => {
       );
 
       const response = await request(app.getHttpServer())
-        .patch('/meal-menus/1')
+        .patch('/api/v1/meal-menus/1')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           mealType: 'INVALID',
@@ -348,7 +348,7 @@ describe('Meal Menus (e2e)', () => {
       );
 
       const createResponse = await request(app.getHttpServer())
-        .post('/meal-menus')
+        .post('/api/v1/meal-menus')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           schoolInfo: '인덕대학교 학생식당',
@@ -368,7 +368,7 @@ describe('Meal Menus (e2e)', () => {
         });
 
       const response = await request(app.getHttpServer())
-        .delete(`/meal-menus/${createResponse.body.id}`)
+        .delete(`/api/v1/meal-menus/${createResponse.body.id}`)
         .set('Authorization', `Bearer ${accessToken}`);
 
       const detailResponse = await request(app.getHttpServer()).get(
@@ -390,7 +390,7 @@ describe('Meal Menus (e2e)', () => {
     });
 
     it('인증 없이 학식 삭제 요청 시 401', async () => {
-      const response = await request(app.getHttpServer()).delete('/meal-menus/1');
+      const response = await request(app.getHttpServer()).delete('/api/v1/meal-menus/1');
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -404,7 +404,7 @@ describe('Meal Menus (e2e)', () => {
       const accessToken = await signupAndGetAccessToken('delete-user@example.com', 'delete-user');
 
       const response = await request(app.getHttpServer())
-        .delete('/meal-menus/1')
+        .delete('/api/v1/meal-menus/1')
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(403);
@@ -422,7 +422,7 @@ describe('Meal Menus (e2e)', () => {
       );
 
       const response = await request(app.getHttpServer())
-        .delete('/meal-menus/999999')
+        .delete('/api/v1/meal-menus/999999')
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(404);
@@ -445,7 +445,7 @@ describe('Meal Menus (e2e)', () => {
         dislikeCount: 1,
       });
 
-      const response = await request(app.getHttpServer()).get('/meal-menus');
+      const response = await request(app.getHttpServer()).get('/api/v1/meal-menus');
 
       expect(response.status).toBe(200);
       expect(response.body.items).toHaveLength(1);
@@ -470,7 +470,7 @@ describe('Meal Menus (e2e)', () => {
         menuName: '비빔밥',
       });
 
-      const response = await request(app.getHttpServer()).get('/meal-menus');
+      const response = await request(app.getHttpServer()).get('/api/v1/meal-menus');
 
       expect(response.status).toBe(200);
       expect(response.body.items).toHaveLength(2);
@@ -487,7 +487,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .get('/meal-menus')
+        .get('/api/v1/meal-menus')
         .query({ mealType: MealType.DINNER });
 
       expect(response.status).toBe(200);
@@ -506,7 +506,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .get('/meal-menus')
+        .get('/api/v1/meal-menus')
         .query({ mealType: MealType.ALL });
 
       expect(response.status).toBe(200);
@@ -521,14 +521,14 @@ describe('Meal Menus (e2e)', () => {
 
       await dataSource.getRepository(MealMenu).softDelete(mealMenu.id);
 
-      const response = await request(app.getHttpServer()).get('/meal-menus');
+      const response = await request(app.getHttpServer()).get('/api/v1/meal-menus');
 
       expect(response.status).toBe(200);
       expect(response.body.items).toEqual([]);
     });
 
     it('결과 없을 때 빈 배열 반환', async () => {
-      const response = await request(app.getHttpServer()).get('/meal-menus');
+      const response = await request(app.getHttpServer()).get('/api/v1/meal-menus');
 
       expect(response.status).toBe(200);
       expect(response.body.items).toEqual([]);
@@ -540,14 +540,14 @@ describe('Meal Menus (e2e)', () => {
         menuName: '치킨마요',
       });
 
-      const response = await request(app.getHttpServer()).get('/meal-menus');
+      const response = await request(app.getHttpServer()).get('/api/v1/meal-menus');
 
       expect(response.status).toBe(200);
     });
 
     it('잘못된 mealType 입력 시 400', async () => {
       const response = await request(app.getHttpServer())
-        .get('/meal-menus')
+        .get('/api/v1/meal-menus')
         .query({ mealType: 'INVALID' });
 
       expect(response.status).toBe(400);
@@ -572,7 +572,7 @@ describe('Meal Menus (e2e)', () => {
         dislikeCount: 2,
       });
 
-      const response = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
+      const response = await request(app.getHttpServer()).get(`/api/v1/meal-menus/${mealMenu.id}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
@@ -588,7 +588,7 @@ describe('Meal Menus (e2e)', () => {
     });
 
     it('존재하지 않는 학식 조회 시 404', async () => {
-      const response = await request(app.getHttpServer()).get('/meal-menus/999999');
+      const response = await request(app.getHttpServer()).get('/api/v1/meal-menus/999999');
 
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -606,7 +606,7 @@ describe('Meal Menus (e2e)', () => {
 
       await dataSource.getRepository(MealMenu).softDelete(mealMenu.id);
 
-      const response = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
+      const response = await request(app.getHttpServer()).get(`/api/v1/meal-menus/${mealMenu.id}`);
 
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -622,7 +622,7 @@ describe('Meal Menus (e2e)', () => {
         menuName: '토스트',
       });
 
-      const response = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
+      const response = await request(app.getHttpServer()).get(`/api/v1/meal-menus/${mealMenu.id}`);
 
       expect(response.status).toBe(200);
     });
@@ -634,7 +634,7 @@ describe('Meal Menus (e2e)', () => {
       const mealMenu = await createMealMenu();
 
       const response = await request(app.getHttpServer())
-        .post(`/meal-menus/${mealMenu.id}/like`)
+        .post(`/api/v1/meal-menus/${mealMenu.id}/like`)
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
@@ -660,7 +660,7 @@ describe('Meal Menus (e2e)', () => {
     it('인증 없이 요청 시 401', async () => {
       const mealMenu = await createMealMenu();
 
-      const response = await request(app.getHttpServer()).post(`/meal-menus/${mealMenu.id}/like`);
+      const response = await request(app.getHttpServer()).post(`/api/v1/meal-menus/${mealMenu.id}/like`);
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
@@ -674,7 +674,7 @@ describe('Meal Menus (e2e)', () => {
       const accessToken = await signupAndGetAccessToken('missing@example.com', 'missing-user');
 
       const response = await request(app.getHttpServer())
-        .post('/meal-menus/999999/like')
+        .post('/api/v1/meal-menus/999999/like')
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(404);
@@ -699,7 +699,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .post(`/meal-menus/${mealMenu.id}/like`)
+        .post(`/api/v1/meal-menus/${mealMenu.id}/like`)
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
@@ -734,7 +734,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .post(`/meal-menus/${mealMenu.id}/like`)
+        .post(`/api/v1/meal-menus/${mealMenu.id}/like`)
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
@@ -759,11 +759,11 @@ describe('Meal Menus (e2e)', () => {
       const mealMenu = await createMealMenu();
 
       await request(app.getHttpServer())
-        .post(`/meal-menus/${mealMenu.id}/like`)
+        .post(`/api/v1/meal-menus/${mealMenu.id}/like`)
         .set('Authorization', `Bearer ${accessToken}`);
 
-      const listResponse = await request(app.getHttpServer()).get('/meal-menus');
-      const detailResponse = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
+      const listResponse = await request(app.getHttpServer()).get('/api/v1/meal-menus');
+      const detailResponse = await request(app.getHttpServer()).get(`/api/v1/meal-menus/${mealMenu.id}`);
 
       expect(listResponse.status).toBe(200);
       expect(detailResponse.status).toBe(200);
@@ -780,7 +780,7 @@ describe('Meal Menus (e2e)', () => {
       const mealMenu = await createMealMenu();
 
       const response = await request(app.getHttpServer())
-        .post(`/meal-menus/${mealMenu.id}/dislike`)
+        .post(`/api/v1/meal-menus/${mealMenu.id}/dislike`)
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
@@ -825,7 +825,7 @@ describe('Meal Menus (e2e)', () => {
       );
 
       const response = await request(app.getHttpServer())
-        .post('/meal-menus/999999/dislike')
+        .post('/api/v1/meal-menus/999999/dislike')
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(404);
@@ -853,7 +853,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .post(`/meal-menus/${mealMenu.id}/dislike`)
+        .post(`/api/v1/meal-menus/${mealMenu.id}/dislike`)
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
@@ -888,7 +888,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .post(`/meal-menus/${mealMenu.id}/dislike`)
+        .post(`/api/v1/meal-menus/${mealMenu.id}/dislike`)
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
@@ -916,11 +916,11 @@ describe('Meal Menus (e2e)', () => {
       const mealMenu = await createMealMenu();
 
       await request(app.getHttpServer())
-        .post(`/meal-menus/${mealMenu.id}/dislike`)
+        .post(`/api/v1/meal-menus/${mealMenu.id}/dislike`)
         .set('Authorization', `Bearer ${accessToken}`);
 
-      const listResponse = await request(app.getHttpServer()).get('/meal-menus');
-      const detailResponse = await request(app.getHttpServer()).get(`/meal-menus/${mealMenu.id}`);
+      const listResponse = await request(app.getHttpServer()).get('/api/v1/meal-menus');
+      const detailResponse = await request(app.getHttpServer()).get(`/api/v1/meal-menus/${mealMenu.id}`);
 
       expect(listResponse.status).toBe(200);
       expect(detailResponse.status).toBe(200);
@@ -947,7 +947,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .get('/meal-menus/rankings')
+        .get('/api/v1/meal-menus/rankings')
         .query({ actionType: ActionType.LIKE });
 
       expect(response.status).toBe(200);
@@ -971,7 +971,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .get('/meal-menus/rankings')
+        .get('/api/v1/meal-menus/rankings')
         .query({ actionType: ActionType.DISLIKE });
 
       expect(response.status).toBe(200);
@@ -993,7 +993,7 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .get('/meal-menus/rankings')
+        .get('/api/v1/meal-menus/rankings')
         .query({ actionType: ActionType.DISLIKE, mealType: MealType.DINNER });
 
       expect(response.status).toBe(200);
@@ -1003,7 +1003,7 @@ describe('Meal Menus (e2e)', () => {
 
     it('결과 없을 때 빈 배열 반환', async () => {
       const response = await request(app.getHttpServer())
-        .get('/meal-menus/rankings')
+        .get('/api/v1/meal-menus/rankings')
         .query({ actionType: ActionType.LIKE });
 
       expect(response.status).toBe(200);
@@ -1018,14 +1018,14 @@ describe('Meal Menus (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .get('/meal-menus/rankings')
+        .get('/api/v1/meal-menus/rankings')
         .query({ actionType: ActionType.LIKE });
 
       expect(response.status).toBe(200);
     });
 
     it('actionType 누락 시 400', async () => {
-      const response = await request(app.getHttpServer()).get('/meal-menus/rankings');
+      const response = await request(app.getHttpServer()).get('/api/v1/meal-menus/rankings');
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -1037,7 +1037,7 @@ describe('Meal Menus (e2e)', () => {
 
     it('잘못된 actionType 값 시 400', async () => {
       const response = await request(app.getHttpServer())
-        .get('/meal-menus/rankings')
+        .get('/api/v1/meal-menus/rankings')
         .query({ actionType: 'INVALID' });
 
       expect(response.status).toBe(400);

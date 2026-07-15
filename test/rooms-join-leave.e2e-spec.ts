@@ -42,7 +42,7 @@ describe('Rooms Join/Leave (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .post(`/rooms/${room.id}/join`)
+      .post(`/api/v1/rooms/${room.id}/join`)
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(201);
@@ -75,7 +75,7 @@ describe('Rooms Join/Leave (e2e)', () => {
     const room = await createRoomFixture(dataSource, hostUser);
 
     const response = await request(httpApp())
-      .post(`/rooms/${room.id}/join`)
+      .post(`/api/v1/rooms/${room.id}/join`)
       .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(400);
@@ -106,7 +106,7 @@ describe('Rooms Join/Leave (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .post('/rooms/quick-join')
+      .post('/api/v1/rooms/quick-join')
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(201);
@@ -153,7 +153,7 @@ describe('Rooms Join/Leave (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .post('/rooms/quick-join')
+      .post('/api/v1/rooms/quick-join')
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);
@@ -173,11 +173,11 @@ describe('Rooms Join/Leave (e2e)', () => {
     });
 
     await request(httpApp())
-      .post(`/rooms/${room.id}/join`)
+      .post(`/api/v1/rooms/${room.id}/join`)
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     const response = await request(httpApp())
-      .delete(`/rooms/${room.id}/leave`)
+      .delete(`/api/v1/rooms/${room.id}/leave`)
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(204);
@@ -209,11 +209,11 @@ describe('Rooms Join/Leave (e2e)', () => {
     });
 
     await request(httpApp())
-      .post(`/rooms/${room.id}/join`)
+      .post(`/api/v1/rooms/${room.id}/join`)
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     const response = await request(httpApp())
-      .delete(`/rooms/${room.id}/leave`)
+      .delete(`/api/v1/rooms/${room.id}/leave`)
       .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(204);
@@ -243,11 +243,11 @@ describe('Rooms Join/Leave (e2e)', () => {
     });
 
     await request(httpApp())
-      .post(`/rooms/${room.id}/join`)
+      .post(`/api/v1/rooms/${room.id}/join`)
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     const response = await request(httpApp())
-      .delete(`/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
+      .delete(`/api/v1/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
       .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(204);
@@ -288,11 +288,11 @@ describe('Rooms Join/Leave (e2e)', () => {
     });
 
     await request(httpApp())
-      .post(`/rooms/${room.id}/join`)
+      .post(`/api/v1/rooms/${room.id}/join`)
       .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
     const response = await request(httpApp())
-      .delete(`/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
+      .delete(`/api/v1/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
       .set('Authorization', `Bearer ${otherSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(403);
@@ -307,7 +307,7 @@ describe('Rooms Join/Leave (e2e)', () => {
     const room = await createRoomFixture(dataSource, hostUser);
 
     const response = await request(httpApp())
-      .delete(`/rooms/${room.id}/members/${hostSignupResponse.body.user.id}`)
+      .delete(`/api/v1/rooms/${room.id}/members/${hostSignupResponse.body.user.id}`)
       .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(400);
@@ -327,7 +327,7 @@ describe('Rooms Join/Leave (e2e)', () => {
     const room = await createRoomFixture(dataSource, hostUser);
 
     const response = await request(httpApp())
-      .delete(`/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
+      .delete(`/api/v1/rooms/${room.id}/members/${guestSignupResponse.body.user.id}`)
       .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(400);

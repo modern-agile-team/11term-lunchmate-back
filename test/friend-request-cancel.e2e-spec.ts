@@ -48,7 +48,7 @@ describe('Friend Request Cancel (e2e)', () => {
     schoolInfo?: string;
   }) {
     return request(app.getHttpServer())
-      .post('/auth/signup')
+      .post('/api/v1/auth/signup')
       .send({
         email: params.email,
         password: 'password1234',
@@ -73,7 +73,7 @@ describe('Friend Request Cancel (e2e)', () => {
     });
 
     const friendRequest = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${requester.body.accessToken}`)
       .send({
         receiverId: receiver.body.user.id,
@@ -86,7 +86,7 @@ describe('Friend Request Cancel (e2e)', () => {
     const { requester, receiver, friendRequest } = await createPendingRequest();
 
     const response = await request(app.getHttpServer())
-      .delete(`/friends/requests/${friendRequest.body.id}`)
+      .delete(`/api/v1/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
     expect(response.status).toBe(204);
@@ -118,7 +118,7 @@ describe('Friend Request Cancel (e2e)', () => {
     const { receiver, friendRequest } = await createPendingRequest();
 
     const response = await request(app.getHttpServer())
-      .delete(`/friends/requests/${friendRequest.body.id}`)
+      .delete(`/api/v1/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 403, FRIEND_ERROR_MESSAGES.requesterOnly);
@@ -132,7 +132,7 @@ describe('Friend Request Cancel (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .delete(`/friends/requests/${friendRequest.body.id}`)
+      .delete(`/api/v1/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${thirdUser.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 403, FRIEND_ERROR_MESSAGES.requesterOnly);
@@ -145,7 +145,7 @@ describe('Friend Request Cancel (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .delete('/friends/requests/999999')
+      .delete('/api/v1/friends/requests/999999')
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 404, FRIEND_ERROR_MESSAGES.requestNotFound);
@@ -159,7 +159,7 @@ describe('Friend Request Cancel (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .delete(`/friends/requests/${friendRequest.body.id}`)
+      .delete(`/api/v1/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyProcessed);
@@ -173,7 +173,7 @@ describe('Friend Request Cancel (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .delete(`/friends/requests/${friendRequest.body.id}`)
+      .delete(`/api/v1/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyProcessed);
@@ -193,11 +193,11 @@ describe('Friend Request Cancel (e2e)', () => {
     const { requester, receiver, friendRequest } = await createPendingRequest();
 
     await request(app.getHttpServer())
-      .delete(`/friends/requests/${friendRequest.body.id}`)
+      .delete(`/api/v1/friends/requests/${friendRequest.body.id}`)
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
     const response = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${requester.body.accessToken}`)
       .send({
         receiverId: receiver.body.user.id,

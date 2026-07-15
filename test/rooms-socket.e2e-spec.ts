@@ -87,7 +87,7 @@ describe('Rooms Socket (e2e)', () => {
       const membersUpdatedPromise = waitForSocketEvent(socket, 'room.members_updated');
 
       const response = await request(app.getHttpServer())
-        .post(`/rooms/${room.id}/join`)
+        .post(`/api/v1/rooms/${room.id}/join`)
         .set('Authorization', `Bearer ${guestSignupResponse.body.accessToken}`);
 
       expect(response.status).toBe(201);
@@ -122,7 +122,7 @@ describe('Rooms Socket (e2e)', () => {
       const roomDeletedPromise = waitForSocketEvent(socket, 'room.deleted');
 
       const response = await request(app.getHttpServer())
-        .delete(`/rooms/${room.id}`)
+        .delete(`/api/v1/rooms/${room.id}`)
         .set('Authorization', `Bearer ${hostSignupResponse.body.accessToken}`);
 
       expect(response.status).toBe(204);

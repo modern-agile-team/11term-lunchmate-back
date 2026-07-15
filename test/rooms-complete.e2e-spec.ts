@@ -37,7 +37,7 @@ describe('Rooms Complete (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/rooms/${room.id}/complete`)
+      .patch(`/api/v1/rooms/${room.id}/complete`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(200);
@@ -66,7 +66,7 @@ describe('Rooms Complete (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/rooms/${room.id}/complete`)
+      .patch(`/api/v1/rooms/${room.id}/complete`)
       .set('Authorization', `Bearer ${otherSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(403);
@@ -84,7 +84,7 @@ describe('Rooms Complete (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .patch(`/rooms/${room.id}/complete`)
+      .patch(`/api/v1/rooms/${room.id}/complete`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(400);
@@ -99,7 +99,7 @@ describe('Rooms Complete (e2e)', () => {
     );
 
     const response = await request(httpApp())
-      .patch('/rooms/999999/complete')
+      .patch('/api/v1/rooms/999999/complete')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);

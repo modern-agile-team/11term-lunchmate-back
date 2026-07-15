@@ -43,7 +43,7 @@ describe('Auth and Users (e2e)', () => {
   }
 
   it('회원가입 성공', async () => {
-    const response = await request(app.getHttpServer()).post('/auth/signup').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'alpha@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -73,7 +73,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('이메일 중복 회원가입 실패', async () => {
-    await request(app.getHttpServer()).post('/auth/signup').send({
+    await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'duplicate@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -82,7 +82,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Hongik University',
     });
 
-    const response = await request(app.getHttpServer()).post('/auth/signup').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'duplicate@example.com',
       password: 'password1234',
       birthDate: '1998-02-02',
@@ -95,7 +95,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('닉네임 중복 회원가입 실패', async () => {
-    await request(app.getHttpServer()).post('/auth/signup').send({
+    await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'first@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -104,7 +104,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Hongik University',
     });
 
-    const response = await request(app.getHttpServer()).post('/auth/signup').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'second@example.com',
       password: 'password1234',
       birthDate: '1998-02-02',
@@ -117,7 +117,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('로그인 성공', async () => {
-    await request(app.getHttpServer()).post('/auth/signup').send({
+    await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'login@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -126,7 +126,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Hongik University',
     });
 
-    const response = await request(app.getHttpServer()).post('/auth/login').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
       email: 'login@example.com',
       password: 'password1234',
     });
@@ -138,7 +138,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('비밀번호 불일치 로그인 실패', async () => {
-    await request(app.getHttpServer()).post('/auth/signup').send({
+    await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'wrong-password@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -147,7 +147,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Hongik University',
     });
 
-    const response = await request(app.getHttpServer()).post('/auth/login').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
       email: 'wrong-password@example.com',
       password: 'invalid-password',
     });
@@ -156,7 +156,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('존재하지 않는 사용자 로그인 실패', async () => {
-    const response = await request(app.getHttpServer()).post('/auth/login').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
       email: 'missing@example.com',
       password: 'password1234',
     });
@@ -165,7 +165,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('refresh 성공 및 새 access token 발급', async () => {
-    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+    const signupResponse = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'refresh@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -174,7 +174,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Hongik University',
     });
 
-    const response = await request(app.getHttpServer()).post('/auth/refresh').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/refresh').send({
       refreshToken: signupResponse.body.refreshToken,
     });
 
@@ -183,7 +183,7 @@ describe('Auth and Users (e2e)', () => {
     expect(response.body.refreshToken).toEqual(expect.any(String));
     expect(response.body.refreshToken).not.toBe(signupResponse.body.refreshToken);
 
-    const reusedRefreshResponse = await request(app.getHttpServer()).post('/auth/refresh').send({
+    const reusedRefreshResponse = await request(app.getHttpServer()).post('/api/v1/auth/refresh').send({
       refreshToken: signupResponse.body.refreshToken,
     });
 
@@ -195,7 +195,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('잘못된 refresh token 거부', async () => {
-    const response = await request(app.getHttpServer()).post('/auth/refresh').send({
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/refresh').send({
       refreshToken: 'invalid.refresh.token.value',
     });
 
@@ -203,7 +203,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('로그아웃 후 refresh 재사용 실패', async () => {
-    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+    const signupResponse = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'logout@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -213,12 +213,12 @@ describe('Auth and Users (e2e)', () => {
     });
 
     const logoutResponse = await request(app.getHttpServer())
-      .post('/auth/logout')
+      .post('/api/v1/auth/logout')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(logoutResponse.status).toBe(204);
 
-    const refreshResponse = await request(app.getHttpServer()).post('/auth/refresh').send({
+    const refreshResponse = await request(app.getHttpServer()).post('/api/v1/auth/refresh').send({
       refreshToken: signupResponse.body.refreshToken,
     });
 
@@ -229,14 +229,14 @@ describe('Auth and Users (e2e)', () => {
     );
 
     const logoutAgainResponse = await request(app.getHttpServer())
-      .post('/auth/logout')
+      .post('/api/v1/auth/logout')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(logoutAgainResponse, 401, UNAUTHORIZED_MESSAGE);
   });
 
   it('같은 refresh token 동시 요청 시 한 번만 성공', async () => {
-    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+    const signupResponse = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'refresh-race@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -248,10 +248,10 @@ describe('Auth and Users (e2e)', () => {
     const refreshToken = signupResponse.body.refreshToken;
 
     const [firstResponse, secondResponse] = await Promise.all([
-      request(app.getHttpServer()).post('/auth/refresh').send({
+      request(app.getHttpServer()).post('/api/v1/auth/refresh').send({
         refreshToken,
       }),
-      request(app.getHttpServer()).post('/auth/refresh').send({
+      request(app.getHttpServer()).post('/api/v1/auth/refresh').send({
         refreshToken,
       }),
     ]);
@@ -262,7 +262,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('GET /users/:userId 공개 프로필 조회 성공', async () => {
-    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+    const signupResponse = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'public@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -284,19 +284,19 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('GET /users/:userId 존재하지 않는 사용자 조회 시 404', async () => {
-    const response = await request(app.getHttpServer()).get('/users/999999');
+    const response = await request(app.getHttpServer()).get('/api/v1/users/999999');
 
     expectExceptionFilterErrorResponse(response, 404, USER_ERROR_MESSAGES.userNotFound);
   });
 
   it('GET /users/me 인증 없이 접근 시 401', async () => {
-    const response = await request(app.getHttpServer()).get('/users/me');
+    const response = await request(app.getHttpServer()).get('/api/v1/users/me');
 
     expectExceptionFilterErrorResponse(response, 401, UNAUTHORIZED_MESSAGE);
   });
 
   it('PATCH /users/me 프로필 수정 성공', async () => {
-    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+    const signupResponse = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'update@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -306,7 +306,7 @@ describe('Auth and Users (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .patch('/users/me')
+      .patch('/api/v1/users/me')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         schoolInfo: 'Yonsei University',
@@ -321,7 +321,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('PATCH /users/me 변경이 없으면 저장 없이 현재 정보 반환', async () => {
-    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+    const signupResponse = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'noop@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -342,7 +342,7 @@ describe('Auth and Users (e2e)', () => {
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     const response = await request(app.getHttpServer())
-      .patch('/users/me')
+      .patch('/api/v1/users/me')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         schoolInfo: 'Hongik University',
@@ -365,7 +365,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('PATCH /users/me 에서 중복 닉네임 거부', async () => {
-    await request(app.getHttpServer()).post('/auth/signup').send({
+    await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'first-user@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -374,7 +374,7 @@ describe('Auth and Users (e2e)', () => {
       schoolInfo: 'Hongik University',
     });
 
-    const secondUser = await request(app.getHttpServer()).post('/auth/signup').send({
+    const secondUser = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'second-user@example.com',
       password: 'password1234',
       birthDate: '1998-02-02',
@@ -384,7 +384,7 @@ describe('Auth and Users (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .patch('/users/me')
+      .patch('/api/v1/users/me')
       .set('Authorization', `Bearer ${secondUser.body.accessToken}`)
       .send({
         nickname: 'taken-nickname',
@@ -394,7 +394,7 @@ describe('Auth and Users (e2e)', () => {
   });
 
   it('DELETE /users/me 후 soft delete 반영 및 재로그인 실패', async () => {
-    const signupResponse = await request(app.getHttpServer()).post('/auth/signup').send({
+    const signupResponse = await request(app.getHttpServer()).post('/api/v1/auth/signup').send({
       email: 'withdraw@example.com',
       password: 'password1234',
       birthDate: '1999-01-01',
@@ -404,7 +404,7 @@ describe('Auth and Users (e2e)', () => {
     });
 
     const deleteResponse = await request(app.getHttpServer())
-      .delete('/users/me')
+      .delete('/api/v1/users/me')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(deleteResponse.status).toBe(204);
@@ -419,7 +419,7 @@ describe('Auth and Users (e2e)', () => {
 
     expect(deletedUser?.deletedAt).toBeInstanceOf(Date);
 
-    const loginResponse = await request(app.getHttpServer()).post('/auth/login').send({
+    const loginResponse = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
       email: 'withdraw@example.com',
       password: 'password1234',
     });

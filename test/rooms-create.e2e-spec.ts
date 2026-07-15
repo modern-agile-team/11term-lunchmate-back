@@ -30,7 +30,7 @@ describe('Rooms Create (e2e)', () => {
   it('POST /rooms 방 생성 성공', async () => {
     const lunchAt = futureLunchAt(1);
 
-    const signupResponse = await request(httpApp()).post('/auth/signup').send({
+    const signupResponse = await request(httpApp()).post('/api/v1/auth/signup').send({
       email: 'test123@gmail.com',
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -40,7 +40,7 @@ describe('Rooms Create (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .post('/rooms')
+      .post('/api/v1/rooms')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '밥 같이 먹을 사람',
@@ -80,7 +80,7 @@ describe('Rooms Create (e2e)', () => {
   });
 
   it('POST /rooms 이미 참여 중인 방이 있으면 생성 실패', async () => {
-    const signupResponse = await request(httpApp()).post('/auth/signup').send({
+    const signupResponse = await request(httpApp()).post('/api/v1/auth/signup').send({
       email: 'test123@gmail.com',
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -90,7 +90,7 @@ describe('Rooms Create (e2e)', () => {
     });
 
     const firstResponse = await request(httpApp())
-      .post('/rooms')
+      .post('/api/v1/rooms')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '첫 번째 방',
@@ -106,7 +106,7 @@ describe('Rooms Create (e2e)', () => {
     expect(firstResponse.status).toBe(201);
 
     const secondResponse = await request(httpApp())
-      .post('/rooms')
+      .post('/api/v1/rooms')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '두 번째 방',

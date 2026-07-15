@@ -48,7 +48,7 @@ describe('Friend Request Accept (e2e)', () => {
     schoolInfo?: string;
   }) {
     return request(app.getHttpServer())
-      .post('/auth/signup')
+      .post('/api/v1/auth/signup')
       .send({
         email: params.email,
         password: 'password1234',
@@ -73,7 +73,7 @@ describe('Friend Request Accept (e2e)', () => {
     });
 
     const friendRequest = await request(app.getHttpServer())
-      .post('/friends/requests')
+      .post('/api/v1/friends/requests')
       .set('Authorization', `Bearer ${requester.body.accessToken}`)
       .send({
         receiverId: receiver.body.user.id,
@@ -86,7 +86,7 @@ describe('Friend Request Accept (e2e)', () => {
     const { requester, receiver, friendRequest } = await createPendingRequest();
 
     const response = await request(app.getHttpServer())
-      .patch(`/friends/requests/${friendRequest.body.id}/accept`)
+      .patch(`/api/v1/friends/requests/${friendRequest.body.id}/accept`)
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
     expect(response.status).toBe(200);
@@ -110,13 +110,13 @@ describe('Friend Request Accept (e2e)', () => {
     });
 
     const requesterResponse = await request(app.getHttpServer())
-      .patch(`/friends/requests/${friendRequest.body.id}/accept`)
+      .patch(`/api/v1/friends/requests/${friendRequest.body.id}/accept`)
       .set('Authorization', `Bearer ${requester.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(requesterResponse, 403, FRIEND_ERROR_MESSAGES.receiverOnly);
 
     const thirdUserResponse = await request(app.getHttpServer())
-      .patch(`/friends/requests/${friendRequest.body.id}/accept`)
+      .patch(`/api/v1/friends/requests/${friendRequest.body.id}/accept`)
       .set('Authorization', `Bearer ${thirdUser.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(thirdUserResponse, 403, FRIEND_ERROR_MESSAGES.receiverOnly);
@@ -129,7 +129,7 @@ describe('Friend Request Accept (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .patch('/friends/requests/999999/accept')
+      .patch('/api/v1/friends/requests/999999/accept')
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 404, FRIEND_ERROR_MESSAGES.requestNotFound);
@@ -139,11 +139,11 @@ describe('Friend Request Accept (e2e)', () => {
     const { receiver, friendRequest } = await createPendingRequest();
 
     await request(app.getHttpServer())
-      .patch(`/friends/requests/${friendRequest.body.id}/accept`)
+      .patch(`/api/v1/friends/requests/${friendRequest.body.id}/accept`)
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
     const response = await request(app.getHttpServer())
-      .patch(`/friends/requests/${friendRequest.body.id}/accept`)
+      .patch(`/api/v1/friends/requests/${friendRequest.body.id}/accept`)
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyProcessed);
@@ -157,7 +157,7 @@ describe('Friend Request Accept (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .patch(`/friends/requests/${friendRequest.body.id}/accept`)
+      .patch(`/api/v1/friends/requests/${friendRequest.body.id}/accept`)
       .set('Authorization', `Bearer ${receiver.body.accessToken}`);
 
     expectExceptionFilterErrorResponse(response, 409, FRIEND_ERROR_MESSAGES.alreadyProcessed);

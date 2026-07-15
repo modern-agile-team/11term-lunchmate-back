@@ -55,6 +55,7 @@ export async function createCoreTestApp(): Promise<INestApplication> {
   }).compile();
 
   const app = moduleFixture.createNestApplication();
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   await app.init();
   await app.listen(0, '127.0.0.1');
@@ -122,6 +123,7 @@ export async function createAuthUserTestApp(): Promise<INestApplication> {
   }).compile();
 
   const app = moduleFixture.createNestApplication();
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   await app.init();
   await app.listen(0, '127.0.0.1');
@@ -180,6 +182,7 @@ export async function createMealMenuTestApp(): Promise<INestApplication> {
   }).compile();
 
   const app = moduleFixture.createNestApplication();
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   await app.init();
 
@@ -244,6 +247,7 @@ export async function createMealMenuAuthTestApp(): Promise<INestApplication> {
   }).compile();
 
   const app = moduleFixture.createNestApplication();
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   await app.init();
 

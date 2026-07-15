@@ -33,7 +33,7 @@ describe('Posts Read (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -84,7 +84,7 @@ describe('Posts Read (e2e)', () => {
       category: infoCategory,
     });
 
-    const response = await request(httpApp()).get('/posts');
+    const response = await request(httpApp()).get('/api/v1/posts');
 
     expect(response.status).toBe(200);
     expect(response.body.items).toHaveLength(2);
@@ -127,7 +127,7 @@ describe('Posts Read (e2e)', () => {
       category: infoCategory,
     });
 
-    const response = await request(httpApp()).get('/posts').query({
+    const response = await request(httpApp()).get('/api/v1/posts').query({
       categoryId: infoCategory.id,
     });
 
@@ -162,7 +162,7 @@ describe('Posts Read (e2e)', () => {
       category,
     });
 
-    const firstPageResponse = await request(httpApp()).get('/posts').query({
+    const firstPageResponse = await request(httpApp()).get('/api/v1/posts').query({
       limit: 2,
     });
 
@@ -173,7 +173,7 @@ describe('Posts Read (e2e)', () => {
     expect(firstPageResponse.body.nextCursor).toBe(secondPost.id);
     expect(firstPageResponse.body.hasNext).toBe(true);
 
-    const nextPageResponse = await request(httpApp()).get('/posts').query({
+    const nextPageResponse = await request(httpApp()).get('/api/v1/posts').query({
       cursor: firstPageResponse.body.nextCursor,
       limit: 2,
     });
@@ -200,7 +200,7 @@ describe('Posts Read (e2e)', () => {
       isAnonymous: true,
     });
 
-    const response = await request(httpApp()).get('/posts');
+    const response = await request(httpApp()).get('/api/v1/posts');
 
     expect(response.status).toBe(200);
     expect(response.body.items).toHaveLength(1);
@@ -208,7 +208,7 @@ describe('Posts Read (e2e)', () => {
   });
 
   it('GET /posts 존재하지 않는 카테고리면 실패', async () => {
-    const response = await request(httpApp()).get('/posts').query({
+    const response = await request(httpApp()).get('/api/v1/posts').query({
       categoryId: 999,
     });
 
@@ -233,7 +233,7 @@ describe('Posts Read (e2e)', () => {
       category,
     });
 
-    const response = await request(httpApp()).get(`/posts/${post.id}`);
+    const response = await request(httpApp()).get(`/api/v1/posts/${post.id}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -270,7 +270,7 @@ describe('Posts Read (e2e)', () => {
       isAnonymous: true,
     });
 
-    const response = await request(httpApp()).get(`/posts/${post.id}`);
+    const response = await request(httpApp()).get(`/api/v1/posts/${post.id}`);
 
     expect(response.status).toBe(200);
     expect(response.body.user).toBeNull();
@@ -278,7 +278,7 @@ describe('Posts Read (e2e)', () => {
   });
 
   it('GET /posts/:id 존재하지 않는 게시글이면 실패', async () => {
-    const response = await request(httpApp()).get('/posts/999');
+    const response = await request(httpApp()).get('/api/v1/posts/999');
 
     expect(response.status).toBe(404);
     expect(response.body.success).toBe(false);
@@ -289,7 +289,7 @@ describe('Posts Read (e2e)', () => {
   });
 
   it('GET /posts/:id 잘못된 게시글 ID 면 실패', async () => {
-    const response = await request(httpApp()).get('/posts/abc');
+    const response = await request(httpApp()).get('/api/v1/posts/abc');
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
