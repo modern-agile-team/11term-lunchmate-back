@@ -23,6 +23,9 @@ export class MealMenuDetailResponseDto {
   @ApiProperty({ example: 0, description: '싫어요 수' })
   dislikeCount: number;
 
+  @ApiProperty({ example: '학생식당', description: '식당 이름' })
+  schoolInfo: string;
+
   @ApiProperty({
     example: ['밥', '미역국', '불고기', '오뎅볶음', '배추김치'],
     description: '학식 구성 요소 목록',
