@@ -37,7 +37,7 @@ describe('Comments Read (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -89,7 +89,7 @@ describe('Comments Read (e2e)', () => {
       content: '두 번째 댓글',
     });
 
-    const response = await request(httpApp()).get(`/posts/${post.id}/comments`);
+    const response = await request(httpApp()).get(`/api/v1/posts/${post.id}/comments`);
 
     expect(response.status).toBe(200);
     expect(response.body.items).toHaveLength(2);
@@ -144,7 +144,7 @@ describe('Comments Read (e2e)', () => {
       isAnonymous: true,
     });
 
-    const response = await request(httpApp()).get(`/posts/${post.id}/comments`);
+    const response = await request(httpApp()).get(`/api/v1/posts/${post.id}/comments`);
 
     expect(response.status).toBe(200);
     expect(response.body.items[0].user).toBeNull();
@@ -163,7 +163,7 @@ describe('Comments Read (e2e)', () => {
 
     await dataSource.getRepository(Comment).softDelete(deletedComment.id);
 
-    const response = await request(httpApp()).get(`/posts/${post.id}/comments`);
+    const response = await request(httpApp()).get(`/api/v1/posts/${post.id}/comments`);
 
     expect(response.status).toBe(200);
     expect(response.body.items).toHaveLength(1);
@@ -171,7 +171,7 @@ describe('Comments Read (e2e)', () => {
   });
 
   it('GET /posts/:id/comments 존재하지 않는 게시글이면 실패', async () => {
-    const response = await request(httpApp()).get('/posts/999/comments');
+    const response = await request(httpApp()).get('/api/v1/posts/999/comments');
 
     expect(response.status).toBe(404);
     expect(response.body.success).toBe(false);
@@ -186,7 +186,7 @@ describe('Comments Read (e2e)', () => {
     const category = await createCategory('자유');
     const post = await createPost(signupResponse.body.user.id, category.id);
 
-    const response = await request(httpApp()).get(`/posts/${post.id}/comments?cursor=0&limit=51`);
+    const response = await request(httpApp()).get(`/api/v1/posts/${post.id}/comments?cursor=0&limit=51`);
 
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);

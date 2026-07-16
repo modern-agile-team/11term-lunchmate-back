@@ -50,7 +50,7 @@ describe('Friend List (e2e)', () => {
     mbti?: string;
   }) {
     return request(app.getHttpServer())
-      .post('/auth/signup')
+      .post('/api/v1/auth/signup')
       .send({
         email: params.email,
         password: 'password1234',
@@ -97,7 +97,7 @@ describe('Friend List (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .get('/friends')
+      .get('/api/v1/friends')
       .set('Authorization', `Bearer ${currentUser.body.accessToken}`)
       .query({ status: 'accepted' });
 
@@ -125,7 +125,7 @@ describe('Friend List (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .get('/friends')
+      .get('/api/v1/friends')
       .set('Authorization', `Bearer ${currentUser.body.accessToken}`)
       .query({ status: 'accepted' });
 
@@ -154,7 +154,7 @@ describe('Friend List (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .get('/friends')
+      .get('/api/v1/friends')
       .set('Authorization', `Bearer ${currentUser.body.accessToken}`)
       .query({ status: 'accepted' });
 
@@ -188,7 +188,7 @@ describe('Friend List (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .get('/friends')
+      .get('/api/v1/friends')
       .set('Authorization', `Bearer ${currentUser.body.accessToken}`)
       .query({ status: 'accepted' });
 
@@ -215,7 +215,7 @@ describe('Friend List (e2e)', () => {
     await dataSource.getRepository(Friend).softDelete(relation.id);
 
     const response = await request(app.getHttpServer())
-      .get('/friends')
+      .get('/api/v1/friends')
       .set('Authorization', `Bearer ${currentUser.body.accessToken}`)
       .query({ status: 'accepted' });
 
@@ -225,7 +225,7 @@ describe('Friend List (e2e)', () => {
 
   it('인증 없이 조회 시 401', async () => {
     const response = await request(app.getHttpServer())
-      .get('/friends')
+      .get('/api/v1/friends')
       .query({ status: 'accepted' });
 
     expectExceptionFilterErrorResponse(response, 401, 'Unauthorized');
@@ -238,7 +238,7 @@ describe('Friend List (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .get('/friends')
+      .get('/api/v1/friends')
       .set('Authorization', `Bearer ${currentUser.body.accessToken}`)
       .query({ status: 'accepted' });
 
@@ -252,7 +252,7 @@ describe('Friend List (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .get('/friends')
+      .get('/api/v1/friends')
       .set('Authorization', `Bearer ${currentUser.body.accessToken}`)
       .query({ status: 'pending' });
 

@@ -54,7 +54,7 @@ describe('Rooms Read (e2e)', () => {
       lunchAt: thirdLunchAt,
     });
 
-    const response = await request(httpApp()).get('/rooms').query({
+    const response = await request(httpApp()).get('/api/v1/rooms').query({
       limit: 2,
       status: RoomStatus.OPEN,
     });
@@ -69,7 +69,7 @@ describe('Rooms Read (e2e)', () => {
     expect(response.body.hasNext).toBe(true);
     expect(response.body.nextCursor).toBe(secondRoom.id);
 
-    const nextPageResponse = await request(httpApp()).get('/rooms').query({
+    const nextPageResponse = await request(httpApp()).get('/api/v1/rooms').query({
       cursor: response.body.nextCursor,
       limit: 2,
       status: RoomStatus.OPEN,
@@ -97,7 +97,7 @@ describe('Rooms Read (e2e)', () => {
       lunchAt,
     });
 
-    const response = await request(httpApp()).get(`/rooms/${room.id}`);
+    const response = await request(httpApp()).get(`/api/v1/rooms/${room.id}`);
 
     expect(response.status).toBe(200);
     expect(response.body.id).toBe(room.id);

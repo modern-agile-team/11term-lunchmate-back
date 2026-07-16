@@ -33,7 +33,7 @@ describe('Posts Delete (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -77,7 +77,7 @@ describe('Posts Delete (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}`)
+      .delete(`/api/v1/posts/${post.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(204);
@@ -105,7 +105,7 @@ describe('Posts Delete (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}`)
+      .delete(`/api/v1/posts/${post.id}`)
       .set('Authorization', `Bearer ${otherSignup.body.accessToken}`);
 
     expect(response.status).toBe(403);
@@ -120,7 +120,7 @@ describe('Posts Delete (e2e)', () => {
     const signupResponse = await signupUser('post-delete-missing@example.com', 'delete-missing');
 
     const response = await request(httpApp())
-      .delete('/posts/999')
+      .delete('/api/v1/posts/999')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);
@@ -144,7 +144,7 @@ describe('Posts Delete (e2e)', () => {
       category,
     });
 
-    const response = await request(httpApp()).delete(`/posts/${post.id}`);
+    const response = await request(httpApp()).delete(`/api/v1/posts/${post.id}`);
 
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);

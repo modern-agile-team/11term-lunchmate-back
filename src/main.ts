@@ -13,6 +13,8 @@ async function bootstrap() {
     logger: winstonLogger,
   });
 
+  app.setGlobalPrefix('api/v1');
+
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   app.useGlobalInterceptors(new ResponseTransformInterceptor(app.get(Reflector)));

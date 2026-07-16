@@ -35,7 +35,7 @@ describe('Posts Like (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -80,7 +80,7 @@ describe('Posts Like (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .post(`/posts/${post.id}/like`)
+      .post(`/api/v1/posts/${post.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     expect(response.status).toBe(201);
@@ -123,11 +123,11 @@ describe('Posts Like (e2e)', () => {
     });
 
     await request(httpApp())
-      .post(`/posts/${post.id}/like`)
+      .post(`/api/v1/posts/${post.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     const response = await request(httpApp())
-      .post(`/posts/${post.id}/like`)
+      .post(`/api/v1/posts/${post.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     expect(response.status).toBe(400);
@@ -153,11 +153,11 @@ describe('Posts Like (e2e)', () => {
     });
 
     await request(httpApp())
-      .post(`/posts/${post.id}/like`)
+      .post(`/api/v1/posts/${post.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}/like`)
+      .delete(`/api/v1/posts/${post.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     expect(response.status).toBe(200);
@@ -203,7 +203,7 @@ describe('Posts Like (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}/like`)
+      .delete(`/api/v1/posts/${post.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     expect(response.status).toBe(404);
@@ -227,8 +227,8 @@ describe('Posts Like (e2e)', () => {
       category,
     });
 
-    const likeResponse = await request(httpApp()).post(`/posts/${post.id}/like`);
-    const unlikeResponse = await request(httpApp()).delete(`/posts/${post.id}/like`);
+    const likeResponse = await request(httpApp()).post(`/api/v1/posts/${post.id}/like`);
+    const unlikeResponse = await request(httpApp()).delete(`/api/v1/posts/${post.id}/like`);
 
     expect(likeResponse.status).toBe(401);
     expect(likeResponse.body.success).toBe(false);

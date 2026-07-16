@@ -33,7 +33,7 @@ describe('Posts Create (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -52,7 +52,7 @@ describe('Posts Create (e2e)', () => {
     const category = await createCategory('자유');
 
     const response = await request(httpApp())
-      .post('/posts')
+      .post('/api/v1/posts')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '학생식당 돈까스 맛있어요',
@@ -99,7 +99,7 @@ describe('Posts Create (e2e)', () => {
     const category = await createCategory('정보');
 
     const response = await request(httpApp())
-      .post('/posts')
+      .post('/api/v1/posts')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '익명 후기',
@@ -121,7 +121,7 @@ describe('Posts Create (e2e)', () => {
     const signupResponse = await signupUser('missing-category@example.com', 'missing-category');
 
     const response = await request(httpApp())
-      .post('/posts')
+      .post('/api/v1/posts')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '없는 카테고리 글',
@@ -143,7 +143,7 @@ describe('Posts Create (e2e)', () => {
     const category = await createCategory('질문');
 
     const response = await request(httpApp())
-      .post('/posts')
+      .post('/api/v1/posts')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`)
       .send({
         title: '   ',
@@ -172,7 +172,7 @@ describe('Posts Create (e2e)', () => {
   it('POST /posts 인증 없이 요청하면 실패', async () => {
     const category = await createCategory('자유');
 
-    const response = await request(httpApp()).post('/posts').send({
+    const response = await request(httpApp()).post('/api/v1/posts').send({
       title: '로그인 없이 작성',
       content: '이 요청은 인증이 필요해요.',
       categoryId: category.id,

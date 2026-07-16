@@ -37,7 +37,7 @@ describe('Comments Like (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -87,7 +87,7 @@ describe('Comments Like (e2e)', () => {
     const comment = await createComment(post.id, authorSignup.body.user.id);
 
     const response = await request(httpApp())
-      .post(`/posts/${post.id}/comments/${comment.id}/like`)
+      .post(`/api/v1/posts/${post.id}/comments/${comment.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     expect(response.status).toBe(201);
@@ -126,11 +126,11 @@ describe('Comments Like (e2e)', () => {
     const comment = await createComment(post.id, authorSignup.body.user.id);
 
     await request(httpApp())
-      .post(`/posts/${post.id}/comments/${comment.id}/like`)
+      .post(`/api/v1/posts/${post.id}/comments/${comment.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     const response = await request(httpApp())
-      .post(`/posts/${post.id}/comments/${comment.id}/like`)
+      .post(`/api/v1/posts/${post.id}/comments/${comment.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     expect(response.status).toBe(400);
@@ -147,7 +147,7 @@ describe('Comments Like (e2e)', () => {
     const post = await createPost(signupResponse.body.user.id, category.id);
 
     const response = await request(httpApp())
-      .post(`/posts/${post.id}/comments/999/like`)
+      .post(`/api/v1/posts/${post.id}/comments/999/like`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);
@@ -170,7 +170,7 @@ describe('Comments Like (e2e)', () => {
     const comment = await createComment(firstPost.id, signupResponse.body.user.id);
 
     const response = await request(httpApp())
-      .post(`/posts/${secondPost.id}/comments/${comment.id}/like`)
+      .post(`/api/v1/posts/${secondPost.id}/comments/${comment.id}/like`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);
@@ -189,11 +189,11 @@ describe('Comments Like (e2e)', () => {
     const comment = await createComment(post.id, authorSignup.body.user.id);
 
     await request(httpApp())
-      .post(`/posts/${post.id}/comments/${comment.id}/like`)
+      .post(`/api/v1/posts/${post.id}/comments/${comment.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}/comments/${comment.id}/like`)
+      .delete(`/api/v1/posts/${post.id}/comments/${comment.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     expect(response.status).toBe(200);
@@ -232,7 +232,7 @@ describe('Comments Like (e2e)', () => {
     const comment = await createComment(post.id, authorSignup.body.user.id);
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}/comments/${comment.id}/like`)
+      .delete(`/api/v1/posts/${post.id}/comments/${comment.id}/like`)
       .set('Authorization', `Bearer ${likerSignup.body.accessToken}`);
 
     expect(response.status).toBe(400);

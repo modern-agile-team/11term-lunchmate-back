@@ -37,7 +37,7 @@ describe('Rooms Delete (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .delete(`/rooms/${room.id}`)
+      .delete(`/api/v1/rooms/${room.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(204);
@@ -64,7 +64,7 @@ describe('Rooms Delete (e2e)', () => {
     });
 
     const response = await request(httpApp())
-      .delete(`/rooms/${room.id}`)
+      .delete(`/api/v1/rooms/${room.id}`)
       .set('Authorization', `Bearer ${otherSignupResponse.body.accessToken}`);
 
     expect(response.status).toBe(403);
@@ -79,7 +79,7 @@ describe('Rooms Delete (e2e)', () => {
     );
 
     const response = await request(httpApp())
-      .delete('/rooms/999999')
+      .delete('/api/v1/rooms/999999')
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);

@@ -37,7 +37,7 @@ describe('Comments Delete (e2e)', () => {
   }
 
   async function signupUser(email: string, nickname: string): Promise<Response> {
-    return request(httpApp()).post('/auth/signup').send({
+    return request(httpApp()).post('/api/v1/auth/signup').send({
       email,
       password: '1q2w3e4r',
       birthDate: '2000-01-01',
@@ -86,7 +86,7 @@ describe('Comments Delete (e2e)', () => {
     const comment = await createComment(post.id, signupResponse.body.user.id);
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}/comments/${comment.id}`)
+      .delete(`/api/v1/posts/${post.id}/comments/${comment.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(204);
@@ -115,7 +115,7 @@ describe('Comments Delete (e2e)', () => {
     const comment = await createComment(post.id, writerSignup.body.user.id);
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}/comments/${comment.id}`)
+      .delete(`/api/v1/posts/${post.id}/comments/${comment.id}`)
       .set('Authorization', `Bearer ${otherSignup.body.accessToken}`);
 
     expect(response.status).toBe(403);
@@ -132,7 +132,7 @@ describe('Comments Delete (e2e)', () => {
     const post = await createPost(signupResponse.body.user.id, category.id);
 
     const response = await request(httpApp())
-      .delete(`/posts/${post.id}/comments/999`)
+      .delete(`/api/v1/posts/${post.id}/comments/999`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);
@@ -153,7 +153,7 @@ describe('Comments Delete (e2e)', () => {
     const comment = await createComment(firstPost.id, signupResponse.body.user.id);
 
     const response = await request(httpApp())
-      .delete(`/posts/${secondPost.id}/comments/${comment.id}`)
+      .delete(`/api/v1/posts/${secondPost.id}/comments/${comment.id}`)
       .set('Authorization', `Bearer ${signupResponse.body.accessToken}`);
 
     expect(response.status).toBe(404);
@@ -170,7 +170,7 @@ describe('Comments Delete (e2e)', () => {
     const post = await createPost(signupResponse.body.user.id, category.id, { commentCount: 1 });
     const comment = await createComment(post.id, signupResponse.body.user.id);
 
-    const response = await request(httpApp()).delete(`/posts/${post.id}/comments/${comment.id}`);
+    const response = await request(httpApp()).delete(`/api/v1/posts/${post.id}/comments/${comment.id}`);
 
     expect(response.status).toBe(401);
     expect(response.body.success).toBe(false);
