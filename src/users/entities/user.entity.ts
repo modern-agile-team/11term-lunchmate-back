@@ -78,6 +78,13 @@ export class User extends BaseTableEntity {
   mbti: Mbti | null;
 
   @Column({
+    name: 'profile_image_url',
+    length: 500,
+    nullable: true,
+  })
+  profileImageUrl: string;
+
+  @Column({
     type: 'varchar',
     name: 'refresh_token_hash',
     nullable: true,

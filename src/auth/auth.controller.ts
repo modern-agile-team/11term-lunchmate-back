@@ -251,6 +251,7 @@ export class AuthController {
       createdAt: user.createdAt,
       email: user.email,
       role: user.role,
+      profileImageUrl: user.profileImageUrl,
     };
   }
 

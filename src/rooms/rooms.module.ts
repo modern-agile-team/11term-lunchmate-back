@@ -6,16 +6,15 @@ import { RoomController } from './rooms.controller';
 import { RoomService } from './rooms.service';
 import { RoomRepository } from './room.repository';
 import { RoomMemberRepository } from './roomMember.repository';
-import { UserService } from 'src/users/users.service';
 import { User } from 'src/users/entities/user.entity';
-import { UserRepository } from 'src/users/users.repository';
+import { UserModule } from 'src/users/users.module';
 import { RoomMemberService } from './roomMember.service';
 import { RoomGateway } from './rooms.gateway';
 import { AuthModule } from 'src/auth/auth.module';
 import { RoomScheduler } from './schedulers/room.scheduler';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Room, RoomMember, User]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Room, RoomMember, User]), AuthModule, UserModule],
   controllers: [RoomController],
   providers: [
     RoomScheduler,
@@ -24,8 +23,6 @@ import { RoomScheduler } from './schedulers/room.scheduler';
     RoomMemberService,
     RoomMemberRepository,
     RoomGateway,
-    UserService,
-    UserRepository,
   ],
 })
 export class RoomModule {}

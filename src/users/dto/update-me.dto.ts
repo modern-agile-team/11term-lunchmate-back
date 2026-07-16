@@ -6,6 +6,7 @@ import {
   IsIn,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -66,4 +67,14 @@ export class UpdateMeDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   @IsEnum(Mbti)
   mbti?: Mbti | null;
+
+  @ApiPropertyOptional({
+    example:
+      'https://lunchmate-s3.s3.ap-northeast-2.amazonaws.com/profile-images/1_1752000000000_uuid.png',
+  })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  @MaxLength(500)
+  profileImageUrl?: string;
 }

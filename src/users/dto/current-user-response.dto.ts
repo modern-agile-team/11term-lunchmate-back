@@ -25,4 +25,11 @@ export class CurrentUserResponseDto {
 
   @ApiProperty({ enum: UserRole })
   role: UserRole;
+
+  @ApiProperty({
+    nullable: true,
+    example:
+      'https://lunchmate-s3.s3.ap-northeast-2.amazonaws.com/profile-images/1_1752000000000_uuid.png',
+  })
+  profileImageUrl: string | null;
 }
