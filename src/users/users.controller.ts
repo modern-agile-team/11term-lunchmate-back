@@ -81,6 +81,7 @@ export class UserController {
     return {
       ...this.toPublicUserResponse(user),
       email: user.email,
+      role: user.role,
     };
   }
 }

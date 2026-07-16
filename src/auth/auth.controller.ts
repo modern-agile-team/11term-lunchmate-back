@@ -250,6 +250,7 @@ export class AuthController {
       mbti: user.mbti,
       createdAt: user.createdAt,
       email: user.email,
+      role: user.role,
     };
   }
 

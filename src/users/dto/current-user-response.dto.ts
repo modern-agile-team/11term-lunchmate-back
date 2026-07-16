@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Mbti, UserGender } from '../types/user.type';
+import { Mbti, UserGender, UserRole } from '../types/user.type';
 
 export class CurrentUserResponseDto {
   id: number;
@@ -22,4 +22,7 @@ export class CurrentUserResponseDto {
   createdAt: string;
 
   email: string;
+
+  @ApiProperty({ enum: UserRole })
+  role: UserRole;
 }
