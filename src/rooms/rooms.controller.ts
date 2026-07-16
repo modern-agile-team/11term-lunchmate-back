@@ -34,8 +34,7 @@ import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { FindRoomsQueryDto } from './dto/find-rooms-query.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { RoomMember } from './entities/room-member.entity';
-import { ResponseRoomMemberListDto } from './dto/room-member.response.dto';
+import { ResponseRoomJoinDto, ResponseRoomMemberListDto } from './dto/room-member.response.dto';
 import { RoomMapper } from './mappers/room.mapper';
 import { RoomMemberMapper } from './mappers/room-member.mapper';
 
@@ -157,7 +156,7 @@ export class RoomController {
   @Authenticated()
   @HttpCode(201)
   @ApiOperation({ summary: '방 참여' })
-  @ApiCreatedResponse({ description: '방 참여 성공' })
+  @ApiCreatedResponse({ type: ResponseRoomJoinDto, description: '방 참여 성공' })
   @ApiBadRequestResponse({
     description: '이미 참여 중이거나, 방 상태/정원/방 조건에 맞지 않는 경우',
   })
@@ -166,8 +165,10 @@ export class RoomController {
   async joinRoom(
     @Param('id', ParseIntPipe) roomId: number,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<RoomMember> {
-    return await this.roomService.joinRoom(roomId, user.userId);
+  ): Promise<ResponseRoomJoinDto> {
+    const joinedMember = await this.roomService.joinRoom(roomId, user.userId);
+
+    return RoomMemberMapper.toJoinDto(joinedMember);
   }
 
   @Delete(':id/leave')
@@ -227,11 +228,16 @@ export class RoomController {
   @Authenticated()
   @HttpCode(201)
   @ApiOperation({ summary: '빠른 참여' })
-  @ApiCreatedResponse({ description: '사용자 조건에 맞는 방에 빠르게 참여 성공' })
+  @ApiCreatedResponse({
+    type: ResponseRoomJoinDto,
+    description: '사용자 조건에 맞는 방에 빠르게 참여 성공',
+  })
   @ApiBadRequestResponse({ description: '이미 참여 중인 방이 있는 경우' })
   @ApiNotFoundResponse({ description: '참여 가능한 방이 없는 경우' })
   @ApiUnauthorizedResponse({ description: '로그인하지 않은 사용자가 요청한 경우' })
-  async quickJoin(@CurrentUser() user: AuthenticatedUser): Promise<RoomMember> {
-    return await this.roomService.quickJoin(user.userId);
+  async quickJoin(@CurrentUser() user: AuthenticatedUser): Promise<ResponseRoomJoinDto> {
+    const joinedMember = await this.roomService.quickJoin(user.userId);
+
+    return RoomMemberMapper.toJoinDto(joinedMember);
   }
 }
