@@ -24,3 +24,14 @@ export class ResponseRoomMemberListDto {
   @ApiProperty()
   items: ResponseRoomMemberDto[];
 }
+
+export class ResponseRoomJoinDto {
+  @ApiProperty()
+  roomId: number;
+
+  @ApiProperty()
+  userId: number;
+
+  @ApiProperty()
+  createdAt: string;
+}
