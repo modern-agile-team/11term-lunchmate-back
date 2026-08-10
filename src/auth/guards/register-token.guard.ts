@@ -1,11 +1,19 @@
 import { ConfigService } from '@nestjs/config';
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { JwtRegisterPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class RegisterTokenGuard implements CanActivate {
+  private readonly logger = new Logger(RegisterTokenGuard.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -26,7 +34,9 @@ export class RegisterTokenGuard implements CanActivate {
       if (payload.type !== 'social_register') throw new UnauthorizedException();
 
       request.socialUser = payload;
-    } catch {
+    } catch (error) {
+      const reason = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      this.logger.warn(`register_token verification failed - ${reason}`);
       throw new UnauthorizedException();
     }
 

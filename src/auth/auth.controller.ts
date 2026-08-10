@@ -263,6 +263,7 @@ export class AuthController {
       httpOnly: true,
       secure: isProduction || sameSite === 'none',
       sameSite,
+      path: '/',
     };
   }
 
