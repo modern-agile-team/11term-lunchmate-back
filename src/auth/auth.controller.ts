@@ -222,7 +222,7 @@ export class AuthController {
   ): Promise<void> {
     await this.authService.logout(currentUser.userId);
     res.clearCookie('access_token');
-    res.clearCookie('refresh_token', { path: '/auth/refresh' });
+    res.clearCookie('refresh_token', { path: '/api/v1/auth/refresh' });
   }
 
   private toAuthResponse(result: AuthResult): AuthResponseDto {
@@ -257,11 +257,12 @@ export class AuthController {
 
   private setCookieOptions(): CookieOptions {
     const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    const sameSite = this.configService.get<'lax' | 'none'>('COOKIE_SAME_SITE', 'lax');
 
     return {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax' as const,
+      secure: isProduction || sameSite === 'none',
+      sameSite,
     };
   }
 
@@ -280,7 +281,7 @@ export class AuthController {
     });
     res.cookie('refresh_token', refreshToken, {
       ...cookieOptions,
-      path: '/auth/refresh',
+      path: '/api/v1/auth/refresh',
       maxAge: this.configService.get<number>(
         'COOKIE_REFRESH_MAX_AGE',
         JWT_DEFAULTS.refreshCookieMaxAge,
