@@ -21,6 +21,22 @@ export class FriendRepository {
       .getMany();
   }
 
+  async findActiveRelationsBetweenUserAndOthers(
+    userId: number,
+    otherUserIds: number[],
+  ): Promise<Friend[]> {
+    if (otherUserIds.length === 0) {
+      return [];
+    }
+
+    return this.createRelationQuery()
+      .where(
+        '(requester.id = :userId AND receiver.id IN (:...otherUserIds)) OR (requester.id IN (:...otherUserIds) AND receiver.id = :userId)',
+        { userId, otherUserIds },
+      )
+      .getMany();
+  }
+
   async findAcceptedRelationsForUser(userId: number): Promise<Friend[]> {
     // Friend list lookup combines joined users with OR filtering on both sides.
     return this.createRelationQuery()
