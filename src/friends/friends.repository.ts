@@ -45,6 +45,13 @@ export class FriendRepository {
       .getMany();
   }
 
+  async findPendingRelationsForUser(userId: number): Promise<Friend[]> {
+    return this.createRelationQuery()
+      .where('(requester.id = :userId OR receiver.id = :userId)', { userId })
+      .andWhere('friend.status = :status', { status: FriendStatus.PENDING })
+      .getMany();
+  }
+
   async findRestorableRequest(requesterId: number, receiverId: number): Promise<Friend | null> {
     // Restorable lookup needs withDeleted plus joined requester/receiver filtering.
     return this.createRelationQuery({ withDeleted: true })
