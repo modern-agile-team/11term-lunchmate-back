@@ -15,6 +15,7 @@ export class RoomMemberMapper {
       gender: roomMember.user.gender,
       schoolInfo: roomMember.user.schoolInfo,
       mbti: roomMember.user.mbti,
+      profileImageUrl: roomMember.user.profileImageUrl,
     };
   }
 

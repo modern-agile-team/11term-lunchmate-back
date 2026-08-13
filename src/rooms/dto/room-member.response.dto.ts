@@ -18,6 +18,9 @@ export class ResponseRoomMemberDto {
 
   @ApiProperty()
   mbti: string | null;
+
+  @ApiProperty({ nullable: true })
+  profileImageUrl: string | null;
 }
 
 export class ResponseRoomMemberListDto {
