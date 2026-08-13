@@ -132,6 +132,7 @@ export class UserController {
       introduce: user.introduce,
       mbti: user.mbti,
       createdAt: user.createdAt,
+      profileImageUrl: user.profileImageUrl,
     };
   }
 
@@ -140,7 +141,6 @@ export class UserController {
       ...this.toPublicUserResponse(user),
       email: user.email,
       role: user.role,
-      profileImageUrl: user.profileImageUrl,
     };
   }
 
