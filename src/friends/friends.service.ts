@@ -62,6 +62,23 @@ export class FriendService {
     return this.friendRepository.findAcceptedRelationsForUser(currentUserId);
   }
 
+  async findFriendRequests(
+    currentUserId: number,
+    direction?: 'sent' | 'received',
+  ): Promise<Friend[]> {
+    const requests = await this.friendRepository.findPendingRelationsForUser(currentUserId);
+
+    if (direction === 'sent') {
+      return requests.filter((request) => request.requester.id === currentUserId);
+    }
+
+    if (direction === 'received') {
+      return requests.filter((request) => request.receiver.id === currentUserId);
+    }
+
+    return requests;
+  }
+
   async mapRelationshipStatuses(
     currentUserId: number,
     otherUserIds: number[],

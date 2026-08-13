@@ -25,8 +25,11 @@ import { User } from '../users/entities/user.entity';
 import { CreateFriendRequestDto } from './dto/create-friend-request.dto';
 import { FriendListItemResponseDto } from './dto/friend-list-item-response.dto';
 import { FriendListResponseDto } from './dto/friend-list-response.dto';
+import { FriendRequestListItemResponseDto } from './dto/friend-request-list-item-response.dto';
+import { FriendRequestListResponseDto } from './dto/friend-request-list-response.dto';
 import { FriendRequestResponseDto } from './dto/friend-request-response.dto';
 import { GetFriendListQueryDto } from './dto/get-friend-list-query.dto';
+import { GetFriendRequestListQueryDto } from './dto/get-friend-request-list-query.dto';
 import { Friend } from './entities/friend.entity';
 import { FriendService } from './friends.service';
 
@@ -45,6 +48,21 @@ export class FriendController {
   ): Promise<FriendListResponseDto> {
     const friends = await this.friendService.findFriends(currentUser.userId, query.status);
     return this.toFriendListResponse(friends, currentUser.userId);
+  }
+
+  @Get('requests')
+  @Authenticated()
+  @ApiOperation({ summary: '보낸/받은 친구 신청 목록 조회' })
+  @ApiOkResponse({ type: FriendRequestListResponseDto })
+  async findFriendRequests(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Query() query: GetFriendRequestListQueryDto,
+  ): Promise<FriendRequestListResponseDto> {
+    const requests = await this.friendService.findFriendRequests(
+      currentUser.userId,
+      query.direction,
+    );
+    return this.toFriendRequestListResponse(requests, currentUser.userId);
   }
 
   @Post('requests')
@@ -117,6 +135,32 @@ export class FriendController {
       receiverId: friend.receiver.id,
       status: friend.status,
       createdAt: friend.createdAt,
+    };
+  }
+
+  private toFriendRequestListResponse(
+    requests: Friend[],
+    currentUserId: number,
+  ): FriendRequestListResponseDto {
+    return {
+      items: requests.map((request) => this.toFriendRequestListItem(request, currentUserId)),
+    };
+  }
+
+  private toFriendRequestListItem(
+    request: Friend,
+    currentUserId: number,
+  ): FriendRequestListItemResponseDto {
+    const isSender = request.requester.id === currentUserId;
+    const otherUser = isSender ? request.receiver : request.requester;
+
+    return {
+      friendshipId: request.id,
+      requesterId: request.requester.id,
+      receiverId: request.receiver.id,
+      direction: isSender ? 'SENT' : 'RECEIVED',
+      user: this.toPublicUserResponse(otherUser),
+      createdAt: request.createdAt,
     };
   }
 
