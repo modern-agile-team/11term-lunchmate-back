@@ -190,6 +190,7 @@ export class FriendController {
       introduce: user.introduce,
       mbti: user.mbti,
       createdAt: user.createdAt,
+      profileImageUrl: user.profileImageUrl,
     };
   }
 }
