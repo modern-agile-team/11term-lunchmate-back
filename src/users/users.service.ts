@@ -156,6 +156,10 @@ export class UserService {
     return await this.userRepository.findByNickname(nickname);
   }
 
+  async searchUsers(keyword: string, currentUserId: number): Promise<User[]> {
+    return this.userRepository.searchByNicknameOrEmail(keyword, currentUserId);
+  }
+
   async updateProviderToken(
     userId: number,
     providerAccessToken: string,

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, UpdateResult } from 'typeorm';
 import { User } from './entities/user.entity';
 import { AuthProvider, UserGender, Mbti, CreateSocialUserProps } from './types/user.type';
+import { USER_SEARCH_RESULT_LIMIT } from './user.constants';
 
 export type UpdateMePatch = Partial<
   Pick<
@@ -163,6 +164,18 @@ export class UserRepository {
 
   async findByNickname(nickname: string): Promise<User | null> {
     return await this.userRepository.findOne({ where: { nickname } });
+  }
+
+  async searchByNicknameOrEmail(keyword: string, excludeUserId: number): Promise<User[]> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id != :excludeUserId', { excludeUserId })
+      .andWhere('(user.nickname ILIKE :nicknamePattern OR user.email = :keyword)', {
+        nicknamePattern: `%${keyword}%`,
+        keyword,
+      })
+      .take(USER_SEARCH_RESULT_LIMIT)
+      .getMany();
   }
 
   async updateProviderToken(

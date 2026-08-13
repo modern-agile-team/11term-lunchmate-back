@@ -9,6 +9,7 @@ import { UserService } from '../users/users.service';
 import { FRIEND_ERROR_MESSAGES } from './friend.constants';
 import { Friend, FriendStatus } from './entities/friend.entity';
 import { FriendRepository } from './friends.repository';
+import { RelationshipStatus } from './types/relationship-status.type';
 
 @Injectable()
 export class FriendService {
@@ -59,6 +60,39 @@ export class FriendService {
   async findFriends(currentUserId: number, status?: 'accepted'): Promise<Friend[]> {
     this.validateFriendListStatus(status);
     return this.friendRepository.findAcceptedRelationsForUser(currentUserId);
+  }
+
+  async mapRelationshipStatuses(
+    currentUserId: number,
+    otherUserIds: number[],
+  ): Promise<Map<number, RelationshipStatus>> {
+    const relations = await this.friendRepository.findActiveRelationsBetweenUserAndOthers(
+      currentUserId,
+      otherUserIds,
+    );
+
+    return new Map(
+      relations.map((relation) => {
+        const otherUserId =
+          relation.requester.id === currentUserId ? relation.receiver.id : relation.requester.id;
+
+        return [otherUserId, this.toRelationshipStatus(relation, currentUserId)];
+      }),
+    );
+  }
+
+  private toRelationshipStatus(relation: Friend, currentUserId: number): RelationshipStatus {
+    if (relation.status === FriendStatus.ACCEPTED) {
+      return RelationshipStatus.ACCEPTED;
+    }
+
+    if (relation.status === FriendStatus.REJECTED) {
+      return RelationshipStatus.REJECTED;
+    }
+
+    return relation.requester.id === currentUserId
+      ? RelationshipStatus.PENDING_SENT
+      : RelationshipStatus.PENDING_RECEIVED;
   }
 
   private async validateReceiver(requesterId: number, receiverId: number): Promise<void> {
