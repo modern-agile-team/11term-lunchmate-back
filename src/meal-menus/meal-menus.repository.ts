@@ -48,7 +48,7 @@ export class MealMenuRepository {
 
   async findMany(params: FindMealMenusParams): Promise<MealMenu[]> {
     const query = this.applyReadFilters(
-      this.mealMenuRepository.createQueryBuilder('mealMenu'),
+      this.applyComponentJoins(this.mealMenuRepository.createQueryBuilder('mealMenu')),
       params,
     );
 
@@ -72,7 +72,7 @@ export class MealMenuRepository {
 
   async findRankings(params: FindMealMenuRankingsParams): Promise<MealMenu[]> {
     const query = this.applyReadFilters(
-      this.mealMenuRepository.createQueryBuilder('mealMenu'),
+      this.applyComponentJoins(this.mealMenuRepository.createQueryBuilder('mealMenu')),
       params,
     );
 
@@ -85,6 +85,23 @@ export class MealMenuRepository {
     query.addOrderBy('mealMenu.id', 'DESC');
 
     return query.getMany();
+  }
+
+  async findReactionsByUserAndMealMenuIds(
+    userId: number,
+    mealMenuIds: number[],
+  ): Promise<MealMenuReaction[]> {
+    if (mealMenuIds.length === 0) return [];
+
+    return this.mealMenuReactionRepository.find({
+      where: {
+        user: { id: userId },
+        mealMenu: { id: In(mealMenuIds) },
+      },
+      relations: {
+        mealMenu: true,
+      },
+    });
   }
 
   async findReactionByUserAndMealMenu(
@@ -254,6 +271,12 @@ export class MealMenuRepository {
     }
 
     return true;
+  }
+
+  private applyComponentJoins(query: SelectQueryBuilder<MealMenu>): SelectQueryBuilder<MealMenu> {
+    return query
+      .leftJoinAndSelect('mealMenu.mealMenuComponentMappings', 'mealMenuComponentMappings')
+      .leftJoinAndSelect('mealMenuComponentMappings.mealMenuComponent', 'mealMenuComponent');
   }
 
   private applyReadFilters(

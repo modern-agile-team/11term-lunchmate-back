@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { MealType } from '../entities/meal-menu.entity';
+import { ActionType } from '../entities/meal-menu-reaction.entity';
 
 export class MealMenuListItemResponseDto {
   id: number;
@@ -20,4 +21,9 @@ export class MealMenuListItemResponseDto {
   dislikeCount: number;
 
   schoolInfo: string;
+
+  components: string[];
+
+  @ApiProperty({ enum: ActionType, nullable: true })
+  myReaction: ActionType | null;
 }
