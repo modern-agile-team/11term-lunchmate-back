@@ -132,6 +132,19 @@ export class MealMenusController {
     return this.toReactionResponse(ActionType.DISLIKE, mealMenu);
   }
 
+  @Delete(':mealMenuId/reaction')
+  @HttpCode(HttpStatus.OK)
+  @Authenticated()
+  @ApiOperation({ summary: '학식 좋아요/싫어요 취소' })
+  @ApiOkResponse({ type: MealMenuReactionResponseDto })
+  async cancelMealMenuReaction(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('mealMenuId', ParseIntPipe) mealMenuId: number,
+  ): Promise<MealMenuReactionResponseDto> {
+    const mealMenu = await this.mealMenusService.cancelReaction(currentUser.userId, mealMenuId);
+    return this.toReactionResponse(null, mealMenu);
+  }
+
   @Patch(':mealMenuId')
   @Roles(UserRole.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -229,7 +242,7 @@ export class MealMenusController {
   }
 
   private toReactionResponse(
-    actionType: ActionType,
+    actionType: ActionType | null,
     mealMenu: MealMenu,
   ): MealMenuReactionResponseDto {
     return {

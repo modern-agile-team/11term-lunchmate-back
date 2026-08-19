@@ -75,6 +75,12 @@ export class MealMenusService {
     return this.applyReactionOrFail(userId, mealMenuId, ActionType.DISLIKE);
   }
 
+  async cancelReaction(userId: number, mealMenuId: number): Promise<MealMenu> {
+    await this.findMealMenuOrFail(mealMenuId);
+
+    return this.mealMenuRepository.cancelReaction(userId, mealMenuId);
+  }
+
   async updateMealMenu(
     mealMenuId: number,
     updateMealMenuDto: UpdateMealMenuDto,

@@ -160,6 +160,40 @@ export class MealMenuRepository {
     });
   }
 
+  async cancelReaction(userId: number, mealMenuId: number): Promise<MealMenu> {
+    return this.dataSource.transaction(async (manager) => {
+      const mealMenuRepository = manager.getRepository(MealMenu);
+      const mealMenuReactionRepository = manager.getRepository(MealMenuReaction);
+
+      const mealMenu = await mealMenuRepository.findOneByOrFail({ id: mealMenuId });
+      const existingReaction = await mealMenuReactionRepository.findOne({
+        where: {
+          user: { id: userId },
+          mealMenu: { id: mealMenuId },
+        },
+      });
+
+      if (!existingReaction) {
+        return mealMenu;
+      }
+
+      await mealMenuReactionRepository.remove(existingReaction);
+
+      if (existingReaction.actionType === ActionType.LIKE) {
+        mealMenu.likeCount = Math.max(0, mealMenu.likeCount - 1);
+      } else {
+        mealMenu.dislikeCount = Math.max(0, mealMenu.dislikeCount - 1);
+      }
+
+      await mealMenuRepository.update(mealMenuId, {
+        likeCount: mealMenu.likeCount,
+        dislikeCount: mealMenu.dislikeCount,
+      });
+
+      return mealMenu;
+    });
+  }
+
   async createMealMenuComponent(
     components: { name: string }[],
     manager: EntityManager,
