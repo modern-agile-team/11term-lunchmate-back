@@ -253,6 +253,7 @@ describe('Posts Read (e2e)', () => {
         name: category.name,
       },
       isAnonymous: false,
+      liked: false,
     });
   });
 

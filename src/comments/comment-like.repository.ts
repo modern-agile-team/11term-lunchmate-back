@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CommentLike } from './entities/comment-like.entity';
-import { DeleteResult, EntityManager, Repository } from 'typeorm';
+import { DeleteResult, EntityManager, In, Repository } from 'typeorm';
 
 @Injectable()
 export class CommentLikeRepository {
@@ -15,6 +15,20 @@ export class CommentLikeRepository {
       where: {
         comment: { id: commentId },
         user: { id: userId },
+      },
+    });
+  }
+
+  async findByCommentIdsAndUserId(commentIds: number[], userId: number): Promise<CommentLike[]> {
+    if (commentIds.length === 0) return [];
+
+    return await this.commentLikeRepository.find({
+      where: {
+        comment: { id: In(commentIds) },
+        user: { id: userId },
+      },
+      relations: {
+        comment: true,
       },
     });
   }

@@ -67,6 +67,12 @@ export class PostService {
     return post;
   }
 
+  async isLikedByUser(postId: number, userId: number): Promise<boolean> {
+    const like = await this.postLikeService.findPostLikeById(postId, userId);
+
+    return !!like;
+  }
+
   async updatePost(updatePostDto: UpdatePostDto, postId: number, userId: number): Promise<Post> {
     const existingPost = await this.findPostById(postId);
 
