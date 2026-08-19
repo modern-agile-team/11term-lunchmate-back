@@ -96,6 +96,15 @@ jobs:
     runs-on: [self-hosted, lunchmate-runner]
 
     steps:
+      - name: sync repo checkout on ec2
+        run: |
+          set -e
+
+          cd ~/${{ secrets.APP_NAME }}
+
+          git fetch origin ${{ github.ref_name }}
+          git reset --hard origin/${{ github.ref_name }}
+
       - name: deploy to ec2
         run: |
           set -e
