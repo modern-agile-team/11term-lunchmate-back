@@ -55,6 +55,18 @@ export class MealMenusService {
     return this.findMealMenuOrFail(mealMenuId);
   }
 
+  async findMyReactionsMap(
+    userId: number,
+    mealMenuIds: number[],
+  ): Promise<Map<number, ActionType>> {
+    const reactions = await this.mealMenuRepository.findReactionsByUserAndMealMenuIds(
+      userId,
+      mealMenuIds,
+    );
+
+    return new Map(reactions.map((reaction) => [reaction.mealMenu.id, reaction.actionType]));
+  }
+
   async likeMealMenu(userId: number, mealMenuId: number): Promise<MealMenu> {
     return this.applyReactionOrFail(userId, mealMenuId, ActionType.LIKE);
   }

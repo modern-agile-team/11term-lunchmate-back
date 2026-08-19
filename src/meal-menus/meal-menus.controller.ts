@@ -28,6 +28,8 @@ import {
 } from '@nestjs/swagger';
 import { Authenticated } from '../auth/decorators/authenticated.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { OptionalAuthenticated } from '../auth/decorators/optional-authenticated.decorator';
+import { OptionalCurrentUser } from '../auth/decorators/optional-current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { GetMealMenuListQueryDto } from './dto/get-meal-menu-list-query.dto';
 import { GetMealMenuRankingQueryDto } from './dto/get-meal-menu-ranking-query.dto';
@@ -67,21 +69,31 @@ export class MealMenusController {
   }
 
   @Get()
+  @OptionalAuthenticated()
   @ApiOperation({ summary: '학식 목록 조회' })
   @ApiOkResponse({ type: MealMenuListResponseDto })
-  async findMealMenus(@Query() query: GetMealMenuListQueryDto): Promise<MealMenuListResponseDto> {
+  async findMealMenus(
+    @OptionalCurrentUser() currentUser: AuthenticatedUser | null,
+    @Query() query: GetMealMenuListQueryDto,
+  ): Promise<MealMenuListResponseDto> {
     const mealMenus = await this.mealMenusService.findMealMenus(query);
-    return this.toListResponse(mealMenus);
+    const myReactions = await this.findMyReactionsMap(currentUser, mealMenus);
+
+    return this.toListResponse(mealMenus, myReactions);
   }
 
   @Get('rankings')
+  @OptionalAuthenticated()
   @ApiOperation({ summary: '학식 랭킹 조회' })
   @ApiOkResponse({ type: MealMenuListResponseDto })
   async findMealMenuRankings(
+    @OptionalCurrentUser() currentUser: AuthenticatedUser | null,
     @Query() query: GetMealMenuRankingQueryDto,
   ): Promise<MealMenuListResponseDto> {
     const mealMenus = await this.mealMenusService.findMealMenuRankings(query);
-    return this.toListResponse(mealMenus);
+    const myReactions = await this.findMyReactionsMap(currentUser, mealMenus);
+
+    return this.toListResponse(mealMenus, myReactions);
   }
 
   @Get(':mealMenuId')
@@ -159,13 +171,31 @@ export class MealMenusController {
     return await this.mealMenusService.deleteMealMenu(mealMenuId);
   }
 
-  private toListResponse(mealMenus: MealMenu[]): MealMenuListResponseDto {
+  private async findMyReactionsMap(
+    currentUser: AuthenticatedUser | null,
+    mealMenus: MealMenu[],
+  ): Promise<Map<number, ActionType>> {
+    if (!currentUser) return new Map();
+
+    return this.mealMenusService.findMyReactionsMap(
+      currentUser.userId,
+      mealMenus.map((mealMenu) => mealMenu.id),
+    );
+  }
+
+  private toListResponse(
+    mealMenus: MealMenu[],
+    myReactions: Map<number, ActionType>,
+  ): MealMenuListResponseDto {
     return {
-      items: mealMenus.map((mealMenu) => this.toListItem(mealMenu)),
+      items: mealMenus.map((mealMenu) => this.toListItem(mealMenu, myReactions)),
     };
   }
 
-  private toListItem(mealMenu: MealMenu): MealMenuListItemResponseDto {
+  private toListItem(
+    mealMenu: MealMenu,
+    myReactions: Map<number, ActionType>,
+  ): MealMenuListItemResponseDto {
     return {
       id: mealMenu.id,
       mealType: mealMenu.mealType,
@@ -175,6 +205,10 @@ export class MealMenusController {
       likeCount: mealMenu.likeCount,
       dislikeCount: mealMenu.dislikeCount,
       schoolInfo: mealMenu.schoolInfo,
+      components: mealMenu.mealMenuComponentMappings.map(
+        (mapping) => mapping.mealMenuComponent.name,
+      ),
+      myReaction: myReactions.get(mealMenu.id) ?? null,
     };
   }
 

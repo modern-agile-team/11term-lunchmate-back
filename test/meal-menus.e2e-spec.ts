@@ -457,6 +457,8 @@ describe('Meal Menus (e2e)', () => {
         calorie: 820,
         likeCount: 3,
         dislikeCount: 1,
+        schoolInfo: 'Hongik University',
+        components: [],
       });
     });
 
