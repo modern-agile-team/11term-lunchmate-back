@@ -20,7 +20,15 @@ type JoinRoomPayload = {
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: (origin, callback) => {
+      const allowedOrigins = (process.env.CORS_ORIGINS ?? '')
+        .split(',')
+        .map((allowedOrigin) => allowedOrigin.trim())
+        .filter(Boolean);
+
+      callback(null, !origin || allowedOrigins.includes(origin));
+    },
+    credentials: true,
   },
 })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -36,13 +44,16 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const tokenFromHeader = client.handshake.headers.authorization;
       const tokenFromAuth = client.handshake.auth.token;
+      const tokenFromCookie = this.extractAccessTokenFromCookieHeader(
+        client.handshake.headers.cookie,
+      );
 
       const rawToken =
         typeof tokenFromHeader === 'string'
           ? tokenFromHeader
           : typeof tokenFromAuth === 'string'
             ? tokenFromAuth
-            : null;
+            : tokenFromCookie;
 
       if (!rawToken) throw new UnauthorizedException();
 
@@ -114,5 +125,19 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private getRoomChannel(roomId: number): string {
     return `room:${roomId}`;
+  }
+
+  private extractAccessTokenFromCookieHeader(cookieHeader?: string): string | null {
+    if (!cookieHeader) return null;
+
+    for (const pair of cookieHeader.split(';')) {
+      const [name, ...valueParts] = pair.trim().split('=');
+
+      if (name === 'access_token') {
+        return decodeURIComponent(valueParts.join('='));
+      }
+    }
+
+    return null;
   }
 }
