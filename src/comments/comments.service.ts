@@ -64,6 +64,18 @@ export class CommentService {
     return comment;
   }
 
+  async isLikedByUser(commentId: number, userId: number): Promise<boolean> {
+    const like = await this.commentLikeRepository.findByCommentIdAndUserId(commentId, userId);
+
+    return !!like;
+  }
+
+  async findLikedCommentIds(commentIds: number[], userId: number): Promise<Set<number>> {
+    const likes = await this.commentLikeRepository.findByCommentIdsAndUserId(commentIds, userId);
+
+    return new Set(likes.map((like) => like.comment.id));
+  }
+
   async findCommentsByPostId(
     postId: number,
     findCommentsQueryDto: FindCommentsQueryDto,

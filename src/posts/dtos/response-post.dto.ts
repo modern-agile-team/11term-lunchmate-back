@@ -40,6 +40,9 @@ export class ResponsePostDetailDto {
 
   @ApiProperty()
   createdAt: string;
+
+  @ApiProperty()
+  liked: boolean;
 }
 
 export class ResponsePostListItemDto extends PickType(ResponsePostDetailDto, [

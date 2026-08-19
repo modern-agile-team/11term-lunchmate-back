@@ -32,12 +32,13 @@ export class PostMapper {
     };
   }
 
-  static toDetailDto(post: Post): ResponsePostDetailDto {
+  static toDetailDto(post: Post, liked: boolean): ResponsePostDetailDto {
     return {
       ...this.toListItemDto(post),
       content: post.content,
       category: post.category,
       isAnonymous: post.isAnonymous,
+      liked,
     };
   }
 

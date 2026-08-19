@@ -8,13 +8,14 @@ import {
 import { Comment } from '../entities/comment.entity';
 
 export class CommentMapper {
-  static toCommentDetailDto(comment: Comment): ResponseCommentDetailDto {
+  static toCommentDetailDto(comment: Comment, liked: boolean): ResponseCommentDetailDto {
     return {
       id: comment.id,
       content: comment.content,
       createdAt: comment.createdAt,
       likeCount: comment.likeCount,
       user: comment.isAnonymous ? null : this.toAuthorDto(comment.user),
+      liked,
     };
   }
 
@@ -29,21 +30,25 @@ export class CommentMapper {
     comments: Comment[],
     nextCursor: number | null,
     hasNext: boolean,
+    likedCommentIds: Set<number>,
   ): ResponseCommentListDto {
     return {
-      items: comments.map((comment) => this.toCommentListItemDto(comment)),
+      items: comments.map((comment) =>
+        this.toCommentListItemDto(comment, likedCommentIds.has(comment.id)),
+      ),
       nextCursor,
       hasNext,
     };
   }
 
-  static toCommentListItemDto(comment: Comment): ResponseCommentListItemDto {
+  static toCommentListItemDto(comment: Comment, liked: boolean): ResponseCommentListItemDto {
     return {
       id: comment.id,
       content: comment.content,
       createdAt: comment.createdAt,
       likeCount: comment.likeCount,
       user: comment.isAnonymous ? null : this.toAuthorDto(comment.user),
+      liked,
     };
   }
 }

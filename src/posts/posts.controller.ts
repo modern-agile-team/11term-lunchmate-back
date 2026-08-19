@@ -31,6 +31,8 @@ import { CreatePostDto } from './dtos/create-post.dto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/auth/interfaces/jwt-payload.interface';
 import { Authenticated } from 'src/auth/decorators/authenticated.decorator';
+import { OptionalAuthenticated } from 'src/auth/decorators/optional-authenticated.decorator';
+import { OptionalCurrentUser } from 'src/auth/decorators/optional-current-user.decorator';
 import {
   ResponsePostDetailDto,
   ResponsePostListDto,
@@ -74,8 +76,9 @@ export class PostController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ResponsePostDetailDto> {
     const createdPost = await this.postService.createPost(createPostDto, user.userId);
+    const liked = await this.postService.isLikedByUser(createdPost.id, user.userId);
 
-    return PostMapper.toDetailDto(createdPost);
+    return PostMapper.toDetailDto(createdPost, liked);
   }
 
   @Get()
@@ -90,13 +93,20 @@ export class PostController {
   }
 
   @Get(':id')
+  @OptionalAuthenticated()
   @ApiOperation({ summary: '게시글 상세 조회' })
   @ApiOkResponse({ type: ResponsePostDetailDto })
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글을 조회하려는 경우' })
-  async findPostById(@Param('id', ParseIntPipe) postId: number): Promise<ResponsePostDetailDto> {
+  async findPostById(
+    @OptionalCurrentUser() currentUser: AuthenticatedUser | null,
+    @Param('id', ParseIntPipe) postId: number,
+  ): Promise<ResponsePostDetailDto> {
     const post = await this.postService.findPostById(postId);
+    const liked = currentUser
+      ? await this.postService.isLikedByUser(postId, currentUser.userId)
+      : false;
 
-    return PostMapper.toDetailDto(post);
+    return PostMapper.toDetailDto(post, liked);
   }
 
   @Patch(':id')
@@ -119,8 +129,9 @@ export class PostController {
       throw new BadRequestException('수정할 값이 없습니다.');
 
     const updatedPost = await this.postService.updatePost(updatePostDto, postId, user.userId);
+    const liked = await this.postService.isLikedByUser(postId, user.userId);
 
-    return PostMapper.toDetailDto(updatedPost);
+    return PostMapper.toDetailDto(updatedPost, liked);
   }
 
   @Delete(':id')
@@ -213,7 +224,7 @@ export class PostController {
       user.userId,
     );
 
-    return CommentMapper.toCommentDetailDto(createdComment);
+    return CommentMapper.toCommentDetailDto(createdComment, false);
   }
 
   @Patch(':postId/comments/:commentId')
@@ -242,8 +253,9 @@ export class PostController {
       commentId,
       user.userId,
     );
+    const liked = await this.commentService.isLikedByUser(commentId, user.userId);
 
-    return CommentMapper.toCommentDetailDto(updatedComment);
+    return CommentMapper.toCommentDetailDto(updatedComment, liked);
   }
 
   @Delete(':postId/comments/:commentId')
@@ -268,11 +280,13 @@ export class PostController {
   }
 
   @Get(':id/comments')
+  @OptionalAuthenticated()
   @ApiOperation({ summary: '게시글 댓글 목록 조회' })
   @ApiOkResponse({ type: ResponseCommentListDto })
   @ApiNotFoundResponse({ description: '존재하지 않는 게시글의 댓글을 조회하려는 경우' })
   @ApiBadRequestResponse({ description: '조회 조건이 올바르지 않은 경우' })
   async findCommentsByPostId(
+    @OptionalCurrentUser() currentUser: AuthenticatedUser | null,
     @Param('id', ParseIntPipe) postId: number,
     @Query() findCommentsQueryDto: FindCommentsQueryDto,
   ): Promise<ResponseCommentListDto> {
@@ -280,8 +294,14 @@ export class PostController {
       postId,
       findCommentsQueryDto,
     );
+    const likedCommentIds = currentUser
+      ? await this.commentService.findLikedCommentIds(
+          items.map((comment) => comment.id),
+          currentUser.userId,
+        )
+      : new Set<number>();
 
-    return CommentMapper.toCommentListDto(items, nextCursor, hasNext);
+    return CommentMapper.toCommentListDto(items, nextCursor, hasNext, likedCommentIds);
   }
 
   @Post(':postId/comments/:commentId/like')

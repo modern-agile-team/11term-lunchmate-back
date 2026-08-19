@@ -15,6 +15,9 @@ export class ResponseCommentDetailDto {
 
   @ApiProperty()
   user: CommentAuthorDto | null;
+
+  @ApiProperty()
+  liked: boolean;
 }
 
 export class CommentAuthorDto {
@@ -51,4 +54,7 @@ export class ResponseCommentListItemDto {
 
   @ApiProperty()
   user: CommentAuthorDto | null;
+
+  @ApiProperty()
+  liked: boolean;
 }
