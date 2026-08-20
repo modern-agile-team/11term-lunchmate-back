@@ -98,6 +98,7 @@ describe('Posts Read (e2e)', () => {
       user: {
         id: writer.id,
         nickname: writer.nickname,
+        profileImageUrl: null,
       },
       category: {
         id: infoCategory.id,
@@ -252,6 +253,7 @@ describe('Posts Read (e2e)', () => {
       user: {
         id: writer.id,
         nickname: writer.nickname,
+        profileImageUrl: null,
       },
       category: {
         id: category.id,

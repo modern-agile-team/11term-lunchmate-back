@@ -85,6 +85,7 @@ describe('Comments Create (e2e)', () => {
     expect(response.body.user).toEqual({
       id: signupResponse.body.user.id,
       nickname: 'commenter',
+      profileImageUrl: null,
     });
     expect(response.body.createdAt).toEqual(expect.any(String));
 

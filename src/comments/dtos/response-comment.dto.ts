@@ -26,6 +26,9 @@ export class CommentAuthorDto {
 
   @ApiProperty()
   nickname: string;
+
+  @ApiProperty({ nullable: true })
+  profileImageUrl: string | null;
 }
 
 export class ResponseCommentListDto {

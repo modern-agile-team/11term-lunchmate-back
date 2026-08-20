@@ -72,6 +72,7 @@ describe('Posts Create (e2e)', () => {
     expect(response.body.user).toEqual({
       id: signupResponse.body.user.id,
       nickname: 'writer',
+      profileImageUrl: null,
     });
     expect(response.body.category).toEqual({
       id: category.id,
