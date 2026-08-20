@@ -29,6 +29,7 @@ export class PostMapper {
       commentCount: post.commentCount,
       createdAt: post.createdAt,
       user: post.isAnonymous ? null : this.toPostAuthorDto(post.user),
+      category: post.category,
     };
   }
 
@@ -36,7 +37,6 @@ export class PostMapper {
     return {
       ...this.toListItemDto(post),
       content: post.content,
-      category: post.category,
       isAnonymous: post.isAnonymous,
       liked,
     };

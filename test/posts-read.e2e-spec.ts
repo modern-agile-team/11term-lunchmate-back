@@ -99,6 +99,10 @@ describe('Posts Read (e2e)', () => {
         id: writer.id,
         nickname: writer.nickname,
       },
+      category: {
+        id: infoCategory.id,
+        name: infoCategory.name,
+      },
     });
     expect(response.body.items[1].id).toBe(olderPost.id);
     expect(response.body.nextCursor).toBeNull();
