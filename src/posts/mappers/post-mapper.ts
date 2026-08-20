@@ -12,15 +12,16 @@ export class PostMapper {
     posts: Post[],
     nextCursor: number | null,
     hasNext: boolean,
+    currentUserId: number | null,
   ): ResponsePostListDto {
     return {
-      items: posts.map((post) => this.toListItemDto(post)),
+      items: posts.map((post) => this.toListItemDto(post, currentUserId)),
       nextCursor,
       hasNext,
     };
   }
 
-  static toListItemDto(post: Post): ResponsePostListItemDto {
+  static toListItemDto(post: Post, currentUserId: number | null): ResponsePostListItemDto {
     return {
       id: post.id,
       title: post.title,
@@ -30,12 +31,17 @@ export class PostMapper {
       createdAt: post.createdAt,
       user: post.isAnonymous ? null : this.toPostAuthorDto(post.user),
       category: post.category,
+      isMine: post.user.id === currentUserId,
     };
   }
 
-  static toDetailDto(post: Post, liked: boolean): ResponsePostDetailDto {
+  static toDetailDto(
+    post: Post,
+    liked: boolean,
+    currentUserId: number | null,
+  ): ResponsePostDetailDto {
     return {
-      ...this.toListItemDto(post),
+      ...this.toListItemDto(post, currentUserId),
       content: post.content,
       isAnonymous: post.isAnonymous,
       liked,

@@ -78,18 +78,22 @@ export class PostController {
     const createdPost = await this.postService.createPost(createPostDto, user.userId);
     const liked = await this.postService.isLikedByUser(createdPost.id, user.userId);
 
-    return PostMapper.toDetailDto(createdPost, liked);
+    return PostMapper.toDetailDto(createdPost, liked, user.userId);
   }
 
   @Get()
+  @OptionalAuthenticated()
   @ApiOperation({ summary: '게시글 목록 조회' })
   @ApiOkResponse({ type: ResponsePostListDto })
   @ApiBadRequestResponse({ description: '조회 조건이 올바르지 않은 경우' })
   @ApiNotFoundResponse({ description: '존재하지 않는 카테고리로 조회하려는 경우' })
-  async findPosts(@Query() query: FindPostsQueryDto): Promise<ResponsePostListDto> {
+  async findPosts(
+    @OptionalCurrentUser() currentUser: AuthenticatedUser | null,
+    @Query() query: FindPostsQueryDto,
+  ): Promise<ResponsePostListDto> {
     const { items, nextCursor, hasNext } = await this.postService.findPosts(query);
 
-    return PostMapper.toListDto(items, nextCursor, hasNext);
+    return PostMapper.toListDto(items, nextCursor, hasNext, currentUser?.userId ?? null);
   }
 
   @Get(':id')
@@ -106,7 +110,7 @@ export class PostController {
       ? await this.postService.isLikedByUser(postId, currentUser.userId)
       : false;
 
-    return PostMapper.toDetailDto(post, liked);
+    return PostMapper.toDetailDto(post, liked, currentUser?.userId ?? null);
   }
 
   @Patch(':id')
@@ -131,7 +135,7 @@ export class PostController {
     const updatedPost = await this.postService.updatePost(updatePostDto, postId, user.userId);
     const liked = await this.postService.isLikedByUser(postId, user.userId);
 
-    return PostMapper.toDetailDto(updatedPost, liked);
+    return PostMapper.toDetailDto(updatedPost, liked, user.userId);
   }
 
   @Delete(':id')

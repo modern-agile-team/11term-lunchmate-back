@@ -43,6 +43,9 @@ export class ResponsePostDetailDto {
 
   @ApiProperty()
   liked: boolean;
+
+  @ApiProperty()
+  isMine: boolean;
 }
 
 export class ResponsePostListItemDto extends PickType(ResponsePostDetailDto, [
@@ -54,6 +57,7 @@ export class ResponsePostListItemDto extends PickType(ResponsePostDetailDto, [
   'commentCount',
   'user',
   'category',
+  'isMine',
 ]) {}
 
 export class ResponsePostListDto {
