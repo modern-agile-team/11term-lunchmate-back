@@ -228,7 +228,7 @@ export class PostController {
       user.userId,
     );
 
-    return CommentMapper.toCommentDetailDto(createdComment, false);
+    return CommentMapper.toCommentDetailDto(createdComment, false, user.userId);
   }
 
   @Patch(':postId/comments/:commentId')
@@ -259,7 +259,7 @@ export class PostController {
     );
     const liked = await this.commentService.isLikedByUser(commentId, user.userId);
 
-    return CommentMapper.toCommentDetailDto(updatedComment, liked);
+    return CommentMapper.toCommentDetailDto(updatedComment, liked, user.userId);
   }
 
   @Delete(':postId/comments/:commentId')
@@ -305,7 +305,13 @@ export class PostController {
         )
       : new Set<number>();
 
-    return CommentMapper.toCommentListDto(items, nextCursor, hasNext, likedCommentIds);
+    return CommentMapper.toCommentListDto(
+      items,
+      nextCursor,
+      hasNext,
+      likedCommentIds,
+      currentUser?.userId ?? null,
+    );
   }
 
   @Post(':postId/comments/:commentId/like')
