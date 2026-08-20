@@ -103,6 +103,7 @@ describe('Posts Read (e2e)', () => {
         id: infoCategory.id,
         name: infoCategory.name,
       },
+      isMine: false,
     });
     expect(response.body.items[1].id).toBe(olderPost.id);
     expect(response.body.nextCursor).toBeNull();
@@ -258,6 +259,7 @@ describe('Posts Read (e2e)', () => {
       },
       isAnonymous: false,
       liked: false,
+      isMine: false,
     });
   });
 
