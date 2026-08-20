@@ -8,7 +8,11 @@ import {
 import { Comment } from '../entities/comment.entity';
 
 export class CommentMapper {
-  static toCommentDetailDto(comment: Comment, liked: boolean): ResponseCommentDetailDto {
+  static toCommentDetailDto(
+    comment: Comment,
+    liked: boolean,
+    currentUserId: number | null,
+  ): ResponseCommentDetailDto {
     return {
       id: comment.id,
       content: comment.content,
@@ -16,6 +20,7 @@ export class CommentMapper {
       likeCount: comment.likeCount,
       user: comment.isAnonymous ? null : this.toAuthorDto(comment.user),
       liked,
+      isMine: comment.user.id === currentUserId,
     };
   }
 
@@ -32,17 +37,22 @@ export class CommentMapper {
     nextCursor: number | null,
     hasNext: boolean,
     likedCommentIds: Set<number>,
+    currentUserId: number | null,
   ): ResponseCommentListDto {
     return {
       items: comments.map((comment) =>
-        this.toCommentListItemDto(comment, likedCommentIds.has(comment.id)),
+        this.toCommentListItemDto(comment, likedCommentIds.has(comment.id), currentUserId),
       ),
       nextCursor,
       hasNext,
     };
   }
 
-  static toCommentListItemDto(comment: Comment, liked: boolean): ResponseCommentListItemDto {
+  static toCommentListItemDto(
+    comment: Comment,
+    liked: boolean,
+    currentUserId: number | null,
+  ): ResponseCommentListItemDto {
     return {
       id: comment.id,
       content: comment.content,
@@ -50,6 +60,7 @@ export class CommentMapper {
       likeCount: comment.likeCount,
       user: comment.isAnonymous ? null : this.toAuthorDto(comment.user),
       liked,
+      isMine: comment.user.id === currentUserId,
     };
   }
 }
