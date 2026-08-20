@@ -23,6 +23,7 @@ export class CommentMapper {
     return {
       id: user.id,
       nickname: user.nickname,
+      profileImageUrl: user.profileImageUrl,
     };
   }
 

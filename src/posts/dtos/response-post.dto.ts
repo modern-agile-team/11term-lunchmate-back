@@ -8,6 +8,9 @@ export class PostAuthorDto {
 
   @ApiProperty()
   nickname: string;
+
+  @ApiProperty({ nullable: true })
+  profileImageUrl: string | null;
 }
 
 export class ResponsePostDetailDto {
