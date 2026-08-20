@@ -53,6 +53,7 @@ export class ResponsePostListItemDto extends PickType(ResponsePostDetailDto, [
   'viewCount',
   'commentCount',
   'user',
+  'category',
 ]) {}
 
 export class ResponsePostListDto {
